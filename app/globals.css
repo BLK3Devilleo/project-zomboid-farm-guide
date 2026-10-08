@@ -4,17 +4,27 @@
   padding: 0;
 }
 
+:root {
+  --bg-main: #060913;
+  --bg-card: rgba(15, 23, 42, 0.65);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --border-glass-hover: rgba(16, 185, 129, 0.4);
+  --accent-emerald: #10b981;
+  --accent-cyan: #06b6d4;
+  --accent-amber: #f59e0b;
+}
+
 body {
-  background-color: #0b1120;
+  background-color: var(--bg-main);
   color: #f8fafc;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
   -webkit-font-smoothing: antialiased;
   background-image: 
-    radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 80% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.15), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 90% 80%, rgba(6, 182, 212, 0.08), transparent 60%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
   min-height: 100vh;
 }
 
@@ -26,68 +36,66 @@ button {
   color: inherit;
 }
 
-/* Efecto Display LCD Militar Retro */
-.lcd-display {
-  font-family: 'Courier New', Courier, monospace;
-  letter-spacing: 0.08em;
-  text-shadow: 0 0 10px rgba(52, 211, 153, 0.7);
+/* Glassmorphism 2026 */
+.glass-panel {
+  background: rgba(13, 20, 36, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glass);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
-.lcd-alert {
-  font-family: 'Courier New', Courier, monospace;
-  letter-spacing: 0.06em;
-  text-shadow: 0 0 10px rgba(245, 158, 11, 0.8);
+.glass-card {
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-glass);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Animaciones de gamificación */
-@keyframes pulse-glow {
+.glass-card:hover {
+  background: rgba(22, 33, 56, 0.7);
+  border-color: var(--border-glass-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(16, 185, 129, 0.15);
+}
+
+/* Slot de Inventario Gamer */
+.inv-slot {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: rgba(8, 12, 22, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.inv-slot:hover {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  transform: scale(1.05);
+}
+
+.inv-slot.equipped {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.18);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.35);
+}
+
+/* Animaciones */
+@keyframes pulse-emerald {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6), 0 0 20px rgba(16, 185, 129, 0.3);
-    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
   }
   50% {
-    box-shadow: 0 0 0 14px rgba(16, 185, 129, 0), 0 0 30px rgba(16, 185, 129, 0.5);
-    transform: scale(1.05);
+    box-shadow: 0 0 0 12px rgba(16, 185, 129, 0);
   }
 }
 
-@keyframes pulse-red {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
-  }
-}
-
-@keyframes float-gentle {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
-}
-
-@keyframes pop-in {
-  0% { transform: scale(0.9); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-.pulse-node {
-  animation: pulse-glow 2.2s infinite ease-in-out;
-}
-
-.pulse-alert {
-  animation: pulse-red 1.6s infinite ease-in-out;
-}
-
-.float-spiffo {
-  animation: float-gentle 3.5s infinite ease-in-out;
-}
-
-.pop-modal {
-  animation: pop-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@media (max-width: 640px) {
-  .hud-xp-box {
-    display: none !important;
-  }
+.pulse-glow {
+  animation: pulse-emerald 2.2s infinite ease-in-out;
 }
