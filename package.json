@@ -8,6 +8,7 @@
     "start": "node node_modules/next/dist/bin/next start --hostname 0.0.0.0"
   },
   "dependencies": {
+    "@microsoft/clarity": "^1.0.2",
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"

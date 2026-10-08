@@ -1,42 +1,57 @@
-# Walkthrough: Sistema de Metalurgia B42 y Zonas de Peligro & Loot
+# Walkthrough: Arquitectura Spiffo-OS (MVP Funcional)
 
-## Estado Final
-Se ha integrado con éxito en la aplicación de Project Zomboid (Build 42):
-1. **Módulo de Metalurgia & Forja (Build 42)** con soporte para herramientas de soldadura, hornos primitivos/industriales de arcilla, yunques, defensas blindadas y revistas técnicas Vol. 1-4.
-2. **Módulo de Zonas de Máximo Riesgo & Botín Legendario (Top 3 por Mapa)** cubriendo Muldraugh, West Point, Riverside, Rosewood y Louisville con densidad zombi, niveles de amenaza (Tiers S+, S, A+, A, B+), equipo obligatorio y rutas tácticas de incursion/evacuación.
-
----
-
-## Características Implementadas
-
-### 1. Base de Datos de Metalurgia & Forja ([`app/data/metalworking.js`](file:///C:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/data/metalworking.js))
-* **Herramientas de Taller:** Soplete de propano, máscara de soldador, electrodos consumibles y llave grifa para fontanería.
-* **Forja & Fundición B42:** Horno primitivo de arcilla, yunque de forja, fuelle de cuero para flujo de aire y moldes cocidos de arcilla para clavos y piezas.
-* **Defensas & Barricadas:** Rejas de barras transparentes para ventanas, láminas ciegas de metal y vallas altas de reja de acero perimetrales.
-* **Manuales Técnicos:** The Metalwork Magazine Vol. 1 al 4 con recetas desbloqueadas y mejores ubicaciones para encontrarlas.
-
-### 2. Base de Datos de Zonas de Peligro ([`app/data/dangerousZones.js`](file:///C:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/data/dangerousZones.js))
-Top 3 zonas más peligrosas y looteables de cada una de las 5 ciudades:
-* **Muldraugh:** Dixie Highway Commercial Strip (S+), Large North Warehouse (A), Depósito Ferroviario / Rail Yard (B+).
-* **West Point:** Gun Store & Armería Blindada (S+), Downtown Strip & Giga-Supermercado (S), Comisaría de Policía Central (A+).
-* **Riverside:** Country Club & Mansiones del Sur (A+), GigaMart Fluvial & Galería (A), Escuela Pública & Correos (B+).
-* **Rosewood:** Penitenciaría Estatal de Kentucky / Prisión (S+), Estación de Bomberos & Comisaría (A), Autocine Abandonado & Desguace (B+).
-* **Louisville:** Punto de Control Militar de la Zona de Exclusión (S+), Grand Ohio Mall (+5.000 zombis) (S+), Hospital General San Peregrino (S).
-
-### 3. Vistas HUD e Interfaz Interactiva ([`app/page.jsx`](file:///C:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/page.jsx))
-* Selector modular de 4 pestañas:
-  * 🗺️ **Misiones:** Ruta de progresión 1-20 y retos tácticos.
-  * 🛠️ **Herramientas:** Arsenal de herramientas con filtros de categoría.
-  * ⚒️ **Metalurgia (B42):** Manual de forja, fundición y defensas.
-  * ☠️ **Zonas de Peligro:** Filtro por ciudades de Knox Country, niveles de amenaza y planes de incursión.
-* Modales dinámicos con fichas completas, recetas, requisitos de combustible, equipamiento táctico sugerido y tácticas de escape.
+## Resumen de la Implementación
+Se ha completado con éxito la transformación de la aplicación hacia la arquitectura **Spiffo-OS**, cumpliendo con los ajustes clave acordados:
+* Onboarding interactivo por intenciones.
+* Navbar limpio con 4 menús desplegables.
+* Rutas modulares por niveles con checklists de acciones tácticas.
+* Vista de botín contextualizada bajo una plantilla estandarizada.
+* Persistencia centralizada en `localStorage` (sin cuentas obligatorias, tolerancia a fallos y cero pérdida de datos).
 
 ---
 
-## Verificación y Calidad
-1. **Compilación de Producción:**
-   * Ejecutado `npm run build` con Next.js 16.4.0 (Turbopack).
-   * Generación de páginas estáticas exitosa (3/3 páginas estáticas generadas).
-   * **Exit Code: 0**.
-2. **Control de Versiones:**
-   * Cambios preparados y estructurados de forma atómica siguiendo Conventional Commits en inglés.
+## Componentes y Archivos Creados
+1. [`app/lib/progressStorage.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/lib/progressStorage.js):
+   * Centraliza lectura, escritura y reinicio de progreso bajo un único objeto versionado (`spiffo_os_player_data`).
+2. [`app/data/onboardingOptions.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/data/onboardingOptions.js):
+   * Estructura del flujo de dos pasos: *"¿Cómo quieres jugar?"* y *"¿Qué te llama más?"* para novatos.
+3. [`app/data/routesDatabase.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/data/routesDatabase.js):
+   * 3 Rutas completas disponibles:
+     * **Supervivencia Básica (Primeros Días):** Niveles 1, 2 y 3.
+     * **Primer Vehículo / Nómada:** Camión Niveles 1, 2 y 3.
+     * **Agricultura y Granja Autosuficiente (B42):** Niveles 1, 2 y 3.
+   * Rutas preparadas como `coming_soon` (Carpintería, Combate, Roleplay).
+4. [`app/data/lootDatabase.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/data/lootDatabase.js):
+   * Fichas de botín estandarizadas con qué buscar, dónde buscar, riesgo, cuándo ir, qué llevar y tips tácticos para *Hospitales*, *Vehículos/Gasolineras*, *Herramientas/Ferreterías* y *Comida/Supermercados*.
+5. [`app/components/Navbar.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/Navbar.jsx):
+   * Cabecera limpia con 4 menús desplegables (`Modo de juego`, `Profesiones`, `Habilidades`, `Loot y mapas`), logo Spiffo de retorno y HUD de XP global.
+6. [`app/components/OnboardingWizard.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/OnboardingWizard.jsx):
+   * Pantalla de inicio con tarjetas grandes tácticas para seleccionar estilo u objetivo.
+7. [`app/components/RouteView.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/RouteView.jsx):
+   * Navegación por pestañas de nivel libre (sin bloquear consulta), barra de progreso, checklist con XP y recompensa de conocimiento.
+8. [`app/components/LootView.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/LootView.jsx):
+   * Vista de tarjetas de botín con enlace directo a la ruta relacionada.
+9. [`app/page.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/page.jsx):
+   * Orquestador reactivo limpio sin duplicación de estado.
+
+---
+
+## Verificación de Compilación
+* Comando ejecutado: `npm run build`
+* Resultado: **Exit Code 0** (Compilación estática optimizada sin errores).
+* Repositorio remoto: Actualizado en rama `main` en GitHub (`f85e243`).
+
+---
+
+## Integración de Métricas y Analítica (GA4 & Microsoft Clarity)
+* **Archivo modificado**: [`app/layout.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/layout.js)
+* **Google Analytics 4**:
+  - Measurement ID: `G-KRWBJ9ER2C`
+  - Inyectado vía `next/script` con estrategia `afterInteractive`.
+* **Microsoft Clarity**:
+  - Project ID: `yuppdlr6rl`
+  - Inyectado vía `next/script` con estrategia `afterInteractive` para mapas de calor y grabaciones de sesión.
+* **Validación**:
+  - `npm run build` exitoso con Turbopack (Exit Code 0).
+  - Confirmado en el head del layout raíz.
+
