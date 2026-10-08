@@ -5,8 +5,14 @@ services:
       dockerfile: Dockerfile
     container_name: pz-farm-guide-app
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pz-farm-guide.rule=Host(`pzguia.filocentraldemando.site`)"
+      - "traefik.http.routers.pz-farm-guide.entrypoints=websecure"
+      - "traefik.http.routers.pz-farm-guide.tls.certresolver=letsencrypt"
+      - "traefik.http.services.pz-farm-guide.loadbalancer.server.port=3000"
