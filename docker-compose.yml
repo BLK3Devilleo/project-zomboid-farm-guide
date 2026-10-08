@@ -7,6 +7,8 @@ services:
     restart: unless-stopped
     expose:
       - "3000"
+    networks:
+      - dokploy-network
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -16,3 +18,7 @@ services:
       - "traefik.http.routers.pz-farm-guide.entrypoints=websecure"
       - "traefik.http.routers.pz-farm-guide.tls.certresolver=letsencrypt"
       - "traefik.http.services.pz-farm-guide.loadbalancer.server.port=3000"
+
+networks:
+  dokploy-network:
+    external: true
