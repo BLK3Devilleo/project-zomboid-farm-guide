@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
+import HoloCard from './HoloCard';
+import AnimatedList from './AnimatedList';
 
 export default function RouteView({
   route,
@@ -14,78 +16,104 @@ export default function RouteView({
 
   if (!route) {
     return (
-      <div style={{ padding: '60px 20px', textAlign: 'center', color: '#94a3b8' }}>
+      <div className="py-20 text-center text-slate-400">
         No se encontró la ruta solicitada.
       </div>
     );
   }
 
   const currentLevel = route.levels[selectedLevelIdx] || route.levels[0];
-  const routeProgress = progress.routes[route.id] || { completedObjectives: [] };
+  const routeProgress = progress?.routes?.[route.id] || { completedObjectives: [] };
 
   const levelCompletedCount = currentLevel.objectives.filter((obj) =>
     routeProgress.completedObjectives.includes(obj.id)
   ).length;
-  const levelPercent = Math.round((levelCompletedCount / currentLevel.objectives.length) * 100);
+  const levelPercent = Math.round(
+    (levelCompletedCount / currentLevel.objectives.length) * 100
+  );
 
   const toggleEquip = (name) => {
     setEquippedItems((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
+  // Asignar imagen Spiffo según la temática de la ruta
+  const spiffoCardImage =
+    route.id.includes('vehicle') || route.id.includes('nomad')
+      ? '/spiffo/spiffo_vehicle.png'
+      : route.id.includes('farm')
+      ? '/spiffo/spiffo_farming.png'
+      : route.id.includes('combat')
+      ? '/spiffo/spiffo_combat.png'
+      : route.id.includes('craft') || route.id.includes('carpent')
+      ? '/spiffo/spiffo_crafting.png'
+      : '/spiffo/spiffo_character.png';
+
   return (
-    <div style={{ maxWidth: '880px', margin: '0 auto', padding: '36px 20px 80px' }}>
-      {/* CABECERA 2026 DE LA RUTA */}
-      <div
-        className="glass-panel"
-        style={{
-          borderRadius: '24px',
-          padding: '28px',
-          marginBottom: '24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: '20px',
-          flexWrap: 'wrap',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div
-            style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              background: 'rgba(16, 185, 129, 0.12)',
-              border: '1.5px solid rgba(16, 185, 129, 0.35)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '30px',
-              boxShadow: '0 0 20px rgba(16, 185, 129, 0.25)',
-            }}
-          >
-            {route.icon}
+    <div className="max-w-4xl mx-auto px-4 py-8 pb-24 flex flex-col gap-6">
+      {/* CABECERA 2026 DE LA RUTA CON HOLOCARD 3D */}
+      <div className="glass-panel rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden border border-[rgba(255,255,255,0.1)]">
+        {/* Lado izquierdo: Metadatos y título */}
+        <div className="flex-1 z-10 flex flex-col gap-2 text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start gap-2.5">
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#10b981] bg-[#10b9811f] border border-[#10b9814d] px-2.5 py-0.5 rounded-md">
+              {route.difficulty}
+            </span>
+            <span className="text-xs text-[#94a3b8] font-medium">
+              ⏱️ {route.estimatedTime}
+            </span>
+            <span className="text-xs text-[#38bdf8] font-medium">
+              • Nivel Activo {currentLevel.levelNumber} de {route.levels.length}
+            </span>
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ fontSize: '10px', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.08em', background: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                {route.difficulty}
-              </span>
-              <span style={{ fontSize: '11px', color: '#94a3b8' }}>• {route.estimatedTime}</span>
+
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center justify-center md:justify-start gap-3 mt-1">
+            <span>{route.icon}</span>
+            <span>{route.title}</span>
+          </h1>
+
+          <p className="text-xs sm:text-sm text-[#94a3b8] leading-relaxed max-w-xl m-0">
+            {route.description}
+          </p>
+
+          <div className="flex items-center justify-center md:justify-start gap-3 mt-2 text-xs text-[#cbd5e1]">
+            <span className="font-semibold text-[#10b981]">
+              Progreso de la Ruta:
+            </span>
+            <div className="w-36 h-2 rounded-full bg-[rgba(255,255,255,0.08)] overflow-hidden border border-[rgba(255,255,255,0.1)]">
+              <div
+                className="h-full bg-gradient-to-r from-[#10b981] to-[#34d399] transition-all duration-500 shadow-[0_0_10px_#10b981]"
+                style={{ width: `${levelPercent}%` }}
+              />
             </div>
-            <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#ffffff', margin: 0, letterSpacing: '-0.02em' }}>
-              {route.title}
-            </h1>
+            <span className="font-mono font-bold text-white">
+              {levelPercent}%
+            </span>
           </div>
         </div>
-        <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.5', margin: '8px 0 0', maxWidth: '640px' }}>
-          {route.description}
-        </p>
+
+        {/* Lado derecho: HOLOCARD 3D HOLOGRÁFICA REACT BITS */}
+        <div className="flex flex-col items-center gap-2 z-10">
+          <div className="relative group cursor-pointer">
+            <HoloCard
+              image={spiffoCardImage}
+              alt={route.title}
+              preset="bursts"
+              width={140}
+              radius={16}
+              intensity={0.9}
+              edgeSparkle={0.85}
+              tiltMax={16}
+              className="shadow-[0_10px_30px_rgba(0,0,0,0.6)]"
+            />
+          </div>
+          <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-widest font-mono">
+            SPIFFO CARD 3D
+          </span>
+        </div>
       </div>
 
-      {/* SELECTOR DE NIVELES / TABS */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
+      {/* SELECTOR DE NIVELES (TABS CON FEEDBACK VISUAL) */}
+      <div className="flex gap-2.5 overflow-x-auto pb-2 select-none">
         {route.levels.map((lvl, idx) => {
           const isSelected = selectedLevelIdx === idx;
           const completedInThis = lvl.objectives.filter((o) =>
@@ -97,106 +125,99 @@ export default function RouteView({
             <button
               key={lvl.id}
               onClick={() => setSelectedLevelIdx(idx)}
-              style={{
-                padding: '10px 18px',
-                borderRadius: '14px',
-                fontSize: '12px',
-                fontWeight: 800,
-                backgroundColor: isSelected ? '#10b981' : 'rgba(15, 23, 42, 0.6)',
-                color: isSelected ? '#090d16' : isDone ? '#34d399' : '#cbd5e1',
-                border: '1.5px solid',
-                borderColor: isSelected ? '#34d399' : isDone ? 'rgba(16, 185, 129, 0.3)' : 'rgba(255, 255, 255, 0.08)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                whiteSpace: 'nowrap',
-                boxShadow: isSelected ? '0 0 20px rgba(16, 185, 129, 0.4)' : 'none',
-              }}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                isSelected
+                  ? 'bg-[#10b981] text-[#060913] shadow-[0_0_20px_rgba(16,185,129,0.5)] border border-[#34d399]'
+                  : isDone
+                  ? 'bg-[rgba(16,185,129,0.15)] text-[#34d399] border border-[rgba(16,185,129,0.3)]'
+                  : 'bg-[rgba(15,23,42,0.6)] text-[#cbd5e1] border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.2)]'
+              }`}
             >
               <span>Nivel {lvl.levelNumber}</span>
-              {isDone && <span>✓</span>}
+              {isDone ? (
+                <span className="text-xs">✓</span>
+              ) : (
+                <span className="text-[10px] opacity-60">
+                  ({completedInThis}/{lvl.objectives.length})
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
-      {/* CONTENEDOR PRINCIPAL DEL NIVEL (EL LOOP GAMIFICADO) */}
-      <div
-        className="glass-panel"
-        style={{
-          borderRadius: '24px',
-          padding: '28px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '24px',
-        }}
-      >
-        {/* Cabecera y Barra de Progreso */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 900, color: '#ffffff', margin: 0 }}>
+      {/* SECUENCIA GAMIFICADA PASO A PASO */}
+      <div className="glass-panel rounded-3xl p-6 sm:p-8 flex flex-col gap-6 border border-[rgba(255,255,255,0.1)]">
+        {/* Cabecera del nivel */}
+        <div className="border-b border-[rgba(255,255,255,0.08)] pb-4 flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+          <div>
+            <span className="text-[10px] font-black tracking-widest text-[#10b981] uppercase font-mono">
+              MISIÓN DE NIVEL {currentLevel.levelNumber}
+            </span>
+            <h2 className="text-xl sm:text-2xl font-black text-white m-0 tracking-tight">
               {currentLevel.title}
             </h2>
-            <span style={{ fontSize: '12px', fontWeight: 800, color: '#10b981' }}>
-              {levelCompletedCount} de {currentLevel.objectives.length} Tareas ({levelPercent}%)
-            </span>
           </div>
-
-          <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255, 255, 255, 0.06)', borderRadius: '99px', overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-            <div
-              style={{
-                width: `${levelPercent}%`,
-                height: '100%',
-                backgroundColor: '#10b981',
-                boxShadow: '0 0 12px rgba(16, 185, 129, 0.7)',
-                transition: 'width 0.4s ease',
-              }}
-            />
+          <div className="text-right">
+            <span className="text-xs font-bold text-[#10b981] font-mono">
+              {levelCompletedCount}/{currentLevel.objectives.length} Tareas (
+              {levelPercent}%)
+            </span>
           </div>
         </div>
 
-        {/* PASO 1: LOADOUT DE EQUIPO REQUERIDO (SLOTS DE INVENTARIO GAMER) */}
+        {/* FASE 1: QUÉ EQUIPAR PRIMERO (INVENTARIO TÁCTICO) */}
         {currentLevel.requiredGear && (
-          <div style={{ backgroundColor: 'rgba(9, 13, 24, 0.7)', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '18px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                🎒 Paso 1: Equipo Requerido en tu Inventario
+          <div className="flex flex-col gap-3 bg-[#080d1b99] rounded-2xl p-4 sm:p-5 border border-[rgba(255,255,255,0.06)]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">🎒</span>
+                <span className="text-xs font-black uppercase tracking-wider text-[#38bdf8]">
+                  Fase 1: ¿Qué equipar de inmediato?
+                </span>
+              </div>
+              <span className="text-[10px] text-[#94a3b8]">
+                Haz clic en cada ranura para marcar equipo
               </span>
-              <span style={{ fontSize: '10px', color: '#94a3b8' }}>Toca cada slot para equipar</span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {currentLevel.requiredGear.map((item, i) => {
                 const isEq = !!equippedItems[item.name];
                 return (
                   <div
                     key={i}
                     onClick={() => toggleEquip(item.name)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '10px 14px',
-                      borderRadius: '14px',
-                      backgroundColor: isEq ? 'rgba(16, 185, 129, 0.15)' : 'rgba(15, 23, 42, 0.6)',
-                      border: '1.5px solid',
-                      borderColor: isEq ? '#10b981' : 'rgba(255, 255, 255, 0.08)',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease',
-                    }}
+                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                      isEq
+                        ? 'bg-[#10b98124] border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.2)]'
+                        : 'bg-[#0f172a80] border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,255,255,0.2)]'
+                    }`}
                   >
                     <div className={`inv-slot ${isEq ? 'equipped' : ''}`}>
-                      <Image src={item.img} alt={item.name} width={34} height={34} style={{ objectFit: 'contain' }} />
+                      <Image
+                        src={item.img}
+                        alt={item.name}
+                        width={36}
+                        height={36}
+                        className="object-contain"
+                      />
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '12px', fontWeight: 800, color: isEq ? '#34d399' : '#f8fafc' }}>
+                    <div className="flex-1 min-w-0">
+                      <div
+                        className={`text-xs font-bold truncate ${
+                          isEq ? 'text-[#34d399]' : 'text-white'
+                        }`}
+                      >
                         {item.name}
                       </div>
-                      <div style={{ fontSize: '10px', color: '#94a3b8', lineHeight: '1.3' }}>{item.desc}</div>
+                      <div className="text-[10px] text-[#94a3b8] line-clamp-1">
+                        {item.desc}
+                      </div>
                     </div>
-                    <span style={{ fontSize: '14px' }}>{isEq ? '✅' : '➕'}</span>
+                    <span className="text-xs font-bold text-[#10b981]">
+                      {isEq ? '✓' : '+'}
+                    </span>
                   </div>
                 );
               })}
@@ -204,108 +225,145 @@ export default function RouteView({
           </div>
         )}
 
-        {/* PASO 2: TARGET DE SAQUEO / DÓNDE RECOLECTAR */}
+        {/* FASE 2: DÓNDE Y QUÉ RECOLECTAR */}
         {currentLevel.lootTarget && (
-          <div style={{ backgroundColor: 'rgba(9, 13, 24, 0.7)', borderRadius: '18px', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '18px' }}>
-            <span style={{ fontSize: '11px', fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '8px' }}>
-              📍 Paso 2: Dónde Buscar y Recolectar
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', fontSize: '12px' }}>
-              <div style={{ color: '#cbd5e1' }}>
-                <strong style={{ color: '#f8fafc' }}>Edificio prioritario:</strong> {currentLevel.lootTarget.building}
+          <div className="flex flex-col gap-2.5 bg-[#080d1b99] rounded-2xl p-4 sm:p-5 border border-[rgba(255,255,255,0.06)]">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">📍</span>
+              <span className="text-xs font-black uppercase tracking-wider text-[#f59e0b]">
+                Fase 2: ¿Dónde recolectar los materiales?
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="bg-[#0f172a66] p-2.5 rounded-xl border border-[rgba(255,255,255,0.05)]">
+                <span className="text-[10px] text-[#94a3b8] uppercase font-bold block">
+                  Edificio Clave
+                </span>
+                <span className="font-bold text-white">
+                  {currentLevel.lootTarget.building}
+                </span>
               </div>
-              <div style={{ color: '#cbd5e1' }}>
-                <strong style={{ color: '#f8fafc' }}>Prioridad:</strong> {currentLevel.lootTarget.priority}
+              <div className="bg-[#0f172a66] p-2.5 rounded-xl border border-[rgba(255,255,255,0.05)]">
+                <span className="text-[10px] text-[#94a3b8] uppercase font-bold block">
+                  Prioridad en Contenedores
+                </span>
+                <span className="font-bold text-[#e2e8f0]">
+                  {currentLevel.lootTarget.priority}
+                </span>
               </div>
-              <div style={{ color: '#cbd5e1' }}>
-                <strong style={{ color: '#f8fafc' }}>Riesgo estimado:</strong> <span style={{ color: '#38bdf8' }}>{currentLevel.lootTarget.risk}</span>
+              <div className="bg-[#0f172a66] p-2.5 rounded-xl border border-[rgba(255,255,255,0.05)]">
+                <span className="text-[10px] text-[#94a3b8] uppercase font-bold block">
+                  Nivel de Riesgo
+                </span>
+                <span className="font-bold text-[#38bdf8]">
+                  {currentLevel.lootTarget.risk}
+                </span>
               </div>
             </div>
-            <div style={{ marginTop: '10px', fontSize: '11px', color: '#fde68a', backgroundColor: 'rgba(245, 158, 11, 0.1)', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
-              💡 {currentLevel.lootTarget.tip}
+
+            <div className="text-xs text-[#fde68a] bg-[#f59e0b17] p-3 rounded-xl border border-[#f59e0b33] flex items-start gap-2">
+              <span>💡</span>
+              <span>
+                <strong>Consejo Táctico:</strong> {currentLevel.lootTarget.tip}
+              </span>
             </div>
           </div>
         )}
 
-        {/* PASO 3: CHECKLIST DE ACCIONES DE CAMPO CON XP */}
-        <div>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '12px' }}>
-            🎯 Paso 3: Acciones en el Juego (Checklist)
-          </span>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {currentLevel.objectives.map((obj) => {
-              const isChecked = routeProgress.completedObjectives.includes(obj.id);
+        {/* FASE 3: ACCIONES DE CAMPO CON ANIMATED LIST REACT BITS */}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">⚡</span>
+              <span className="text-xs font-black uppercase tracking-wider text-[#10b981]">
+                Fase 3: Misiones de Supervivencia (+XP)
+              </span>
+            </div>
+            <span className="text-[10px] text-[#94a3b8]">
+              Usa [↑/↓] y [Enter] o clic
+            </span>
+          </div>
 
+          <AnimatedList
+            items={currentLevel.objectives}
+            onItemSelect={(obj) => onToggleObjective(route.id, obj.id, obj.xp)}
+            renderItem={(obj, idx, isSelected) => {
+              const isChecked = routeProgress.completedObjectives.includes(obj.id);
               return (
                 <div
-                  key={obj.id}
-                  onClick={() => onToggleObjective(route.id, obj.id, obj.xp)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    padding: '16px',
-                    borderRadius: '16px',
-                    backgroundColor: isChecked ? 'rgba(16, 185, 129, 0.12)' : 'rgba(15, 23, 42, 0.65)',
-                    border: '1.5px solid',
-                    borderColor: isChecked ? '#10b981' : 'rgba(255, 255, 255, 0.08)',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                  }}
+                  className={`flex items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl border transition-all ${
+                    isChecked
+                      ? 'bg-[#10b9811f] border-[#10b98180]'
+                      : isSelected
+                      ? 'bg-[#10b98112] border-[#10b9814d] shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                      : 'bg-[#0f172a80] border-[rgba(255,255,255,0.08)] hover:border-[rgba(16,185,129,0.3)]'
+                  }`}
                 >
-                  <span style={{ fontSize: '20px' }}>{isChecked ? '✅' : '⬜'}</span>
-                  <span
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: isChecked ? '#34d399' : '#f8fafc',
-                      textDecoration: isChecked ? 'line-through' : 'none',
-                      flex: 1,
-                      lineHeight: '1.4',
-                    }}
-                  >
-                    {obj.label}
-                  </span>
-                  <span style={{ fontSize: '10px', fontWeight: 800, color: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.15)', padding: '4px 8px', borderRadius: '6px', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg select-none">
+                      {isChecked ? '✅' : '⬜'}
+                    </span>
+                    <span
+                      className={`text-xs sm:text-sm font-semibold ${
+                        isChecked
+                          ? 'line-through text-[#34d399]'
+                          : 'text-white'
+                      }`}
+                    >
+                      {obj.label}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono font-black text-[#f59e0b] bg-[#f59e0b1f] border border-[#f59e0b40] px-2.5 py-1 rounded-lg shrink-0">
                     +{obj.xp} XP
                   </span>
                 </div>
               );
-            })}
+            }}
+          />
+        </div>
+
+        {/* CELEBRACIÓN DE MAESTRÍA (SI NIVEL ESTÁ COMPLETO) */}
+        {levelPercent === 100 ? (
+          <div className="flex flex-col sm:flex-row items-center gap-5 p-5 rounded-2xl bg-gradient-to-r from-[#10b98126] via-[#06b6d41f] to-[#10b98126] border border-[#10b98180] shadow-[0_0_30px_rgba(16,185,129,0.25)]">
+            <HoloCard
+              image="/spiffo/spiffo_character.png"
+              alt="Maestría Desbloqueada"
+              preset="gold"
+              width={100}
+              radius={14}
+              intensity={1}
+              edgeSparkle={1}
+            />
+            <div className="flex-1 text-center sm:text-left">
+              <span className="text-xs font-black uppercase text-[#34d399] tracking-wider block mb-1">
+                🏆 ¡Nivel {currentLevel.levelNumber} Completado con Éxito!
+              </span>
+              <p className="text-xs text-[#d1fae5] leading-relaxed m-0">
+                {currentLevel.unlockReward}
+              </p>
+            </div>
           </div>
-        </div>
-
-        {/* RECOMPENSA DE CONOCIMIENTO TÁCTICO */}
-        <div style={{ backgroundColor: 'rgba(6, 95, 70, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '16px', padding: '16px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#34d399', textTransform: 'uppercase', display: 'block', marginBottom: '3px' }}>
-            🔓 Recompensa de Conocimiento Táctico:
-          </span>
-          <p style={{ fontSize: '12px', color: '#a7f3d0', margin: 0, lineHeight: '1.4' }}>
+        ) : (
+          <div className="p-4 rounded-xl bg-[#065f4626] border border-[#10b9814d] text-xs text-[#a7f3d0]">
+            <strong className="text-[#34d399] uppercase tracking-wider block mb-1">
+              🔓 Recompensa al Completar:
+            </strong>
             {currentLevel.unlockReward}
-          </p>
-        </div>
+          </div>
+        )}
 
-        {/* ACCESO A LOOT RELACIONADO */}
+        {/* ACCESO RÁPIDO A LOOT RECOMENDADO */}
         {currentLevel.recommendedLootCategory && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '4px' }}>
+          <div className="flex justify-end pt-2">
             <button
-              onClick={() => onOpenLootCategory(currentLevel.recommendedLootCategory)}
-              style={{
-                fontSize: '12px',
-                fontWeight: 800,
-                color: '#38bdf8',
-                backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                padding: '10px 18px',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s ease',
-              }}
+              onClick={() =>
+                onOpenLootCategory(currentLevel.recommendedLootCategory)
+              }
+              className="btn-secondary"
             >
-              <span>🗺️</span> Ver Ficha de Saqueo Recomendada →
+              <span>🗺️</span>
+              <span>Ver Ficha de Saqueo en Radar →</span>
             </button>
           </div>
         )}

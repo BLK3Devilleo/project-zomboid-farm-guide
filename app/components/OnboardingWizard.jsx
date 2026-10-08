@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
+import HoloCard from './HoloCard';
 import { ONBOARDING_FLOW } from '../data/onboardingOptions';
 
 export default function OnboardingWizard({ onComplete }) {
@@ -22,35 +23,35 @@ export default function OnboardingWizard({ onComplete }) {
   const currentData = ONBOARDING_FLOW[currentStep];
 
   return (
-    <div style={{ maxWidth: '880px', margin: '0 auto', padding: '48px 20px 80px' }}>
-      {/* CABECERA ULTRA-MODERNA */}
-      <div
-        className="glass-panel"
-        style={{
-          borderRadius: '24px',
-          padding: '32px',
-          marginBottom: '36px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '24px',
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <div style={{ zIndex: 2 }}>
-          <span style={{ fontSize: '11px', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'rgba(16, 185, 129, 0.15)', padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-            Asistente Táctico 2026
+    <div className="max-w-4xl mx-auto px-4 py-8 pb-24 flex flex-col gap-6">
+      {/* CABECERA TÁCTICA 2026 CON HOLOCARD */}
+      <div className="glass-panel rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden border border-[rgba(255,255,255,0.1)]">
+        <div className="flex-1 z-10 text-center sm:text-left">
+          <span className="text-[10px] font-black uppercase tracking-wider text-[#10b981] bg-[#10b9811f] border border-[#10b9814d] px-3 py-1 rounded-md inline-block font-mono">
+            SPIFFO-OS TACTICAL ADVISOR
           </span>
-          <h1 style={{ fontSize: '28px', fontWeight: 900, color: '#ffffff', margin: '10px 0 6px', letterSpacing: '-0.02em' }}>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-2 mb-2">
             {currentData.question}
           </h1>
-          <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.5', margin: 0, maxWidth: '580px' }}>
+          <p className="text-xs sm:text-sm text-[#94a3b8] leading-relaxed max-w-xl m-0">
             {currentData.subtitle}
           </p>
         </div>
-        <div className="float-spiffo" style={{ width: '72px', height: '72px', flexShrink: 0, zIndex: 2 }}>
-          <Image src="/spiffo/spiffo_character.png" alt="Spiffo" width={72} height={72} style={{ objectFit: 'contain' }} />
+
+        <div className="z-10 flex flex-col items-center gap-1">
+          <HoloCard
+            image="/spiffo/spiffo_character.png"
+            alt="Spiffo Guía"
+            preset="bursts"
+            width={110}
+            radius={14}
+            intensity={0.9}
+            edgeSparkle={0.8}
+            tiltMax={14}
+          />
+          <span className="text-[9px] font-mono text-[#94a3b8] tracking-widest uppercase">
+            TOUCH / TILT
+          </span>
         </div>
       </div>
 
@@ -58,86 +59,42 @@ export default function OnboardingWizard({ onComplete }) {
       {currentStep === 'step2_newbie' && (
         <button
           onClick={() => setCurrentStep('step1')}
-          style={{
-            marginBottom: '20px',
-            fontSize: '12px',
-            fontWeight: 800,
-            color: '#38bdf8',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            cursor: 'pointer',
-          }}
+          className="self-start text-xs font-black text-[#38bdf8] flex items-center gap-1.5 hover:underline cursor-pointer"
         >
-          ← Volver a opciones principales
+          <span>←</span>
+          <span>Volver a opciones principales</span>
         </button>
       )}
 
-      {/* GRID DE OPCIONES 2026 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+      {/* GRID DE OPCIONES TÁCTICAS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {currentData.options.map((opt) => (
           <div
             key={opt.id}
             onClick={() => handleOptionClick(opt)}
-            className="glass-card"
-            style={{
-              borderRadius: '20px',
-              padding: '24px',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px',
-              position: 'relative',
-            }}
+            className="glass-card rounded-2xl p-5 cursor-pointer flex flex-col gap-3 relative group border border-[rgba(255,255,255,0.08)] hover:border-[#10b981] transition-all duration-200"
           >
             {opt.badge && (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: '16px',
-                  right: '16px',
-                  fontSize: '9px',
-                  fontWeight: 900,
-                  backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                  color: '#34d399',
-                  border: '1px solid #10b981',
-                  borderRadius: '6px',
-                  padding: '3px 8px',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                }}
-              >
+              <span className="absolute top-4 right-4 text-[9px] font-mono font-black uppercase tracking-wider bg-[#10b98126] text-[#34d399] border border-[#10b98180] px-2 py-0.5 rounded-md">
                 {opt.badge}
               </span>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div
-                style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '14px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '24px',
-                }}
-              >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-2xl transition-transform group-hover:scale-110">
                 {opt.icon}
               </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 800, color: '#ffffff', margin: 0, letterSpacing: '-0.01em' }}>
+              <h3 className="text-base font-black text-white m-0 tracking-tight">
                 {opt.title}
               </h3>
             </div>
 
-            <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5', margin: 0 }}>
+            <p className="text-xs text-[#cbd5e1] leading-relaxed m-0">
               {opt.desc}
             </p>
 
-            <div style={{ marginTop: 'auto', paddingTop: '10px', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', fontWeight: 800, color: '#10b981' }}>
+            <div className="mt-auto pt-2 flex justify-end">
+              <span className="text-[11px] font-black text-[#10b981] group-hover:translate-x-1 transition-transform">
                 {opt.action === 'next_step' ? 'Continuar →' : 'Empezar esta ruta →'}
               </span>
             </div>

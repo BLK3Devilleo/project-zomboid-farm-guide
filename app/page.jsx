@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
+import PillNav from './components/PillNav';
 import OnboardingWizard from './components/OnboardingWizard';
 import RouteView from './components/RouteView';
 import LootView from './components/LootView';
 import { routesDatabase } from './data/routesDatabase';
-import { loadProgress, saveProgress, resetProgress } from './lib/progressStorage';
+import { loadProgress, saveProgress } from './lib/progressStorage';
 
 // Sonidos sintéticos con Web Audio API (cero dependencias externas)
 function playSound(type) {
@@ -133,8 +133,8 @@ export default function SpiffoOSApp() {
 
   if (!playerData) {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#0b1120', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', fontFamily: 'monospace' }}>
-        INICIALIZANDO SPIFFO-OS...
+      <div className="min-h-screen bg-[#060913] flex items-center justify-center text-[#10b981] font-mono tracking-widest text-sm">
+        INICIALIZANDO SPIFFO-OS TACTICAL HUD...
       </div>
     );
   }
@@ -145,11 +145,12 @@ export default function SpiffoOSApp() {
   const activeRoute = routesDatabase.find((r) => r.id === playerData.activeRouteId) || routesDatabase[0];
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#0b1120', color: '#f8fafc', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* NAVBAR LIMPIO CON 4 DESPLEGABLES */}
-      <Navbar
-        currentView={playerData.activeView}
+    <div className="min-h-screen bg-[#060913] text-[#f8fafc] flex flex-col font-sans">
+      {/* NAVBAR EN CÁPSULA FLOTANTE REACT BITS */}
+      <PillNav
+        activeView={playerData.activeView}
         onSelectView={(v) => updateStateAndSave((p) => ({ ...p, activeView: v }))}
+        activeRouteId={playerData.activeRouteId}
         onSelectRoute={handleSelectRoute}
         onSelectLootCategory={handleSelectLootCategory}
         onResetToOnboarding={handleResetToOnboarding}
@@ -157,7 +158,7 @@ export default function SpiffoOSApp() {
       />
 
       {/* CONTENIDO PRINCIPAL SEGÚN ESTADO */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <main className="flex-1 flex flex-col">
         {isViewingOnboarding && (
           <OnboardingWizard onComplete={handleCompleteOnboarding} />
         )}
