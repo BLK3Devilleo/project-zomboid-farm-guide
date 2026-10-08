@@ -623,7 +623,7 @@ export default function HoloCard({ image, backImage, alt = '', preset = 'bursts'
     const toggle = ()=>{
         if (flippable) setFlipped((value)=>!value);
     };
-    return <div ref={rootRef} className={`relative inline-block w-[var(--hc-w)] max-w-full aspect-[var(--hc-ratio)] rounded-[var(--hc-radius)] outline-none select-none touch-pan-y [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${flippable ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[6px] focus-visible:outline-current' : ''}${className ? ` ${className}` : ''}`} role={flippable ? 'button' : 'img'} tabIndex={flippable ? 0 : undefined} aria-label={alt || undefined} aria-pressed={flippable ? flipped : undefined} data-ready={ready ? '' : undefined} data-flippable={flippable ? '' : undefined} onPointerEnter={track} onPointerMove={track} onPointerDown={track} onPointerLeave={leave} onPointerCancel={leave} onClick={toggle} onKeyDown={(e)=>{
+    return <div ref={rootRef} className={`hc-root ${className ? ` ${className}` : ''}`} role={flippable ? 'button' : 'img'} tabIndex={flippable ? 0 : undefined} aria-label={alt || undefined} aria-pressed={flippable ? flipped : undefined} data-ready={ready ? '' : undefined} data-flippable={flippable ? '' : undefined} onPointerEnter={track} onPointerMove={track} onPointerDown={track} onPointerLeave={leave} onPointerCancel={leave} onClick={toggle} onKeyDown={(e)=>{
         if (!flippable || e.key !== 'Enter' && e.key !== ' ') return;
         e.preventDefault();
         if (!e.repeat) toggle();
@@ -631,16 +631,19 @@ export default function HoloCard({ image, backImage, alt = '', preset = 'bursts'
         '--hc-w': `${width}px`,
         '--hc-ratio': ratio,
         '--hc-radius': `${radius}px`,
+        width: `${width}px`,
+        aspectRatio: `${ratio}`,
+        borderRadius: `${radius}px`,
         ...style
     }}>
-      {shadow ? <span ref={shadowRef} className="absolute inset-[10%_7%_-4%] rounded-[var(--hc-radius)] bg-black/40 blur-[26px] pointer-events-none will-change-transform" aria-hidden="true"/> : null}
-      <div ref={rotorRef} className="absolute inset-0 [transform-style:preserve-3d] will-change-transform">
-        <div className="absolute inset-0 overflow-hidden rounded-[var(--hc-radius)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden]">
-          {image ? <img src={image} alt="" draggable={false} className="absolute inset-0 block h-full w-full object-cover pointer-events-none [-webkit-user-drag:none]"/> : null}
-          <canvas ref={canvasRef} className={`absolute inset-0 block h-full w-full transition-opacity duration-300 ${ready ? 'opacity-100' : 'opacity-0'}`}/>
+      {shadow ? <span ref={shadowRef} className="hc-shadow" aria-hidden="true"/> : null}
+      <div ref={rotorRef} className="hc-rotor" style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d' }}>
+        <div className="hc-face" style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: `${radius}px` }}>
+          {image ? <img src={image} alt="" draggable={false} className="hc-img" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}/> : null}
+          <canvas ref={canvasRef} className="hc-canvas" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: ready ? 1 : 0 }}/>
         </div>
-        {flippable ? <div className="absolute inset-0 overflow-hidden rounded-[var(--hc-radius)] [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)]">
-            <img src={backImage} alt="" draggable={false} className="absolute inset-0 block h-full w-full object-cover pointer-events-none [-webkit-user-drag:none]"/>
+        {flippable ? <div className="hc-back" style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: `${radius}px`, transform: 'rotateY(180deg)' }}>
+            <img src={backImage} alt="" draggable={false} className="hc-img" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}/>
           </div> : null}
       </div>
     </div>;

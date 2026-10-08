@@ -23,35 +23,59 @@ export default function OnboardingWizard({ onComplete }) {
   const currentData = ONBOARDING_FLOW[currentStep];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 pb-24 flex flex-col gap-6">
-      {/* CABECERA TÁCTICA 2026 CON HOLOCARD */}
-      <div className="glass-panel rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden border border-[rgba(255,255,255,0.1)]">
-        <div className="flex-1 z-10 text-center sm:text-left">
-          <span className="text-[10px] font-black uppercase tracking-wider text-[#10b981] bg-[#10b9811f] border border-[#10b9814d] px-3 py-1 rounded-md inline-block font-mono">
-            SPIFFO-OS TACTICAL ADVISOR
-          </span>
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-2 mb-2">
-            {currentData.question}
-          </h1>
-          <p className="text-xs sm:text-sm text-[#94a3b8] leading-relaxed max-w-xl m-0">
-            {currentData.subtitle}
-          </p>
-        </div>
+    <div className="hud-container">
+      {/* CABECERA TÁCTICA CON HOLOCARD */}
+      <div className="hud-panel">
+        <div className="hud-hero">
+          <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 900,
+                textTransform: 'uppercase',
+                color: '#10b981',
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                padding: '2px 8px',
+                borderRadius: 6,
+                fontFamily: 'monospace',
+                letterSpacing: '0.06em',
+                alignSelf: 'flex-start',
+              }}
+            >
+              SPIFFO-OS ASESOR TÁCTICO
+            </span>
+            <h1
+              style={{
+                fontSize: 26,
+                fontWeight: 900,
+                color: '#ffffff',
+                margin: '4px 0 0',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              {currentData.question}
+            </h1>
+            <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.5, margin: 0, maxWidth: 540 }}>
+              {currentData.subtitle}
+            </p>
+          </div>
 
-        <div className="z-10 flex flex-col items-center gap-1">
-          <HoloCard
-            image="/spiffo/spiffo_character.png"
-            alt="Spiffo Guía"
-            preset="bursts"
-            width={110}
-            radius={14}
-            intensity={0.9}
-            edgeSparkle={0.8}
-            tiltMax={14}
-          />
-          <span className="text-[9px] font-mono text-[#94a3b8] tracking-widest uppercase">
-            TOUCH / TILT
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <HoloCard
+              image="/spiffo/spiffo_character.png"
+              alt="Spiffo Guía"
+              preset="bursts"
+              width={110}
+              radius={14}
+              intensity={0.9}
+              edgeSparkle={0.8}
+              tiltMax={14}
+            />
+            <span style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.1em', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+              TOCA / INCLINA 3D
+            </span>
+          </div>
         </div>
       </div>
 
@@ -59,7 +83,8 @@ export default function OnboardingWizard({ onComplete }) {
       {currentStep === 'step2_newbie' && (
         <button
           onClick={() => setCurrentStep('step1')}
-          className="self-start text-xs font-black text-[#38bdf8] flex items-center gap-1.5 hover:underline cursor-pointer"
+          className="btn-secondary"
+          style={{ alignSelf: 'flex-start' }}
         >
           <span>←</span>
           <span>Volver a opciones principales</span>
@@ -67,34 +92,62 @@ export default function OnboardingWizard({ onComplete }) {
       )}
 
       {/* GRID DE OPCIONES TÁCTICAS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="onboarding-grid">
         {currentData.options.map((opt) => (
           <div
             key={opt.id}
             onClick={() => handleOptionClick(opt)}
-            className="glass-card rounded-2xl p-5 cursor-pointer flex flex-col gap-3 relative group border border-[rgba(255,255,255,0.08)] hover:border-[#10b981] transition-all duration-200"
+            className="onboarding-card"
           >
             {opt.badge && (
-              <span className="absolute top-4 right-4 text-[9px] font-mono font-black uppercase tracking-wider bg-[#10b98126] text-[#34d399] border border-[#10b98180] px-2 py-0.5 rounded-md">
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 14,
+                  right: 14,
+                  fontSize: 9,
+                  fontFamily: 'monospace',
+                  fontWeight: 900,
+                  textTransform: 'uppercase',
+                  background: 'rgba(16, 185, 129, 0.18)',
+                  color: '#34d399',
+                  border: '1px solid rgba(16, 185, 129, 0.45)',
+                  padding: '2px 6px',
+                  borderRadius: 6,
+                }}
+              >
                 {opt.badge}
               </span>
             )}
 
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-[rgba(255,255,255,0.05)] border border-[rgba(255,255,255,0.1)] flex items-center justify-center text-2xl transition-transform group-hover:scale-110">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  minWidth: 44,
+                  borderRadius: 12,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 22,
+                }}
+              >
                 {opt.icon}
               </div>
-              <h3 className="text-base font-black text-white m-0 tracking-tight">
+              <h3 style={{ fontSize: 16, fontWeight: 900, color: '#ffffff', margin: 0 }}>
                 {opt.title}
               </h3>
             </div>
 
-            <p className="text-xs text-[#cbd5e1] leading-relaxed m-0">
+            <p style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.5, margin: 0 }}>
               {opt.desc}
             </p>
 
-            <div className="mt-auto pt-2 flex justify-end">
-              <span className="text-[11px] font-black text-[#10b981] group-hover:translate-x-1 transition-transform">
+            <div style={{ marginTop: 'auto', paddingTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: '#10b981' }}>
                 {opt.action === 'next_step' ? 'Continuar →' : 'Empezar esta ruta →'}
               </span>
             </div>

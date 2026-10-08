@@ -133,7 +133,7 @@ export default function SpiffoOSApp() {
 
   if (!playerData) {
     return (
-      <div className="min-h-screen bg-[#060913] flex items-center justify-center text-[#10b981] font-mono tracking-widest text-sm">
+      <div style={{ minHeight: '100vh', backgroundColor: '#060913', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', fontFamily: 'monospace', letterSpacing: '0.1em' }}>
         INICIALIZANDO SPIFFO-OS TACTICAL HUD...
       </div>
     );
@@ -145,8 +145,8 @@ export default function SpiffoOSApp() {
   const activeRoute = routesDatabase.find((r) => r.id === playerData.activeRouteId) || routesDatabase[0];
 
   return (
-    <div className="min-h-screen bg-[#060913] text-[#f8fafc] flex flex-col font-sans">
-      {/* NAVBAR EN CÁPSULA FLOTANTE REACT BITS */}
+    <div style={{ minHeight: '100vh', backgroundColor: '#060913', color: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
+      {/* NAVBAR EN CÁPSULA FLOTANTE */}
       <PillNav
         activeView={playerData.activeView}
         onSelectView={(v) => updateStateAndSave((p) => ({ ...p, activeView: v }))}
@@ -158,7 +158,7 @@ export default function SpiffoOSApp() {
       />
 
       {/* CONTENIDO PRINCIPAL SEGÚN ESTADO */}
-      <main className="flex-1 flex flex-col">
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         {isViewingOnboarding && (
           <OnboardingWizard onComplete={handleCompleteOnboarding} />
         )}

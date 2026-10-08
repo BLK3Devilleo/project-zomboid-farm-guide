@@ -17,10 +17,10 @@ function AnimatedItem({ children, delay = 0, index, onMouseEnter, onClick }) {
       data-index={index}
       onMouseEnter={onMouseEnter}
       onClick={onClick}
-      initial={{ scale: 0.85, opacity: 0 }}
-      animate={inView ? { scale: 1, opacity: 1 } : { scale: 0.85, opacity: 0 }}
-      transition={{ duration: 0.22, delay }}
-      className="mb-3 cursor-pointer"
+      initial={{ scale: 0.9, opacity: 0 }}
+      animate={inView ? { scale: 1, opacity: 1 } : { scale: 0.9, opacity: 0 }}
+      transition={{ duration: 0.2, delay }}
+      style={{ marginBottom: 10, cursor: 'pointer' }}
     >
       {children}
     </motion.div>
@@ -113,14 +113,13 @@ export default function AnimatedList({
   }, [selectedIndex, keyboardNav]);
 
   return (
-    <div className={`relative w-full ${className}`}>
+    <div className={`anim-list-wrap ${className}`}>
       <div
         ref={listRef}
-        className="max-h-[460px] overflow-y-auto p-2"
+        className="anim-list-scroll"
         onScroll={handleScroll}
         style={{
           scrollbarWidth: displayScrollbar ? 'thin' : 'none',
-          scrollbarColor: 'rgba(16, 185, 129, 0.4) rgba(10, 15, 30, 0.8)',
         }}
       >
         {items.map((item, index) => {
@@ -128,7 +127,7 @@ export default function AnimatedList({
           return (
             <AnimatedItem
               key={item?.id ?? index}
-              delay={Math.min(index * 0.04, 0.3)}
+              delay={Math.min(index * 0.03, 0.25)}
               index={index}
               onMouseEnter={() => handleItemMouseEnter(index)}
               onClick={() => handleItemClick(item, index)}
@@ -137,13 +136,9 @@ export default function AnimatedList({
                 renderItem(item, index, isSelected)
               ) : (
                 <div
-                  className={`p-4 rounded-xl border transition-all duration-200 ${
-                    isSelected
-                      ? 'bg-[rgba(16,185,129,0.12)] border-[#10b981] shadow-[0_0_15px_rgba(16,185,129,0.2)]'
-                      : 'bg-[rgba(15,23,42,0.6)] border-[rgba(255,255,255,0.08)] hover:border-[rgba(16,185,129,0.3)]'
-                  } ${itemClassName}`}
+                  className={`task-card ${isSelected ? 'selected' : ''} ${itemClassName}`}
                 >
-                  <p className="text-white text-sm font-medium m-0">
+                  <p style={{ color: '#ffffff', fontSize: 13, margin: 0, fontWeight: 600 }}>
                     {typeof item === 'string' ? item : item?.text || item?.title}
                   </p>
                 </div>
@@ -155,11 +150,11 @@ export default function AnimatedList({
       {showGradients && (
         <>
           <div
-            className="absolute top-0 left-0 right-0 h-[40px] bg-gradient-to-b from-[#060913] to-transparent pointer-events-none transition-opacity duration-300"
+            className="anim-gradient-top"
             style={{ opacity: topGradientOpacity }}
           />
           <div
-            className="absolute bottom-0 left-0 right-0 h-[60px] bg-gradient-to-t from-[#060913] to-transparent pointer-events-none transition-opacity duration-300"
+            className="anim-gradient-bottom"
             style={{ opacity: bottomGradientOpacity }}
           />
         </>
