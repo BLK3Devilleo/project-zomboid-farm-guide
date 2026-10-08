@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { LEVELS } from './data/levels';
 import { TOOLS_DATABASE } from './data/tools';
+import { METALWORKING_DATABASE } from './data/metalworking';
+import { DANGEROUS_ZONES_DATABASE } from './data/dangerousZones';
 
 // Sonidos sintéticos con Web Audio API (cero dependencias externas)
 function playSound(type) {
@@ -50,10 +52,12 @@ const RANKS = [
 ];
 
 export default function GamifiedFarmApp() {
-  const [currentView, setCurrentView] = useState('missions'); // 'missions' | 'tools'
+  const [currentView, setCurrentView] = useState('missions'); // 'missions' | 'tools' | 'metalworking' | 'dangerousZones'
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [activeLevel, setActiveLevel] = useState(null);
   const [activeToolDetail, setActiveToolDetail] = useState(null);
+  const [activeMetalDetail, setActiveMetalDetail] = useState(null);
+  const [activeZoneDetail, setActiveZoneDetail] = useState(null);
   const [xp, setXp] = useState(0);
   const [stars, setStars] = useState(0);
   const [completedLevels, setCompletedLevels] = useState({});
@@ -63,6 +67,10 @@ export default function GamifiedFarmApp() {
   const [quizResult, setQuizResult] = useState(null);
   const [toolSearch, setToolSearch] = useState('');
   const [toolCategoryFilter, setToolCategoryFilter] = useState('Todas');
+  const [metalSearch, setMetalSearch] = useState('');
+  const [metalCategoryFilter, setMetalCategoryFilter] = useState('Todas');
+  const [zoneSearch, setZoneSearch] = useState('');
+  const [zoneMapFilter, setZoneMapFilter] = useState('Todos');
 
   useEffect(() => {
     try {
@@ -158,6 +166,39 @@ export default function GamifiedFarmApp() {
     return matchesCategory && matchesSearch;
   });
 
+  // Filtrado de Metalurgia & Forja B42
+  const metalCategoryMap = {
+    'Todas': null,
+    'Herramientas de Taller': 'tools',
+    'Forja & Fundición B42': 'forge',
+    'Defensas & Barricadas': 'defenses',
+    'Manuales & Revistas': 'magazines',
+  };
+  const metalCategories = ['Todas', 'Herramientas de Taller', 'Forja & Fundición B42', 'Defensas & Barricadas', 'Manuales & Revistas'];
+  const filteredMetalworking = (METALWORKING_DATABASE.items || []).filter((item) => {
+    const matchesCat =
+      metalCategoryFilter === 'Todas' ||
+      item.category === metalCategoryMap[metalCategoryFilter];
+    const matchesSearch =
+      item.name.toLowerCase().includes(metalSearch.toLowerCase()) ||
+      item.summary.toLowerCase().includes(metalSearch.toLowerCase()) ||
+      (item.usage && item.usage.some((u) => u.toLowerCase().includes(metalSearch.toLowerCase())));
+    return matchesCat && matchesSearch;
+  });
+
+  // Filtrado de Zonas Peligrosas
+  const zoneMaps = ['Todos', 'Muldraugh', 'West Point', 'Riverside', 'Rosewood', 'Louisville'];
+  const filteredZones = DANGEROUS_ZONES_DATABASE.filter((zone) => {
+    const matchesMap =
+      zoneMapFilter === 'Todos' ||
+      zone.map.toLowerCase() === zoneMapFilter.toLowerCase();
+    const matchesSearch =
+      zone.name.toLowerCase().includes(zoneSearch.toLowerCase()) ||
+      zone.description.toLowerCase().includes(zoneSearch.toLowerCase()) ||
+      zone.lootHighlights.some((l) => l.toLowerCase().includes(zoneSearch.toLowerCase()));
+    return matchesMap && matchesSearch;
+  });
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0b1120', color: '#f8fafc', display: 'flex', flexDirection: 'column', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
       {/* HEADER / HUD SUPERIOR */}
@@ -203,12 +244,12 @@ export default function GamifiedFarmApp() {
             </div>
           </div>
 
-          {/* SELECTOR DE MODO: RUTA VS ARSENAL DE HERRAMIENTAS */}
-          <div style={{ display: 'flex', backgroundColor: '#0f172a', padding: '4px', borderRadius: '12px', border: '1px solid #334155', gap: '4px' }}>
+          {/* SELECTOR DE MODO: 4 MÓDULOS DE GUÍA */}
+          <div style={{ display: 'flex', backgroundColor: '#0f172a', padding: '4px', borderRadius: '12px', border: '1px solid #334155', gap: '4px', flexWrap: 'wrap' }}>
             <button
               onClick={() => { playSound('click'); setCurrentView('missions'); }}
               style={{
-                padding: '8px 16px',
+                padding: '8px 14px',
                 borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: 800,
@@ -220,12 +261,12 @@ export default function GamifiedFarmApp() {
                 gap: '6px',
               }}
             >
-              <span>🗺️</span> Ruta de Misiones (1-20)
+              <span>🗺️</span> Misiones
             </button>
             <button
               onClick={() => { playSound('click'); setCurrentView('tools'); }}
               style={{
-                padding: '8px 16px',
+                padding: '8px 14px',
                 borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: 800,
@@ -237,7 +278,41 @@ export default function GamifiedFarmApp() {
                 gap: '6px',
               }}
             >
-              <span>🛠️</span> Arsenal de Herramientas (1-20)
+              <span>🛠️</span> Herramientas
+            </button>
+            <button
+              onClick={() => { playSound('click'); setCurrentView('metalworking'); }}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 800,
+                backgroundColor: currentView === 'metalworking' ? '#10b981' : 'transparent',
+                color: currentView === 'metalworking' ? '#0f172a' : '#94a3b8',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span>⚒️</span> Metalurgia (B42)
+            </button>
+            <button
+              onClick={() => { playSound('click'); setCurrentView('dangerousZones'); }}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 800,
+                backgroundColor: currentView === 'dangerousZones' ? '#10b981' : 'transparent',
+                color: currentView === 'dangerousZones' ? '#0f172a' : '#94a3b8',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span>☠️</span> Zonas de Peligro
             </button>
           </div>
 
@@ -563,6 +638,357 @@ export default function GamifiedFarmApp() {
         </main>
       )}
 
+      {/* VISTA 3: GUÍA DE METALURGIA & FORJA BUILD 42 */}
+      {currentView === 'metalworking' && (
+        <main style={{ flex: 1, maxWidth: '1080px', width: '100%', margin: '0 auto', padding: '30px 20px 80px' }}>
+          {/* Banner de Metalurgia B42 */}
+          <div
+            style={{
+              backgroundColor: 'rgba(30, 41, 59, 0.7)',
+              border: '1px solid rgba(51, 65, 85, 0.8)',
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '28px',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 4px 20px -2px rgba(0,0,0,0.5)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ fontSize: '38px', backgroundColor: 'rgba(234, 88, 12, 0.15)', border: '1px solid rgba(234, 88, 12, 0.3)', borderRadius: '14px', width: '64px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                ⚒️
+              </div>
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#f97316', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Sistema de Herrería y Forja Build 42
+                </span>
+                <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#f8fafc', margin: '2px 0 6px', letterSpacing: '-0.02em' }}>
+                  Manual Completo de Metalurgia, Hornos & Blindaje
+                </h1>
+                <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, maxWidth: '780px', lineHeight: '1.5' }}>
+                  Domina la fundición de metales, recarga de sopletes de propano, construcción de hornos de forja medieval/industrial, blindaje de ventanas con rejas de hierro y lectura de revistas técnicas en Project Zomboid B42.
+                </p>
+              </div>
+            </div>
+
+            {/* Buscador & Filtros de Categorías */}
+            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <input
+                type="text"
+                placeholder="🔍 Buscar herramientas, hornos, láminas, recetas de soldadura o revistas..."
+                value={metalSearch}
+                onChange={(e) => setMetalSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  backgroundColor: '#0f172a',
+                  border: '1px solid #334155',
+                  color: '#f8fafc',
+                  fontSize: '13px',
+                  outline: 'none',
+                }}
+              />
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {metalCategories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => { playSound('click'); setMetalCategoryFilter(cat); }}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      backgroundColor: metalCategoryFilter === cat ? '#f97316' : '#1e293b',
+                      color: metalCategoryFilter === cat ? '#0f172a' : '#94a3b8',
+                      border: '1px solid',
+                      borderColor: metalCategoryFilter === cat ? '#f97316' : '#334155',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Grid de Tarjetas de Metalurgia */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+            {filteredMetalworking.map((item) => (
+              <div
+                key={item.id}
+                onClick={() => { playSound('click'); setActiveMetalDetail(item); }}
+                style={{
+                  backgroundColor: 'rgba(30, 41, 59, 0.6)',
+                  border: '1px solid #334155',
+                  borderRadius: '16px',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#f97316'; e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.85)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#334155'; e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.6)'; }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '10px',
+                      backgroundColor: '#0f172a',
+                      border: '1px solid #334155',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.icon && item.icon.startsWith('/') ? (
+                      <Image src={item.icon} alt={item.name} width={34} height={34} style={{ objectFit: 'contain' }} />
+                    ) : (
+                      <span style={{ fontSize: '24px' }}>{item.icon || '⚒️'}</span>
+                    )}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: '#f97316', textTransform: 'uppercase' }}>
+                        {item.category === 'tools' ? 'Taller' : item.category === 'forge' ? 'Forja B42' : item.category === 'defenses' ? 'Defensa' : 'Revista'}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          fontWeight: 700,
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(234, 88, 12, 0.15)',
+                          color: '#fb923c',
+                          border: '1px solid rgba(234, 88, 12, 0.3)',
+                        }}
+                      >
+                        {item.rarity}
+                      </span>
+                    </div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#ffffff', margin: '3px 0 0', lineHeight: '1.2' }}>
+                      {item.name}
+                    </h3>
+                  </div>
+                </div>
+
+                <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.4', margin: 0 }}>
+                  {item.summary}
+                </p>
+
+                {/* Combustible / Requisitos */}
+                <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.5)', padding: '6px 10px', borderRadius: '8px', fontSize: '11px', color: '#94a3b8' }}>
+                  ⚡ <strong style={{ color: '#cbd5e1' }}>Consumo/Regla:</strong> {item.consumption}
+                </div>
+
+                <div style={{ marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid rgba(51, 65, 85, 0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                    {item.usage ? item.usage.length : 0} usos tácticos
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#f97316' }}>
+                    Ver ficha y usos →
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      )}
+
+      {/* VISTA 4: GUÍA DE TOP 3 ZONAS MÁS PELIGROSAS Y LOOTEABLES */}
+      {currentView === 'dangerousZones' && (
+        <main style={{ flex: 1, maxWidth: '1080px', width: '100%', margin: '0 auto', padding: '30px 20px 80px' }}>
+          {/* Banner de Zonas de Peligro */}
+          <div
+            style={{
+              backgroundColor: 'rgba(30, 41, 59, 0.7)',
+              border: '1px solid rgba(51, 65, 85, 0.8)',
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '28px',
+              position: 'relative',
+              overflow: 'hidden',
+              boxShadow: '0 4px 20px -2px rgba(0,0,0,0.5)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ fontSize: '38px', backgroundColor: 'rgba(220, 38, 38, 0.15)', border: '1px solid rgba(220, 38, 38, 0.3)', borderRadius: '14px', width: '64px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                ☠️
+              </div>
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Incursiones de Alto Riesgo & Recompensas Épicas
+                </span>
+                <h1 style={{ fontSize: '24px', fontWeight: 900, color: '#f8fafc', margin: '2px 0 6px', letterSpacing: '-0.02em' }}>
+                  Top 3 Zonas más Peligrosas y Looteables de Knox Country
+                </h1>
+                <p style={{ fontSize: '13px', color: '#94a3b8', margin: 0, maxWidth: '780px', lineHeight: '1.5' }}>
+                  Informes tácticos de inteligencia para los 5 mapas principales: Muldraugh, West Point, Riverside, Rosewood y Louisville. Conoce las densidades zombi, armerías blindadas, hospitales, almacenes y rutas de evacuación.
+                </p>
+              </div>
+            </div>
+
+            {/* Buscador & Filtros de Ciudades / Mapas */}
+            <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <input
+                type="text"
+                placeholder="🔍 Buscar por nombre de zona, armas, almádena, munición o botín militar..."
+                value={zoneSearch}
+                onChange={(e) => setZoneSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '12px 16px',
+                  borderRadius: '12px',
+                  backgroundColor: '#0f172a',
+                  border: '1px solid #334155',
+                  color: '#f8fafc',
+                  fontSize: '13px',
+                  outline: 'none',
+                }}
+              />
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {zoneMaps.map((mapName) => (
+                  <button
+                    key={mapName}
+                    onClick={() => { playSound('click'); setZoneMapFilter(mapName); }}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      backgroundColor: zoneMapFilter === mapName ? '#ef4444' : '#1e293b',
+                      color: zoneMapFilter === mapName ? '#ffffff' : '#94a3b8',
+                      border: '1px solid',
+                      borderColor: zoneMapFilter === mapName ? '#ef4444' : '#334155',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {mapName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Grid de Zonas Peligrosas */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+            {filteredZones.map((zone) => (
+              <div
+                key={zone.id}
+                onClick={() => { playSound('click'); setActiveZoneDetail(zone); }}
+                style={{
+                  backgroundColor: 'rgba(30, 41, 59, 0.6)',
+                  border: '1px solid #334155',
+                  borderRadius: '16px',
+                  padding: '18px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  borderTop: `4px solid ${zone.bannerColor}`,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = zone.bannerColor; e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.85)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#334155'; e.currentTarget.style.borderTopColor = zone.bannerColor; e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.6)'; }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <div
+                    style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '10px',
+                      backgroundColor: '#0f172a',
+                      border: '1px solid #334155',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '24px',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {zone.icon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase' }}>
+                        📍 {zone.map}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '10px',
+                          fontWeight: 900,
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                          color: '#f87171',
+                          border: '1px solid rgba(239, 68, 68, 0.4)',
+                        }}
+                      >
+                        Tier {zone.tier}
+                      </span>
+                    </div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#ffffff', margin: '3px 0 0', lineHeight: '1.2' }}>
+                      {zone.name}
+                    </h3>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '11px', color: '#f87171', fontWeight: 600 }}>
+                  ⚠️ {zone.threatLevel}
+                </div>
+
+                <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.4', margin: 0 }}>
+                  {zone.description.length > 130 ? zone.description.slice(0, 130) + '...' : zone.description}
+                </p>
+
+                {/* Resumen de Botín Principal */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <span style={{ fontSize: '10px', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase' }}>
+                    💎 Botín Destacado:
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                    {zone.lootHighlights.slice(0, 2).map((loot, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          fontSize: '10px',
+                          padding: '3px 6px',
+                          backgroundColor: 'rgba(15, 23, 42, 0.7)',
+                          border: '1px solid #334155',
+                          borderRadius: '4px',
+                          color: '#94a3b8',
+                        }}
+                      >
+                        {loot.length > 36 ? loot.slice(0, 36) + '...' : loot}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 'auto', paddingTop: '8px', borderTop: '1px solid rgba(51, 65, 85, 0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', color: '#64748b' }}>
+                    {zone.coordinates}
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#ef4444' }}>
+                    Plan de Incursión →
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      )}
+
       {/* MODAL DETALLE DE HERRAMIENTA INDIVIDUAL */}
       {activeToolDetail && (
         <div
@@ -707,6 +1133,263 @@ export default function GamifiedFarmApp() {
                 <p style={{ fontSize: '12px', color: '#fde68a', margin: 0, lineHeight: '1.4' }}>
                   {activeToolDetail.durabilityTip}
                 </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DETALLE DE METALURGIA & FORJA */}
+      {activeMetalDetail && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 60,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            className="pop-modal"
+            style={{
+              width: '100%',
+              maxWidth: '660px',
+              backgroundColor: '#1e293b',
+              border: '2px solid #334155',
+              borderRadius: '20px',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '90vh',
+            }}
+          >
+            {/* Header del Modal */}
+            <div
+              style={{
+                backgroundColor: '#0f172a',
+                borderBottom: '1px solid #334155',
+                padding: '18px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#1e293b', border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {activeMetalDetail.icon && activeMetalDetail.icon.startsWith('/') ? (
+                    <Image src={activeMetalDetail.icon} alt="" width={36} height={36} style={{ objectFit: 'contain' }} />
+                  ) : (
+                    <span style={{ fontSize: '26px' }}>{activeMetalDetail.icon || '⚒️'}</span>
+                  )}
+                </div>
+                <div>
+                  <span style={{ fontSize: '10px', fontWeight: 800, color: '#f97316', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    {activeMetalDetail.category === 'tools' ? 'Herramienta de Taller' : activeMetalDetail.category === 'forge' ? 'Forja & Fundición B42' : activeMetalDetail.category === 'defenses' ? 'Defensas & Blindaje' : 'Revista & Manual'} · {activeMetalDetail.rarity}
+                  </span>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                    {activeMetalDetail.name}
+                  </h3>
+                </div>
+              </div>
+
+              <button
+                onClick={() => { playSound('click'); setActiveMetalDetail(null); }}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  backgroundColor: '#334155',
+                  color: '#94a3b8',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido con scroll */}
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.5)', padding: '12px 14px', borderRadius: '12px', border: '1px solid #334155' }}>
+                <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.5', margin: 0 }}>
+                  {activeMetalDetail.summary}
+                </p>
+                <div style={{ marginTop: '8px', fontSize: '11px', color: '#f97316' }}>
+                  ⚡ <strong>Consumo / Requisito:</strong> {activeMetalDetail.consumption}
+                </div>
+              </div>
+
+              {/* Usos y Aplicaciones */}
+              <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', border: '1px solid #334155', padding: '14px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#f97316', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                  ⚙️ Aplicaciones y Usos en Metalurgia & Forja:
+                </span>
+                <ul style={{ paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: '#cbd5e1', margin: 0, lineHeight: '1.4' }}>
+                  {activeMetalDetail.usage && activeMetalDetail.usage.map((u, i) => (
+                    <li key={i}>{u}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Consejo Pro */}
+              <div style={{ backgroundColor: 'rgba(120, 53, 15, 0.25)', border: '1px solid rgba(245, 158, 11, 0.4)', borderRadius: '12px', padding: '12px 14px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
+                  💡 Regla de Supervivencia Pro:
+                </span>
+                <p style={{ fontSize: '12px', color: '#fde68a', margin: 0, lineHeight: '1.4' }}>
+                  {activeMetalDetail.proTip}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DETALLE DE ZONAS PELIGROSAS & LOOT */}
+      {activeZoneDetail && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 60,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '16px',
+          }}
+        >
+          <div
+            className="pop-modal"
+            style={{
+              width: '100%',
+              maxWidth: '680px',
+              backgroundColor: '#1e293b',
+              border: `2px solid ${activeZoneDetail.bannerColor}`,
+              borderRadius: '20px',
+              overflow: 'hidden',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+              display: 'flex',
+              flexDirection: 'column',
+              maxHeight: '90vh',
+            }}
+          >
+            {/* Header del Modal */}
+            <div
+              style={{
+                backgroundColor: '#0f172a',
+                borderBottom: '1px solid #334155',
+                padding: '18px 20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#1e293b', border: '1px solid #334155', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px' }}>
+                  {activeZoneDetail.icon}
+                </div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase' }}>
+                      📍 {activeZoneDetail.map}
+                    </span>
+                    <span style={{ fontSize: '10px', fontWeight: 900, backgroundColor: 'rgba(239, 68, 68, 0.25)', color: '#f87171', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(239, 68, 68, 0.5)' }}>
+                      Tier {activeZoneDetail.tier}
+                    </span>
+                  </div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff', margin: '2px 0 0' }}>
+                    {activeZoneDetail.name}
+                  </h3>
+                </div>
+              </div>
+
+              <button
+                onClick={() => { playSound('click'); setActiveZoneDetail(null); }}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  backgroundColor: '#334155',
+                  color: '#94a3b8',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido con scroll */}
+            <div style={{ padding: '20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Coordenadas & Nivel de Amenaza */}
+              <div style={{ backgroundColor: 'rgba(220, 38, 38, 0.15)', border: '1px solid rgba(220, 38, 38, 0.4)', borderRadius: '12px', padding: '12px 14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#f87171' }}>
+                    ⚠️ Nivel de Amenaza: {activeZoneDetail.threatLevel}
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#cbd5e1', backgroundColor: '#0f172a', padding: '2px 8px', borderRadius: '6px', border: '1px solid #334155' }}>
+                    Coordenadas: {activeZoneDetail.coordinates}
+                  </span>
+                </div>
+              </div>
+
+              {/* Descripción */}
+              <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.5)', padding: '12px 14px', borderRadius: '12px', border: '1px solid #334155' }}>
+                <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: '1.5', margin: 0 }}>
+                  {activeZoneDetail.description}
+                </p>
+              </div>
+
+              {/* Botín Legendario */}
+              <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', border: '1px solid #334155', padding: '14px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                  💎 Botín Legendario & Suministros Garantizados:
+                </span>
+                <ul style={{ paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px', color: '#cbd5e1', margin: 0, lineHeight: '1.4' }}>
+                  {activeZoneDetail.lootHighlights.map((loot, i) => (
+                    <li key={i}>{loot}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Equipamiento Obligatorio */}
+              <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', border: '1px solid #334155', padding: '14px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                  🎒 Equipamiento Táctico Obligatorio:
+                </span>
+                <ul style={{ paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#cbd5e1', margin: 0, lineHeight: '1.4' }}>
+                  {activeZoneDetail.recommendedGear.map((gear, i) => (
+                    <li key={i}>{gear}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Tácticas & Ruta de Escape */}
+              <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.8)', border: '1px solid rgba(51, 65, 85, 0.8)', borderRadius: '12px', padding: '14px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+                  🎯 Estrategia de Incursión & Ruta de Escape:
+                </span>
+                <ul style={{ paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: '#cbd5e1', margin: 0, lineHeight: '1.4' }}>
+                  {activeZoneDetail.tactics.map((tactic, i) => (
+                    <li key={i}>{tactic}</li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
