@@ -6,6 +6,7 @@ import { LEVELS } from './data/levels';
 import { TOOLS_DATABASE } from './data/tools';
 import { METALWORKING_DATABASE } from './data/metalworking';
 import { DANGEROUS_ZONES_DATABASE } from './data/dangerousZones';
+import { TV_SHOWS, ARCHETYPES, TOP_LOCATIONS_BY_CITY } from './data/campaign';
 
 // Sonidos sintéticos con Web Audio API (cero dependencias externas)
 function playSound(type) {
@@ -52,7 +53,7 @@ const RANKS = [
 ];
 
 export default function GamifiedFarmApp() {
-  const [currentView, setCurrentView] = useState('missions'); // 'missions' | 'tools' | 'metalworking' | 'dangerousZones'
+  const [currentView, setCurrentView] = useState('missions'); // 'missions' | 'tools' | 'metalworking' | 'dangerousZones' | 'campaign' | 'radar'
   const [unlockedLevel, setUnlockedLevel] = useState(1);
   const [activeLevel, setActiveLevel] = useState(null);
   const [activeToolDetail, setActiveToolDetail] = useState(null);
@@ -72,18 +73,73 @@ export default function GamifiedFarmApp() {
   const [zoneSearch, setZoneSearch] = useState('');
   const [zoneMapFilter, setZoneMapFilter] = useState('Todos');
 
+  // ESTADOS DEL MÓDULO GAMER: RELOJ DIGITAL IN-GAME Y CAMPAÑA PERSONALIZADA
+  const [gameDay, setGameDay] = useState(1);
+  const [gameHour, setGameHour] = useState(8);
+  const [gameMinute, setGameMinute] = useState(0);
+  const [isClockRunning, setIsClockRunning] = useState(false);
+  const [selectedArchetypeId, setSelectedArchetypeId] = useState('nomada');
+  const [campaignActiveDay, setCampaignActiveDay] = useState(1);
+  const [archetypeChecks, setArchetypeChecks] = useState({});
+  const [selectedRadarCity, setSelectedRadarCity] = useState('rosewood');
+
   useEffect(() => {
     try {
       const savedLevel = localStorage.getItem('agroterra_game_unlocked');
       const savedXp = localStorage.getItem('agroterra_game_xp');
       const savedStars = localStorage.getItem('agroterra_game_stars');
       const savedCompleted = localStorage.getItem('agroterra_game_completed');
+      const savedGameDay = localStorage.getItem('pz_game_day');
+      const savedGameHour = localStorage.getItem('pz_game_hour');
+      const savedArchetype = localStorage.getItem('pz_game_archetype');
+      const savedChecks = localStorage.getItem('pz_archetype_checks');
       if (savedLevel) setUnlockedLevel(parseInt(savedLevel, 10));
       if (savedXp) setXp(parseInt(savedXp, 10));
       if (savedStars) setStars(parseInt(savedStars, 10));
       if (savedCompleted) setCompletedLevels(JSON.parse(savedCompleted));
+      if (savedGameDay) setGameDay(parseInt(savedGameDay, 10));
+      if (savedGameHour) setGameHour(parseInt(savedGameHour, 10));
+      if (savedArchetype) setSelectedArchetypeId(savedArchetype);
+      if (savedChecks) setArchetypeChecks(JSON.parse(savedChecks));
     } catch (e) {}
   }, []);
+
+  // Timer simulado del reloj del juego (cuando está activo: 1 minuto real avanza horas del juego)
+  useEffect(() => {
+    if (!isClockRunning) return;
+    const interval = setInterval(() => {
+      setGameMinute((prevMin) => {
+        if (prevMin + 10 >= 60) {
+          setGameHour((prevH) => {
+            if (prevH + 1 >= 24) {
+              setGameDay((d) => d + 1);
+              return 0;
+            }
+            return prevH + 1;
+          });
+          return 0;
+        }
+        return prevMin + 10;
+      });
+    }, 2500); // Cada 2.5 seg en la app = 10 min en PZ por defecto
+    return () => clearInterval(interval);
+  }, [isClockRunning]);
+
+  const toggleArchetypeObjective = (objKey) => {
+    playSound('click');
+    const wasChecked = !!archetypeChecks[objKey];
+    const newChecks = { ...archetypeChecks, [objKey]: !wasChecked };
+    setArchetypeChecks(newChecks);
+    if (!wasChecked) {
+      playSound('success');
+      const newXp = xp + 75;
+      setXp(newXp);
+      saveState(unlockedLevel, newXp, stars, completedLevels);
+    }
+    try {
+      localStorage.setItem('pz_archetype_checks', JSON.stringify(newChecks));
+    } catch (e) {}
+  };
 
   const saveState = (newUnlocked, newXp, newStars, newCompleted) => {
     try {
@@ -313,6 +369,41 @@ export default function GamifiedFarmApp() {
               }}
             >
               <span>☠️</span> Zonas de Peligro
+            </button>
+            <button
+              onClick={() => { playSound('click'); setCurrentView('campaign'); }}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 800,
+                backgroundColor: currentView === 'campaign' ? '#10b981' : 'transparent',
+                color: currentView === 'campaign' ? '#0f172a' : '#38bdf8',
+                border: currentView === 'campaign' ? 'none' : '1px solid rgba(56, 189, 248, 0.4)',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span>⚡</span> Campañas & Reloj
+            </button>
+            <button
+              onClick={() => { playSound('click'); setCurrentView('radar'); }}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 800,
+                backgroundColor: currentView === 'radar' ? '#10b981' : 'transparent',
+                color: currentView === 'radar' ? '#0f172a' : '#94a3b8',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span>🎯</span> Radar Top 3
             </button>
           </div>
 
@@ -1394,6 +1485,430 @@ export default function GamifiedFarmApp() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* VISTA 5: CAMPAÑAS Y RELOJ DIGITAL TÁCTICO IN-GAME */}
+      {currentView === 'campaign' && (
+        <main style={{ flex: 1, maxWidth: '1080px', width: '100%', margin: '0 auto', padding: '32px 20px 80px' }}>
+          {/* PANEL DIGITAL RETO 1993: RELOJ COMPANION */}
+          <div
+            style={{
+              backgroundColor: '#050b14',
+              border: '2px solid #10b981',
+              borderRadius: '18px',
+              padding: '24px',
+              marginBottom: '32px',
+              boxShadow: '0 0 25px rgba(16, 185, 129, 0.25), inset 0 0 15px rgba(0, 0, 0, 0.8)',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+          >
+            {/* Cabecera del Reloj */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(16, 185, 129, 0.3)', paddingBottom: '12px', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: isClockRunning ? '#10b981' : '#f59e0b', display: 'inline-block', boxShadow: isClockRunning ? '0 0 10px #10b981' : '0 0 8px #f59e0b' }} />
+                <span style={{ fontSize: '12px', fontWeight: 900, color: '#34d399', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                  RELOJ DE SINCRONIZACIÓN IN-GAME (KENTUCKY 1993)
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => { playSound('click'); setIsClockRunning(!isClockRunning); }}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    fontSize: '11px',
+                    fontWeight: 900,
+                    backgroundColor: isClockRunning ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                    border: '1px solid',
+                    borderColor: isClockRunning ? '#ef4444' : '#10b981',
+                    color: isClockRunning ? '#f87171' : '#34d399',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {isClockRunning ? '⏸️ PAUSAR TIMER' : '▶️ INICIAR TIMER IN-GAME'}
+                </button>
+              </div>
+            </div>
+
+            {/* Display LCD Digital */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', alignItems: 'center' }}>
+              <div style={{ backgroundColor: '#020617', padding: '16px 20px', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 800, textTransform: 'uppercase', marginBottom: '6px' }}>
+                  Tiempo del Reloj Digital del Personaje
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
+                  <span className="lcd-display" style={{ fontSize: '32px', fontWeight: 900, color: '#34d399' }}>
+                    DÍA {String(gameDay).padStart(2, '0')}
+                  </span>
+                  <span className="lcd-display" style={{ fontSize: '36px', fontWeight: 900, color: '#10b981' }}>
+                    {String(gameHour).padStart(2, '0')}:{String(gameMinute).padStart(2, '0')}
+                  </span>
+                </div>
+
+                {/* Ajustes rápidos */}
+                <div style={{ display: 'flex', gap: '6px', marginTop: '12px', flexWrap: 'wrap' }}>
+                  <button
+                    onClick={() => { playSound('click'); setGameHour((h) => (h + 1) % 24); }}
+                    style={{ padding: '4px 8px', borderRadius: '6px', backgroundColor: '#1e293b', border: '1px solid #334155', fontSize: '10px', color: '#cbd5e1', fontWeight: 700 }}
+                  >
+                    +1 Hora
+                  </button>
+                  <button
+                    onClick={() => { playSound('click'); setGameHour((h) => (h > 0 ? h - 1 : 23)); }}
+                    style={{ padding: '4px 8px', borderRadius: '6px', backgroundColor: '#1e293b', border: '1px solid #334155', fontSize: '10px', color: '#cbd5e1', fontWeight: 700 }}
+                  >
+                    -1 Hora
+                  </button>
+                  <button
+                    onClick={() => { playSound('click'); setGameDay((d) => d + 1); }}
+                    style={{ padding: '4px 8px', borderRadius: '6px', backgroundColor: '#1e293b', border: '1px solid #334155', fontSize: '10px', color: '#38bdf8', fontWeight: 700 }}
+                  >
+                    +1 Día
+                  </button>
+                  <button
+                    onClick={() => { playSound('click'); setGameDay((d) => Math.max(1, d - 1)); }}
+                    style={{ padding: '4px 8px', borderRadius: '6px', backgroundColor: '#1e293b', border: '1px solid #334155', fontSize: '10px', color: '#cbd5e1', fontWeight: 700 }}
+                  >
+                    -1 Día
+                  </button>
+                </div>
+              </div>
+
+              {/* Eventos Inminentes / Life & Living TV */}
+              <div style={{ backgroundColor: '#020617', padding: '16px 20px', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 800, textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>📺</span> Emisiones de Televisión & Alertas Críticas
+                </div>
+                {gameDay <= 9 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {TV_SHOWS.map((show, idx) => {
+                      const isUpcoming = gameHour < show.hour;
+                      const isNow = gameHour === show.hour;
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            backgroundColor: isNow ? 'rgba(16, 185, 129, 0.2)' : isUpcoming ? 'rgba(30, 41, 59, 0.4)' : 'rgba(15, 23, 42, 0.2)',
+                            border: '1px solid',
+                            borderColor: isNow ? '#10b981' : isUpcoming ? '#334155' : 'transparent',
+                            opacity: !isUpcoming && !isNow ? 0.4 : 1,
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '14px' }}>{show.icon}</span>
+                            <div>
+                              <div style={{ fontSize: '11px', fontWeight: 800, color: isNow ? '#34d399' : '#f8fafc' }}>
+                                {String(show.hour).padStart(2, '0')}:00 · {show.title}
+                              </div>
+                              <div style={{ fontSize: '9px', color: '#94a3b8' }}>{show.xpSkill} (+XP gratis)</div>
+                            </div>
+                          </div>
+                          <span style={{ fontSize: '10px', fontWeight: 700, color: isNow ? '#34d399' : '#38bdf8' }}>
+                            {isNow ? '¡EN EL AIRE!' : isUpcoming ? `En ${show.hour - gameHour}h` : 'Emitido'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic', padding: '8px 0' }}>
+                    Las transmisiones de Life and Living terminaron el Día 9. Usa libros y cintas VHS para seguir subiendo experiencia.
+                  </div>
+                )}
+
+                {/* Advertencia del Helicóptero */}
+                {gameDay >= 6 && gameDay <= 9 && (
+                  <div className="pulse-alert" style={{ marginTop: '10px', padding: '8px 12px', backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '16px' }}>🚁</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: '#f87171' }}>
+                      ¡ALERTA DE HELICÓPTERO ACTIVA! (Días 6 al 9): Si escuchas hélices, enciérrate en el piso superior.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* SELECTOR DE ARQUETIPO DE SUPERVIVIENTE */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Panel de Campañas Personalizadas
+                </span>
+                <h3 style={{ fontSize: '22px', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                  Elige tu Arquetipo de Juego
+                </h3>
+              </div>
+              <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                Cada arquetipo genera una guía y checklist diario único.
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+              {ARCHETYPES.map((arch) => (
+                <div
+                  key={arch.id}
+                  onClick={() => {
+                    playSound('click');
+                    setSelectedArchetypeId(arch.id);
+                    setCampaignActiveDay(1);
+                    try { localStorage.setItem('pz_game_archetype', arch.id); } catch (e) {}
+                  }}
+                  style={{
+                    backgroundColor: selectedArchetypeId === arch.id ? 'rgba(16, 185, 129, 0.15)' : 'rgba(30, 41, 59, 0.5)',
+                    border: '2px solid',
+                    borderColor: selectedArchetypeId === arch.id ? '#10b981' : '#334155',
+                    borderRadius: '14px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '24px' }}>{arch.icon}</span>
+                    <div>
+                      <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#ffffff', margin: 0 }}>{arch.title}</h4>
+                      <span style={{ fontSize: '10px', color: '#10b981', fontWeight: 700 }}>{arch.subtitle}</span>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '11px', color: '#cbd5e1', lineHeight: '1.4', margin: 0 }}>
+                    {arch.philosophy}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* HOJA DE RUTA DIARIA Y CHECKLIST INTERACTIVO */}
+          {(() => {
+            const activeArch = ARCHETYPES.find((a) => a.id === selectedArchetypeId) || ARCHETYPES[0];
+            const currentDayData = activeArch.daysPlan.find((d) => d.day === campaignActiveDay) || activeArch.daysPlan[0];
+
+            return (
+              <div style={{ backgroundColor: 'rgba(30, 41, 59, 0.7)', border: '1px solid #334155', borderRadius: '18px', padding: '24px', boxShadow: '0 8px 30px rgba(0, 0, 0, 0.3)' }}>
+                {/* Selector de Días 1 al 7 */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '16px', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '48px', height: '48px', position: 'relative' }}>
+                      <Image src={activeArch.spiffoBanner} alt="" width={48} height={48} style={{ objectFit: 'contain' }} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#ffffff', margin: 0 }}>
+                        {activeArch.title} · Hoja de Ruta
+                      </h3>
+                      <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                        Rasgos recomendados: <strong style={{ color: '#38bdf8' }}>{activeArch.recommendedTraits.join(', ')}</strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Selector de Días */}
+                  <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '4px' }}>
+                    {activeArch.daysPlan.map((d) => (
+                      <button
+                        key={d.day}
+                        onClick={() => { playSound('click'); setCampaignActiveDay(d.day); }}
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: 800,
+                          backgroundColor: campaignActiveDay === d.day ? '#10b981' : '#1e293b',
+                          color: campaignActiveDay === d.day ? '#0f172a' : '#94a3b8',
+                          border: '1px solid',
+                          borderColor: campaignActiveDay === d.day ? '#34d399' : '#334155',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        D{d.day}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Título del Día */}
+                <div style={{ marginBottom: '18px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#10b981', textTransform: 'uppercase' }}>
+                    Día {currentDayData.day} de Supervivencia
+                  </span>
+                  <h4 style={{ fontSize: '17px', fontWeight: 800, color: '#ffffff', margin: '2px 0 0' }}>
+                    {currentDayData.title}
+                  </h4>
+                </div>
+
+                {/* Lista de Objetivos con Checkbox Interactivo */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                  {currentDayData.objectives.map((obj, idx) => {
+                    const objKey = `${activeArch.id}_day${currentDayData.day}_obj${idx}`;
+                    const isChecked = !!archetypeChecks[objKey];
+
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => toggleArchetypeObjective(objKey)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px 14px',
+                          borderRadius: '12px',
+                          backgroundColor: isChecked ? 'rgba(16, 185, 129, 0.15)' : 'rgba(15, 23, 42, 0.6)',
+                          border: '2px solid',
+                          borderColor: isChecked ? '#10b981' : '#334155',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span style={{ fontSize: '18px' }}>{isChecked ? '✅' : '⬜'}</span>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: isChecked ? '#34d399' : '#f8fafc', textDecoration: isChecked ? 'line-through' : 'none', flex: 1 }}>
+                          {obj}
+                        </span>
+                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#f59e0b', backgroundColor: '#0f172a', padding: '2px 6px', borderRadius: '4px' }}>
+                          +75 XP
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Consejo Táctico Pro */}
+                <div style={{ backgroundColor: 'rgba(120, 53, 15, 0.25)', border: '1px solid rgba(245, 158, 11, 0.4)', borderRadius: '12px', padding: '12px 16px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', display: 'block', marginBottom: '2px' }}>
+                    💡 Consejo de Supervivencia:
+                  </span>
+                  <p style={{ fontSize: '12px', color: '#fde68a', margin: 0, lineHeight: '1.4' }}>
+                    {currentDayData.tip}
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
+        </main>
+      )}
+
+      {/* VISTA 6: RADAR TOP 3 UBICACIONES POR CIUDAD */}
+      {currentView === 'radar' && (
+        <main style={{ flex: 1, maxWidth: '1080px', width: '100%', margin: '0 auto', padding: '32px 20px 80px' }}>
+          {/* Cabecera */}
+          <div
+            style={{
+              backgroundColor: 'rgba(30, 41, 59, 0.7)',
+              border: '1px solid rgba(51, 65, 85, 0.8)',
+              borderRadius: '16px',
+              padding: '24px',
+              marginBottom: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '20px',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div>
+              <span style={{ fontSize: '11px', fontWeight: 700, color: '#10b981', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                Reconocimiento Táctico de Kentucky
+              </span>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#ffffff', margin: '4px 0 6px', letterSpacing: '-0.02em' }}>
+                Radar de Ubicaciones Top 3
+              </h2>
+              <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: '1.5', margin: 0 }}>
+                Las mejores bases estratégicas, armerías y almacenes con mayor índice de supervivencia en cada sector.
+              </p>
+            </div>
+
+            {/* Selector de Ciudad */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {Object.keys(TOP_LOCATIONS_BY_CITY).map((cityKey) => {
+                const c = TOP_LOCATIONS_BY_CITY[cityKey];
+                return (
+                  <button
+                    key={cityKey}
+                    onClick={() => { playSound('click'); setSelectedRadarCity(cityKey); }}
+                    style={{
+                      padding: '8px 16px',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: 800,
+                      backgroundColor: selectedRadarCity === cityKey ? '#10b981' : '#1e293b',
+                      color: selectedRadarCity === cityKey ? '#0f172a' : '#94a3b8',
+                      border: '1px solid',
+                      borderColor: selectedRadarCity === cityKey ? '#34d399' : '#334155',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {c.cityName}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Listado de Ubicaciones de la Ciudad Seleccionada */}
+          {(() => {
+            const city = TOP_LOCATIONS_BY_CITY[selectedRadarCity] || TOP_LOCATIONS_BY_CITY.rosewood;
+            return (
+              <div>
+                <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: '#cbd5e1' }}>
+                    Sector: <strong style={{ color: '#ffffff' }}>{city.cityName}</strong> · Dificultad: <strong style={{ color: '#38bdf8' }}>{city.difficulty}</strong>
+                  </span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
+                  {city.locations.map((loc, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        backgroundColor: 'rgba(30, 41, 59, 0.6)',
+                        border: '1px solid #334155',
+                        borderRadius: '16px',
+                        padding: '20px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                        <span style={{ fontSize: '28px' }}>{loc.icon}</span>
+                        <span style={{ fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                          {loc.badge}
+                        </span>
+                      </div>
+
+                      <div>
+                        <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase' }}>
+                          {loc.type}
+                        </span>
+                        <h4 style={{ fontSize: '16px', fontWeight: 800, color: '#ffffff', margin: '2px 0 0' }}>
+                          {loc.name}
+                        </h4>
+                      </div>
+
+                      <p style={{ fontSize: '12px', color: '#cbd5e1', lineHeight: '1.5', margin: 0 }}>
+                        {loc.whyGood}
+                      </p>
+
+                      <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid rgba(51, 65, 85, 0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '11px', color: '#94a3b8' }}>Nivel de Peligro:</span>
+                        <span style={{ fontSize: '11px', fontWeight: 800, color: loc.dangerLevel.includes('Alto') || loc.dangerLevel.includes('Extremo') ? '#f87171' : '#34d399' }}>
+                          {loc.dangerLevel}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </main>
       )}
 
       {/* MODAL DE MISIÓN / NODO ACTIVO */}
