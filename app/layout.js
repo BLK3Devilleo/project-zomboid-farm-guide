@@ -3,14 +3,20 @@ import ClarityAnalytics from './components/ClarityAnalytics';
 import './globals.css';
 
 export const metadata = {
-  title: 'Guía de granja · Project Zomboid',
-  description: 'Tutorial interactivo de agricultura y cuidado animal para Project Zomboid Build 42.',
+  title: 'Guía de granja y Hub de Servidores · Project Zomboid B42',
+  description: 'Directorio táctico de servidores dedicados y tutorial de supervivencia para Project Zomboid.',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
       <head>
+        {/* Google Identity Services SDK */}
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="afterInteractive"
+        />
+
         {/* Google Analytics (GA4) */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-KRWBJ9ER2C"
@@ -26,7 +32,7 @@ export default function RootLayout({ children }) {
           `}
         </Script>
 
-        {/* Microsoft Clarity Tag for direct HTML detection */}
+        {/* Microsoft Clarity Tag */}
         <script
           type="text/javascript"
           dangerouslySetInnerHTML={{
@@ -47,5 +53,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-
-

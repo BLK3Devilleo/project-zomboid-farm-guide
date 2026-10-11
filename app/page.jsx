@@ -6,8 +6,10 @@ import OnboardingWizard from './components/OnboardingWizard';
 import RouteView from './components/RouteView';
 import LootView from './components/LootView';
 import ServerList from './components/ServerList';
+import AuthModal from './components/AuthModal';
 import { routesDatabase } from './data/routesDatabase';
 import { loadProgress, saveProgress } from './lib/progressStorage';
+import { getActiveSession, logoutUser } from './lib/authClient';
 
 // Sonidos sintéticos con Web Audio API (cero dependencias externas)
 function playSound(type) {
@@ -39,11 +41,22 @@ function playSound(type) {
 
 export default function SpiffoOSApp() {
   const [playerData, setPlayerData] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
-  // Carga inicial del progreso guardado en localStorage
+  // Carga inicial del progreso guardado en localStorage y de la sesión activa
   useEffect(() => {
     const loaded = loadProgress();
     setPlayerData(loaded);
+
+    // Verificar sesión de usuario activa
+    async function checkUser() {
+      const user = await getActiveSession();
+      if (user) {
+        setCurrentUser(user);
+      }
+    }
+    checkUser();
   }, []);
 
   // Actualizar y persistir el estado centralizado
@@ -81,12 +94,12 @@ export default function SpiffoOSApp() {
     playSound('click');
     updateStateAndSave((prev) => ({
       ...prev,
-      activeView: 'loot',
       selectedLootCategory: catId,
+      activeView: 'loot',
     }));
   };
 
-  // 4. Volver al Onboarding (sin borrar el progreso ya ganado)
+  // 4. Reiniciar al Asistente
   const handleResetToOnboarding = () => {
     playSound('click');
     updateStateAndSave((prev) => ({
@@ -95,26 +108,39 @@ export default function SpiffoOSApp() {
     }));
   };
 
-  // 5. Marcar / Desmarcar objetivo en la checklist
-  const handleToggleObjective = (routeId, objectiveId, xpValue) => {
+  // 5. Manejo de Autenticación
+  const handleAuthSuccess = (user) => {
+    setCurrentUser(user);
+    playSound('success');
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setCurrentUser(null);
     playSound('click');
+  };
+
+  // 6. Marcar/Desmarcar Objetivo de Ruta
+  const handleToggleObjective = (routeId, levelId, objIndex, xpReward) => {
     updateStateAndSave((prev) => {
-      const currentRoute = prev.routes[routeId] || { completedObjectives: [], earnedXp: 0 };
-      const alreadyChecked = currentRoute.completedObjectives.includes(objectiveId);
+      const currentRoute = prev.routes?.[routeId] || { completedObjectives: [], earnedXp: 0 };
+      const objKey = `${levelId}-${objIndex}`;
+      const isCompleted = currentRoute.completedObjectives?.includes(objKey);
 
-      let newCompleted;
-      let newRouteXp;
-      let newGlobalXp;
+      let newCompleted = [];
+      let newRouteXp = currentRoute.earnedXp || 0;
+      let newGlobalXp = prev.globalXp || 0;
 
-      if (alreadyChecked) {
-        newCompleted = currentRoute.completedObjectives.filter((id) => id !== objectiveId);
-        newRouteXp = Math.max(0, currentRoute.earnedXp - xpValue);
-        newGlobalXp = Math.max(0, prev.globalXp - xpValue);
+      if (isCompleted) {
+        playSound('click');
+        newCompleted = currentRoute.completedObjectives.filter((k) => k !== objKey);
+        newRouteXp = Math.max(0, newRouteXp - xpReward);
+        newGlobalXp = Math.max(0, newGlobalXp - xpReward);
       } else {
         playSound('success');
-        newCompleted = [...currentRoute.completedObjectives, objectiveId];
-        newRouteXp = currentRoute.earnedXp + xpValue;
-        newGlobalXp = prev.globalXp + xpValue;
+        newCompleted = [...(currentRoute.completedObjectives || []), objKey];
+        newRouteXp += xpReward;
+        newGlobalXp += xpReward;
       }
 
       return {
@@ -159,6 +185,9 @@ export default function SpiffoOSApp() {
         onSelectLootCategory={handleSelectLootCategory}
         onResetToOnboarding={handleResetToOnboarding}
         globalXp={playerData.globalXp}
+        currentUser={currentUser}
+        onOpenLoginModal={() => setAuthModalOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* CONTENIDO PRINCIPAL SEGÚN ESTADO */}
@@ -168,7 +197,10 @@ export default function SpiffoOSApp() {
         )}
 
         {isViewingServers && (
-          <ServerList />
+          <ServerList
+            currentUser={currentUser}
+            onOpenLoginModal={() => setAuthModalOpen(true)}
+          />
         )}
 
         {isViewingLoot && (
@@ -187,6 +219,13 @@ export default function SpiffoOSApp() {
           />
         )}
       </main>
+
+      {/* MODAL DE AUTENTICACIÓN GOOGLE */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }

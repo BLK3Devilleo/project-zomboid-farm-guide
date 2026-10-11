@@ -55,11 +55,11 @@ export default function AddServerModal({
     const payload = {
       name: formData.name.trim(),
       ip: formData.ip.trim(),
-      port: parseInt(formData.port) || 16261,
+      port: parseInt(formData.port, 10) || 16261,
       region: formData.region,
-      mode: formData.mode,
-      loot_tier: formData.loot_tier,
-      max_players: parseInt(formData.max_players) || 32,
+      gamemode: formData.mode,
+      loot_multiplier: formData.loot_tier,
+      max_players: parseInt(formData.max_players, 10) || 32,
       description: formData.description.trim(),
       discord_url: formData.discord_url.trim(),
       banner_url: formData.banner_url.trim() || '/spiffo/spiffo_character.png',
@@ -71,7 +71,7 @@ export default function AddServerModal({
       await onSubmit(payload);
       onClose();
     } catch (err) {
-      setErrorMsg('Error al registrar el servidor en el índice.');
+      setErrorMsg(err.message || 'Error al registrar el servidor en el índice.');
     } finally {
       setIsSubmitting(false);
     }

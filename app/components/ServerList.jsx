@@ -6,7 +6,7 @@ import { fetchServersList, createServerEntry, upvoteServerEntry } from '../lib/s
 import ServerDetailModal from './ServerDetailModal';
 import AddServerModal from './AddServerModal';
 
-export default function ServerList() {
+export default function ServerList({ currentUser = null, onOpenLoginModal = () => {} }) {
   const [servers, setServers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -157,14 +157,21 @@ export default function ServerList() {
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
             <button
-              onClick={() => setShowAddModal(true)}
+              onClick={() => {
+                if (!currentUser) {
+                  showToast('Debes iniciar sesión con Google para enlistar un servidor.');
+                  onOpenLoginModal();
+                  return;
+                }
+                setShowAddModal(true);
+              }}
               className="btn-tactical"
               style={{ padding: '12px 22px', fontSize: 13 }}
             >
               <span>➕ Enlistar Mi Servidor</span>
             </button>
             <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>
-              Registro gratuito para admins
+              {currentUser ? `Autenticado como ${currentUser.name}` : 'Requiere cuenta de Google verificada'}
             </span>
           </div>
         </div>

@@ -1,151 +1,215 @@
 import { NextResponse } from 'next/server';
 import { initialServers } from '../../data/serversDatabase';
+import { queryD1 } from '../../lib/d1Client';
+import { CreateServerSchema, VoteServerSchema } from '../../lib/validations';
+import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
+import { getSessionUser, hasRequiredRole } from '../../lib/session';
 
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
-const DATABASE_ID = process.env.CLOUDFLARE_D1_DATABASE_ID;
-const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
-
-// Función para consultar Cloudflare D1 mediante la API REST oficial
-async function queryD1(sql, params = []) {
-  if (!ACCOUNT_ID || !DATABASE_ID || !API_TOKEN) {
-    return null;
+// GET: Listar servidores ordenados por reputación (votos)
+export async function GET(request) {
+  // Rate Limit lectura: 120 peticiones / minuto por IP
+  const clientIp = getClientIp(request);
+  const rate = checkRateLimit(`servers:get:${clientIp}`, 120, 60 * 1000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      { success: false, error: 'Demasiadas consultas al directorio. Por favor espera un momento.' },
+      { status: 429, headers: { 'Retry-After': String(rate.resetInSeconds) } }
+    );
   }
 
-  const endpoint = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`;
-  const response = await fetch(endpoint, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${API_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ sql, params }),
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('Cloudflare D1 HTTP Error:', response.status, errorText);
-    throw new Error(`D1 query failed: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  if (!data.success) {
-    console.error('Cloudflare D1 Query Error:', data.errors);
-    throw new Error(data.errors?.[0]?.message || 'D1 query failed');
-  }
-
-  return data.result?.[0]?.results || [];
-}
-
-// GET: Obtener lista de servidores clasificados por votos
-export async function GET() {
   try {
-    if (ACCOUNT_ID && DATABASE_ID && API_TOKEN) {
-      const results = await queryD1(
-        'SELECT * FROM servers ORDER BY votes DESC'
-      );
-      if (results && results.length > 0) {
-        // Asegurar parsing de tags si vienen serializados en JSON o texto
-        const parsed = results.map((server) => ({
-          ...server,
-          is_online: Boolean(server.is_online),
-          tags: typeof server.tags === 'string' ? JSON.parse(server.tags) : (server.tags || []),
-        }));
-        return NextResponse.json({ success: true, source: 'cloudflare_d1', data: parsed });
-      }
+    const results = await queryD1('SELECT * FROM servers ORDER BY votes DESC');
+    if (results && results.length > 0) {
+      const parsed = results.map((server) => ({
+        ...server,
+        is_online: Boolean(server.is_online),
+        tags: typeof server.tags === 'string' ? JSON.parse(server.tags) : (server.tags || []),
+      }));
+      return NextResponse.json({ success: true, source: 'cloudflare_d1', data: parsed });
     }
   } catch (error) {
-    console.warn('Error conectando a Cloudflare D1 en GET, usando fallback local:', error.message);
+    console.warn('Error en GET /api/servers (D1):', error.message);
   }
 
   // Fallback con datos iniciales
   return NextResponse.json({ success: true, source: 'fallback', data: initialServers });
 }
 
-// POST: Registrar un nuevo servidor
+// POST: Registrar un nuevo servidor con Validación Zod, Rate Limit y RLS
 export async function POST(request) {
-  try {
-    const body = await request.json();
-    const newServer = {
-      id: body.id || `srv-${Date.now()}`,
-      name: body.name || 'Servidor Desconocido',
-      ip: body.ip || '127.0.0.1',
-      port: parseInt(body.port, 10) || 16261,
-      gamemode: body.gamemode || 'PvE',
-      region: body.region || 'LATAM',
-      loot_multiplier: body.loot_multiplier || 'Normal (x1.0)',
-      zombie_speed: body.zombie_speed || 'Fast Shamblers',
-      pvp_rules: body.pvp_rules || 'Desactivado',
-      description: body.description || '',
-      rules: body.rules || '',
-      discord_url: body.discord_url || '',
-      tags: JSON.stringify(Array.isArray(body.tags) ? body.tags : []),
-      players_online: Math.floor(Math.random() * 8) + 2,
-      max_players: parseInt(body.max_players, 10) || 32,
-      votes: 0,
-      is_online: 1,
-      banner_gradient: body.banner_gradient || 'from-emerald-950/70 via-black/80 to-zinc-950',
-    };
+  const clientIp = getClientIp(request);
 
-    if (ACCOUNT_ID && DATABASE_ID && API_TOKEN) {
-      await queryD1(
-        `INSERT INTO servers (
-          id, name, ip, port, gamemode, region, loot_multiplier, zombie_speed,
-          pvp_rules, description, rules, discord_url, tags, players_online,
-          max_players, votes, is_online, banner_gradient
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          newServer.id,
-          newServer.name,
-          newServer.ip,
-          newServer.port,
-          newServer.gamemode,
-          newServer.region,
-          newServer.loot_multiplier,
-          newServer.zombie_speed,
-          newServer.pvp_rules,
-          newServer.description,
-          newServer.rules,
-          newServer.discord_url,
-          newServer.tags,
-          newServer.players_online,
-          newServer.max_players,
-          newServer.votes,
-          newServer.is_online,
-          newServer.banner_gradient,
-        ]
-      );
+  // 1. Rate Limit: Máximo 5 servidores por hora por IP
+  const rate = checkRateLimit(`servers:create:${clientIp}`, 5, 60 * 60 * 1000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Límite de registro de servidores alcanzado. Vuelve a intentar en ${Math.ceil(rate.resetInSeconds / 60)} minutos.`,
+      },
+      { status: 429, headers: { 'Retry-After': String(rate.resetInSeconds) } }
+    );
+  }
+
+  // 2. Comprobar sesión de usuario (RLS)
+  const sessionUser = await getSessionUser(request);
+  if (!sessionUser) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Debes iniciar sesión con tu cuenta de Google para registrar un servidor en la comunidad.',
+      },
+      { status: 401 }
+    );
+  }
+
+  try {
+    // 3. Validación estricta con Zod
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = CreateServerSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      const firstError = parseResult.error.errors[0]?.message || 'Datos del servidor inválidos';
+      return NextResponse.json({ success: false, error: firstError }, { status: 400 });
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        ...newServer,
-        tags: Array.isArray(body.tags) ? body.tags : [],
-        is_online: true,
-      },
-    });
+    const validData = parseResult.data;
+    const newServerId = `srv-${Date.now()}`;
+    const playersOnline = Math.floor(Math.random() * 8) + 2;
+
+    // 4. Inserción segura con parámetros vinculados (Previene Inyecciones SQL)
+    await queryD1(
+      `INSERT INTO servers (
+        id, name, ip, port, region, mode, loot_tier,
+        players_online, max_players, is_online, votes,
+        description, discord_url, tags, owner_id, owner_email
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        newServerId,
+        validData.name,
+        validData.ip,
+        validData.port,
+        validData.region,
+        validData.gamemode,
+        validData.loot_multiplier,
+        playersOnline,
+        validData.max_players,
+        1, // is_online
+        0, // votes
+        validData.description,
+        validData.discord_url || '',
+        JSON.stringify(validData.tags),
+        sessionUser.id,
+        sessionUser.email,
+      ]
+    );
+
+    const createdServer = {
+      id: newServerId,
+      name: validData.name,
+      ip: validData.ip,
+      port: validData.port,
+      region: validData.region,
+      mode: validData.gamemode,
+      loot_tier: validData.loot_multiplier,
+      players_online: playersOnline,
+      max_players: validData.max_players,
+      is_online: true,
+      votes: 0,
+      description: validData.description,
+      discord_url: validData.discord_url,
+      tags: validData.tags,
+      owner_id: sessionUser.id,
+      owner_email: sessionUser.email,
+    };
+
+    return NextResponse.json({ success: true, data: createdServer });
   } catch (error) {
-    console.error('Error registrando servidor:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Error insertando servidor en D1:', error);
+    return NextResponse.json(
+      { success: false, error: 'Fallo interno al registrar el servidor.' },
+      { status: 500 }
+    );
   }
 }
 
-// PATCH: Incrementar voto (+1 reputación atómica)
+// PATCH: Voto (+1 Reputación) con Rate Limit y Validación Zod
 export async function PATCH(request) {
+  const clientIp = getClientIp(request);
+
+  // 1. Rate Limit de votos: Máximo 8 votos por minuto por IP
+  const rate = checkRateLimit(`servers:vote:${clientIp}`, 8, 60 * 1000);
+  if (!rate.allowed) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Has emitido demasiados votos en poco tiempo. Espera ${rate.resetInSeconds} segundos.`,
+      },
+      { status: 429, headers: { 'Retry-After': String(rate.resetInSeconds) } }
+    );
+  }
+
   try {
-    const { id } = await request.json();
-    if (!id) {
-      return NextResponse.json({ success: false, error: 'ID requerido' }, { status: 400 });
+    const rawBody = await request.json().catch(() => ({}));
+    const parseResult = VoteServerSchema.safeParse(rawBody);
+
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { success: false, error: parseResult.error.errors[0]?.message || 'ID inválido' },
+        { status: 400 }
+      );
     }
 
-    if (ACCOUNT_ID && DATABASE_ID && API_TOKEN) {
-      await queryD1('UPDATE servers SET votes = votes + 1 WHERE id = ?', [id]);
-    }
+    const { id } = parseResult.data;
+
+    // Actualización atómica parametrizada
+    await queryD1('UPDATE servers SET votes = votes + 1 WHERE id = ?', [id]);
 
     return NextResponse.json({ success: true, id });
   } catch (error) {
-    console.error('Error al votar servidor:', error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    console.error('Error procesando voto:', error);
+    return NextResponse.json({ success: false, error: 'Fallo al computar el voto' }, { status: 500 });
+  }
+}
+
+// DELETE: Eliminación de servidor con RLS estricto
+export async function DELETE(request) {
+  const sessionUser = await getSessionUser(request);
+  if (!sessionUser) {
+    return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const serverId = searchParams.get('id');
+
+  if (!serverId) {
+    return NextResponse.json({ success: false, error: 'ID de servidor requerido' }, { status: 400 });
+  }
+
+  try {
+    // Consultar el servidor para verificar propiedad
+    const existing = await queryD1('SELECT * FROM servers WHERE id = ? LIMIT 1', [serverId]);
+    if (!existing || existing.length === 0) {
+      return NextResponse.json({ success: false, error: 'Servidor no encontrado' }, { status: 404 });
+    }
+
+    const server = existing[0];
+    const isOwner = server.owner_id === sessionUser.id || server.owner_email === sessionUser.email;
+    const isStaff = hasRequiredRole(sessionUser.role, 'moderador');
+
+    // RLS: Solo el dueño, moderadores o administradores pueden eliminarlo
+    if (!isOwner && !isStaff) {
+      return NextResponse.json(
+        { success: false, error: 'No tienes autorización para eliminar este servidor.' },
+        { status: 403 }
+      );
+    }
+
+    await queryD1('DELETE FROM servers WHERE id = ?', [serverId]);
+
+    return NextResponse.json({ success: true, message: 'Servidor eliminado correctamente.' });
+  } catch (error) {
+    console.error('Error al eliminar servidor:', error);
+    return NextResponse.json({ success: false, error: 'Fallo interno al eliminar.' }, { status: 500 });
   }
 }

@@ -54,24 +54,27 @@ export async function createServerEntry(serverData) {
       body: JSON.stringify(newServer),
     });
 
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && json.data) {
-        // Actualizar cache local
-        if (typeof window !== 'undefined') {
-          try {
-            const current = await fetchServersList();
-            const exists = current.some((s) => s.id === json.data.id);
-            if (!exists) {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify([json.data, ...current]));
-            }
-          } catch (e) {}
-        }
-        return json.data;
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || 'Error al registrar el servidor en la base de datos.');
+    }
+
+    if (json.data) {
+      // Actualizar cache local
+      if (typeof window !== 'undefined') {
+        try {
+          const current = await fetchServersList();
+          const exists = current.some((s) => s.id === json.data.id);
+          if (!exists) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify([json.data, ...current]));
+          }
+        } catch (e) {}
       }
+      return json.data;
     }
   } catch (err) {
     console.warn('Fallo al registrar servidor en API, guardando en local:', err);
+    throw err;
   }
 
   // Fallback Local
