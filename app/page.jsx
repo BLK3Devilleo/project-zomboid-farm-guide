@@ -5,6 +5,7 @@ import PillNav from './components/PillNav';
 import OnboardingWizard from './components/OnboardingWizard';
 import RouteView from './components/RouteView';
 import LootView from './components/LootView';
+import ServerList from './components/ServerList';
 import { routesDatabase } from './data/routesDatabase';
 import { loadProgress, saveProgress } from './lib/progressStorage';
 
@@ -142,6 +143,7 @@ export default function SpiffoOSApp() {
   // Determinar vista activa
   const isViewingOnboarding = playerData.activeView === 'onboarding' || !playerData.activeRouteId;
   const isViewingLoot = playerData.activeView === 'loot';
+  const isViewingServers = playerData.activeView === 'servers';
   const activeRoute = routesDatabase.find((r) => r.id === playerData.activeRouteId) || routesDatabase[0];
 
   return (
@@ -163,6 +165,10 @@ export default function SpiffoOSApp() {
           <OnboardingWizard onComplete={handleCompleteOnboarding} />
         )}
 
+        {isViewingServers && (
+          <ServerList />
+        )}
+
         {isViewingLoot && (
           <LootView
             selectedCategory={playerData.selectedLootCategory}
@@ -170,7 +176,7 @@ export default function SpiffoOSApp() {
           />
         )}
 
-        {!isViewingOnboarding && !isViewingLoot && (
+        {!isViewingOnboarding && !isViewingLoot && !isViewingServers && (
           <RouteView
             route={activeRoute}
             progress={playerData}

@@ -29,6 +29,7 @@ export default function PillNav({
 
   const navItems = [
     { id: 'route', label: 'Ruta Activa', icon: '🎯' },
+    { id: 'servers', label: 'Servidores', icon: '🌐' },
     { id: 'loot', label: 'Radar de Loot', icon: '📦' },
     { id: 'onboarding', label: 'Asistente', icon: '🧭' },
   ];
