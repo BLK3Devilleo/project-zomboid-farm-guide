@@ -84,3 +84,53 @@ export const UpdateUserRoleSchema = z.object({
     errorMap: () => ({ message: 'Rol inválido' }),
   }),
 });
+
+// Esquema para actualizar perfil de jugador PZ
+export const UpdateProfileSchema = z.object({
+  nickname: z
+    .string()
+    .trim()
+    .min(2, 'El apodo debe tener al menos 2 caracteres')
+    .max(30, 'El apodo no puede exceder 30 caracteres')
+    .optional(),
+  profession: z
+    .string()
+    .trim()
+    .max(40)
+    .default('Desempleado'),
+  playstyle: z
+    .string()
+    .trim()
+    .max(30)
+    .default('PvE'),
+  discord_tag: z
+    .string()
+    .trim()
+    .max(36, 'El tag de Discord no puede exceder 36 caracteres')
+    .optional()
+    .or(z.literal('')),
+  bio: z
+    .string()
+    .trim()
+    .max(300, 'El lema o bio no puede exceder 300 caracteres')
+    .optional()
+    .or(z.literal('')),
+  avatar_pz: z
+    .string()
+    .trim()
+    .default('spiffo_combat.png'),
+});
+
+// Esquema para mensajes del chat de radio en vivo
+export const ChatMessageSchema = z.object({
+  message: z
+    .string({ required_error: 'El mensaje es obligatorio' })
+    .trim()
+    .min(1, 'El mensaje no puede estar vacío')
+    .max(280, 'El mensaje no puede exceder 280 caracteres'),
+  server_ref_id: z
+    .string()
+    .optional()
+    .or(z.literal('')),
+});
+

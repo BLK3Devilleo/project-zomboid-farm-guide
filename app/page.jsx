@@ -7,9 +7,12 @@ import RouteView from './components/RouteView';
 import LootView from './components/LootView';
 import ServerList from './components/ServerList';
 import AuthModal from './components/AuthModal';
+import ProfileModal from './components/ProfileModal';
+import LiveRadioChat from './components/LiveRadioChat';
 import { routesDatabase } from './data/routesDatabase';
 import { loadProgress, saveProgress } from './lib/progressStorage';
 import { getActiveSession, logoutUser } from './lib/authClient';
+import { fetchServersList } from './lib/supabaseClient';
 
 // Sonidos sintéticos con Web Audio API (cero dependencias externas)
 function playSound(type) {
@@ -43,13 +46,14 @@ export default function SpiffoOSApp() {
   const [playerData, setPlayerData] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [serversList, setServersList] = useState([]);
 
-  // Carga inicial del progreso guardado en localStorage y de la sesión activa
+  // Carga inicial del progreso guardado en localStorage, sesión activa y lista de servers
   useEffect(() => {
     const loaded = loadProgress();
     setPlayerData(loaded);
 
-    // Verificar sesión de usuario activa
     async function checkUser() {
       const user = await getActiveSession();
       if (user) {
@@ -57,6 +61,12 @@ export default function SpiffoOSApp() {
       }
     }
     checkUser();
+
+    async function loadServers() {
+      const servers = await fetchServersList();
+      if (servers) setServersList(servers);
+    }
+    loadServers();
   }, []);
 
   // Actualizar y persistir el estado centralizado
@@ -108,9 +118,17 @@ export default function SpiffoOSApp() {
     }));
   };
 
-  // 5. Manejo de Autenticación
+  // 5. Manejo de Autenticación y Perfil
   const handleAuthSuccess = (user) => {
     setCurrentUser(user);
+    playSound('success');
+  };
+
+  const handleProfileUpdated = (updatedProfile) => {
+    setCurrentUser((prev) => ({
+      ...prev,
+      ...updatedProfile,
+    }));
     playSound('success');
   };
 
@@ -168,10 +186,11 @@ export default function SpiffoOSApp() {
 
   // Determinar vista activa
   const isViewingServers = playerData.activeView === 'servers';
+  const isViewingRadio = playerData.activeView === 'radio';
   const isViewingLoot = playerData.activeView === 'loot';
   const isViewingOnboarding =
     playerData.activeView === 'onboarding' ||
-    (!playerData.activeRouteId && !isViewingServers && !isViewingLoot);
+    (!playerData.activeRouteId && !isViewingServers && !isViewingLoot && !isViewingRadio);
   const activeRoute = routesDatabase.find((r) => r.id === playerData.activeRouteId) || routesDatabase[0];
 
   return (
@@ -187,6 +206,7 @@ export default function SpiffoOSApp() {
         globalXp={playerData.globalXp}
         currentUser={currentUser}
         onOpenLoginModal={() => setAuthModalOpen(true)}
+        onOpenProfileModal={() => setProfileModalOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -203,6 +223,16 @@ export default function SpiffoOSApp() {
           />
         )}
 
+        {isViewingRadio && (
+          <div style={{ maxWidth: 840, width: '100%', margin: '0 auto', padding: '16px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <LiveRadioChat
+              currentUser={currentUser}
+              onOpenLoginModal={() => setAuthModalOpen(true)}
+              serversList={serversList}
+            />
+          </div>
+        )}
+
         {isViewingLoot && (
           <LootView
             selectedCategory={playerData.selectedLootCategory}
@@ -210,7 +240,7 @@ export default function SpiffoOSApp() {
           />
         )}
 
-        {!isViewingOnboarding && !isViewingLoot && !isViewingServers && (
+        {!isViewingOnboarding && !isViewingLoot && !isViewingServers && !isViewingRadio && (
           <RouteView
             route={activeRoute}
             progress={playerData}
@@ -225,6 +255,18 @@ export default function SpiffoOSApp() {
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* MODAL DE FICHA DE SUPERVIVIENTE & MIS SERVIDORES */}
+      <ProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        currentUser={currentUser}
+        globalXp={playerData.globalXp}
+        onProfileUpdated={handleProfileUpdated}
+        onOpenAddServer={() => {
+          updateStateAndSave((p) => ({ ...p, activeView: 'servers' }));
+        }}
       />
     </div>
   );

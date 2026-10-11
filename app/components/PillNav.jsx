@@ -16,6 +16,7 @@ export default function PillNav({
   globalXp = 0,
   currentUser = null,
   onOpenLoginModal = () => {},
+  onOpenProfileModal = () => {},
   onLogout = () => {},
 }) {
   const [routesMenuOpen, setRoutesMenuOpen] = useState(false);
@@ -35,6 +36,7 @@ export default function PillNav({
   const navItems = [
     { id: 'route', label: 'Ruta Activa', icon: '🎯' },
     { id: 'servers', label: 'Servidores', icon: '🌐' },
+    { id: 'radio', label: 'Radio 91.5 MHz', icon: '📻' },
     { id: 'loot', label: 'Radar de Loot', icon: '📦' },
     { id: 'onboarding', label: 'Asistente', icon: '🧭' },
   ];
@@ -251,6 +253,16 @@ export default function PillNav({
                       ROL: {currentRoleMeta?.label?.toUpperCase()}
                     </div>
                   </div>
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      onOpenProfileModal();
+                    }}
+                    className="pill-dropdown-item"
+                    style={{ color: '#10b981', fontWeight: 800 }}
+                  >
+                    <span>🪪 Ficha de Superviviente (PZ)</span>
+                  </button>
                   <button
                     onClick={() => {
                       setUserMenuOpen(false);

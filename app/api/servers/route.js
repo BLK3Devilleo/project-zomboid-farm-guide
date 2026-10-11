@@ -213,3 +213,73 @@ export async function DELETE(request) {
     return NextResponse.json({ success: false, error: 'Fallo interno al eliminar.' }, { status: 500 });
   }
 }
+
+// PUT: Actualizar servidor existente (Solo dueño o admin)
+export async function PUT(request) {
+  const sessionUser = await getSessionUser(request);
+  if (!sessionUser) {
+    return NextResponse.json({ success: false, error: 'No autenticado' }, { status: 401 });
+  }
+
+  try {
+    const rawBody = await request.json().catch(() => ({}));
+    const { id, ...dataToValidate } = rawBody;
+
+    if (!id) {
+      return NextResponse.json({ success: false, error: 'ID de servidor requerido' }, { status: 400 });
+    }
+
+    const parseResult = CreateServerSchema.safeParse(dataToValidate);
+    if (!parseResult.success) {
+      return NextResponse.json(
+        { success: false, error: parseResult.error.errors[0]?.message || 'Datos inválidos' },
+        { status: 400 }
+      );
+    }
+
+    // Verificar propiedad
+    const existing = await queryD1('SELECT * FROM servers WHERE id = ? LIMIT 1', [id]);
+    if (!existing || existing.length === 0) {
+      return NextResponse.json({ success: false, error: 'Servidor no encontrado' }, { status: 404 });
+    }
+
+    const server = existing[0];
+    const isOwner = server.owner_id === sessionUser.id || server.owner_email === sessionUser.email;
+    const isStaff = hasRequiredRole(sessionUser.role, 'admin');
+
+    if (!isOwner && !isStaff) {
+      return NextResponse.json(
+        { success: false, error: 'No tienes permisos para editar este servidor.' },
+        { status: 403 }
+      );
+    }
+
+    const validData = parseResult.data;
+
+    await queryD1(
+      `UPDATE servers SET
+        name = ?, ip = ?, port = ?, region = ?, mode = ?, loot_tier = ?,
+        max_players = ?, description = ?, discord_url = ?, tags = ?
+       WHERE id = ?`,
+      [
+        validData.name,
+        validData.ip,
+        validData.port,
+        validData.region,
+        validData.gamemode,
+        validData.loot_multiplier,
+        validData.max_players,
+        validData.description,
+        validData.discord_url || '',
+        JSON.stringify(validData.tags),
+        id,
+      ]
+    );
+
+    return NextResponse.json({ success: true, message: 'Servidor actualizado con éxito.' });
+  } catch (error) {
+    console.error('Error al actualizar servidor:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
