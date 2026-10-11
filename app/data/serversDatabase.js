@@ -14,6 +14,11 @@ export const initialServers = [
     votes: 142,
     discord_url: 'https://discord.gg/kentuckyreborn',
     banner_url: '/spiffo/spiffo_character.png',
+    gallery_images: [
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1579202673506-ca3ce28943ef?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80'
+    ],
     tags: ['Roleplay', 'Whitelist', 'Economía', 'B42 Ready'],
     description: 'Servidor de Roleplay serio ambientado 6 meses tras el brote. Facciones de supervivientes, comercio con moneda propia, eventos semanales con directores de juego (DMs) y radiofrecuencias activas en tiempo real.',
     rules: [
@@ -37,6 +42,10 @@ export const initialServers = [
     votes: 98,
     discord_url: 'https://discord.gg/apocalipsishardcore',
     banner_url: '/spiffo/spiffo_combat.png',
+    gallery_images: [
+      'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80'
+    ],
     tags: ['Hardcore', 'Sprinters', 'Permadeath', 'PVP Nocturno'],
     description: 'Dificultad extrema para veteranos curtidos. Zombis corredores durante la noche, botín extremadamente bajo y muerte permanente. La oscuridad es tu sentencia si no estás protegido.',
     rules: [
@@ -60,6 +69,10 @@ export const initialServers = [
     votes: 125,
     discord_url: 'https://discord.gg/zonaceropvp',
     banner_url: '/spiffo/spiffo_vehicle.png',
+    gallery_images: [
+      'https://images.unsplash.com/photo-1579202673506-ca3ce28943ef?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80'
+    ],
     tags: ['PvP', 'Raids', 'Facciones', 'Safezones'],
     description: 'Construcción pacífica y comercio protegido de lunes a viernes con safezones impenetrables. Los sábados y domingos se desata la purga total con asaltos a bases y guerras de clanes.',
     rules: [
@@ -83,6 +96,9 @@ export const initialServers = [
     votes: 110,
     discord_url: 'https://discord.gg/knoxpve',
     banner_url: '/spiffo/spiffo_farming.png',
+    gallery_images: [
+      'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80'
+    ],
     tags: ['PvE', 'Cooperativo', 'Novatos', 'Vehículos'],
     description: 'Comunidad relajada y amigable centrada en construcción de ciudadelas comunitarias, agricultura a gran escala y expediciones conjuntas de convoyes mecánicos. Ideal para nuevos jugadores.',
     rules: [
@@ -105,7 +121,8 @@ export const initialServers = [
     is_online: true,
     votes: 76,
     discord_url: 'https://discord.gg/espaniavanilla',
-    banner_url: '/spiffo/spiffo_character.png',
+    banner_url: '/spiffo/spiffo_cleaning.png',
+    gallery_images: [],
     tags: ['Vanilla', 'Sin Mods', '24/7', 'B42 Ready'],
     description: 'Experiencia pura y original de Project Zomboid tal y como la concibió The Indie Stone. Cero mods de terceros, rendimiento impecable y reinicio mensual de botín en contenedores.',
     rules: [
@@ -129,6 +146,9 @@ export const initialServers = [
     votes: 89,
     discord_url: 'https://discord.gg/overhaulmilitar',
     banner_url: '/spiffo/spiffo_combat.png',
+    gallery_images: [
+      'https://images.unsplash.com/photo-1579202673506-ca3ce28943ef?auto=format&fit=crop&w=800&q=80'
+    ],
     tags: ['Modded', 'Brita Weapons', 'Blindados', 'Hordas'],
     description: 'Pack curado con más de 50 mods: arsenal táctico Britas Weapons, vehículos blindados APC, silenciadores y hordas errantes masivas de más de 300 zombis en carreteras.',
     rules: [

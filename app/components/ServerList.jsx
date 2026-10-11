@@ -276,99 +276,174 @@ export default function ServerList() {
           {filteredServers.map((server, index) => {
             const rank = index + 1;
             const fullAddress = `${server.ip}:${server.port || 16261}`;
+            
+            // Determinar clase temática de modo
+            const modeLower = (server.mode || 'pve').toLowerCase();
+            const modeClass = modeLower.includes('hardcore')
+              ? 'mode-hardcore'
+              : modeLower.includes('roleplay')
+              ? 'mode-roleplay'
+              : modeLower.includes('pvp')
+              ? 'mode-pvp'
+              : 'mode-pve';
+
+            // Cálculo de VU-Meter (8 segmentos)
+            const occupancyRatio = (server.players_online || 0) / (server.max_players || 32);
+            const activeSegments = Math.min(8, Math.max(1, Math.round(occupancyRatio * 8)));
+
+            // Título de estatus según modo
+            const statusLabel = modeClass === 'mode-hardcore'
+              ? 'PELIGRO // SPRINTERS'
+              : modeClass === 'mode-roleplay'
+              ? 'RADIO COMUNIDAD'
+              : modeClass === 'mode-pvp'
+              ? 'ZONA HOSTIL // RAID'
+              : 'REFUGIO SEGURO';
 
             return (
               <div
                 key={server.id}
                 onClick={() => setActiveModalServer(server)}
-                className="server-card-item"
+                className={`server-card-item ${modeClass}`}
               >
-                {/* LADO IZQUIERDO: RANKING + ICONO + INFO */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
-                  {/* Badge de Posición en Ranking */}
-                  <div className={`server-rank-badge rank-${rank <= 3 ? rank : 'normal'}`}>
-                    #{rank}
+                {/* Cantoneras tácticas */}
+                <div className="pz-corner-tick tl" />
+                <div className="pz-corner-tick tr" />
+                <div className="pz-corner-tick bl" />
+                <div className="pz-corner-tick br" />
+
+                {/* Barra superior de ventana estilo terminal */}
+                <div className="pz-window-bar">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ color: '#10b981', fontWeight: 900 }}>●</span>
+                    <span style={{ color: '#94a3b8' }}>
+                      KNOX FREQ-0{rank} // [{statusLabel}]
+                    </span>
                   </div>
-
-                  {/* Icono / Banner */}
-                  <div
-                    style={{
-                      width: 46,
-                      height: 46,
-                      borderRadius: 14,
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <Image
-                      src={server.banner_url || '/spiffo/spiffo_character.png'}
-                      alt={server.name}
-                      width={32}
-                      height={32}
-                      style={{ objectFit: 'contain' }}
-                    />
-                  </div>
-
-                  {/* Info Principal */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span className="server-badge-mode">{server.mode}</span>
-                      <span className="server-badge-region">🌍 {server.region}</span>
-                      <span className="server-badge-loot">📦 {server.loot_tier}</span>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <div className="server-status-dot" />
-                        <span style={{ fontSize: 11, color: '#10b981', fontWeight: 800 }}>
-                          {server.players_online}/{server.max_players}
-                        </span>
-                      </div>
-                    </div>
-
-                    <h3 style={{ fontSize: 17, fontWeight: 900, color: '#ffffff', margin: 0 }}>
-                      {server.name}
-                    </h3>
-
-                    <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                      {server.description}
-                    </p>
+                  <div className="pz-window-controls">
+                    <span className="pz-window-btn">_</span>
+                    <span className="pz-window-btn">□</span>
+                    <span className="pz-window-btn close">✕</span>
                   </div>
                 </div>
 
-                {/* LADO DERECHO: IP RÁPIDA + VOTOS + BOTONES */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  {/* IP Chip con botón de copiar */}
-                  <div
-                    onClick={(e) => handleCopyIP(e, server)}
-                    className="server-ip-btn"
-                    title="Clic para copiar dirección de conexión"
-                  >
-                    <span>📋</span>
-                    <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 800 }}>
-                      {fullAddress}
-                    </span>
+                {/* Cuerpo de la tarjeta */}
+                <div className="server-card-body">
+                  {/* LADO IZQUIERDO: RANGO + ICONO + INFO */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
+                    {/* Badge de Posición en Ranking */}
+                    <div className={`server-rank-badge rank-${rank <= 3 ? rank : 'normal'}`}>
+                      <span style={{ fontSize: 9, opacity: 0.8, letterSpacing: '0.05em' }}>
+                        {rank === 1 ? 'TOP' : rank === 2 ? 'VAN' : rank === 3 ? 'OUT' : 'SEC'}
+                      </span>
+                      <span style={{ fontSize: 16 }}>#{rank}</span>
+                    </div>
+
+                    {/* Icono / Banner */}
+                    <div
+                      style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 4,
+                        background: 'rgba(0, 0, 0, 0.65)',
+                        border: '1.5px solid rgba(255, 255, 255, 0.12)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <Image
+                        src={server.banner_url || '/spiffo/spiffo_character.png'}
+                        alt={server.name}
+                        width={34}
+                        height={34}
+                        style={{ objectFit: 'contain' }}
+                      />
+                    </div>
+
+                    {/* Info Principal */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        <span className="server-badge-mode">{server.mode}</span>
+                        <span className="server-badge-region">🌍 {server.region}</span>
+                        <span className="server-badge-loot">📦 {server.loot_tier}</span>
+
+                        {/* VU-Meter de Capacidad de Supervivientes */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}>
+                          <div className="pz-vu-meter" title={`Ocupación: ${server.players_online}/${server.max_players}`}>
+                            {[...Array(8)].map((_, i) => {
+                              const isActive = i < activeSegments;
+                              let segmentColor = '';
+                              if (isActive) {
+                                if (i >= 6) segmentColor = 'active-red';
+                                else if (i >= 4) segmentColor = 'active-yellow';
+                                else segmentColor = 'active-green';
+                              }
+                              return (
+                                <div
+                                  key={i}
+                                  className={`pz-vu-segment ${segmentColor}`}
+                                />
+                              );
+                            })}
+                          </div>
+                          <span style={{ fontSize: 11, color: '#f1f5f9', fontWeight: 900, fontFamily: 'monospace' }}>
+                            {server.players_online}/{server.max_players}
+                          </span>
+                        </div>
+                      </div>
+
+                      <h3 style={{ fontSize: 17, fontWeight: 900, color: '#ffffff', margin: 0, letterSpacing: '-0.01em', fontFamily: 'monospace' }}>
+                        {server.name}
+                      </h3>
+
+                      <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {server.description}
+                      </p>
+                    </div>
                   </div>
 
-                  {/* Botón de Votar */}
-                  <button
-                    onClick={(e) => handleVote(e, server.id)}
-                    className="server-vote-btn"
-                    title="Votar por este servidor"
-                  >
-                    <span>⭐</span>
-                    <span>{server.votes || 0}</span>
-                  </button>
+                  {/* LADO DERECHO: TELEMETRÍA DE AUDIO + FRECUENCIA IP + VOTOS */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    {/* Telemetría de onda de audio */}
+                    <div className="pz-audio-bar-row" style={{ color: modeClass === 'mode-hardcore' ? '#ef4444' : modeClass === 'mode-roleplay' ? '#f59e0b' : '#10b981' }}>
+                      {[8, 14, 5, 12, 10, 6, 13, 9].map((h, idx) => (
+                        <div key={idx} className="pz-audio-bar" style={{ height: h }} />
+                      ))}
+                    </div>
 
-                  {/* Ver Ficha */}
-                  <button
-                    onClick={() => setActiveModalServer(server)}
-                    className="btn-secondary"
-                    style={{ padding: '6px 12px', fontSize: 11 }}
-                  >
-                    Ficha →
-                  </button>
+                    {/* Botón Copiar Frecuencia / IP */}
+                    <div
+                      onClick={(e) => handleCopyIP(e, server)}
+                      className="server-ip-btn"
+                      title="Copiar Frecuencia de Conexión"
+                    >
+                      <span>📻 FREQ</span>
+                      <span>{fullAddress}</span>
+                    </div>
+
+                    {/* Botón de Votar */}
+                    <button
+                      onClick={(e) => handleVote(e, server.id)}
+                      className="server-vote-btn"
+                      title="Votar por este servidor"
+                    >
+                      <span>⭐</span>
+                      <span>{server.votes || 0}</span>
+                    </button>
+
+                    {/* Ver Ficha Dossier */}
+                    <button
+                      onClick={() => setActiveModalServer(server)}
+                      className="btn-tactical"
+                      style={{ padding: '6px 14px', fontSize: 11, borderRadius: 3 }}
+                    >
+                      Dossier →
+                    </button>
+                  </div>
                 </div>
               </div>
             );
