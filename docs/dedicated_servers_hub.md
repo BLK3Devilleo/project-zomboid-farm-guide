@@ -23,19 +23,24 @@ Includes 6 diverse test servers representing major game styles:
 - **Overhaul Militar: Brita & Blindados** (Heavy Modded, Brita weapons, APCs, NA)
 
 ### 3. Components
-- **`app/components/ServerList.jsx`**: Main directory view with live search, filters (Mode, Region, Loot, Sorting), dynamic ranking badges (`#1`, `#2`, `#3`), online status dots, and one-click IP copy.
-- **`app/components/ServerDetailModal.jsx`**: Detailed server inspection modal displaying server lore, player capacity, tags, server rules checklist, quick connect pill, and official Discord link.
-- **`app/components/AddServerModal.jsx`**: Server registration modal with inputs for name, IP, port, region, game mode, loot density, max player slots, description, Discord link, and custom tags.
+- **`app/components/ServerList.jsx`**: Main directory view with live search, filters (Mode, Region, Loot, Sorting), dynamic ranking badges (`#1`, `#2`, `#3`), online status dots, and one-click IP copy. Styled with the Knox CRT Emergency Terminal aesthetic: hazard stripe tabs, chamfered corner reticles, LED VU-meter bars, and audio waveform telemetry.
+- **`app/components/ServerDetailModal.jsx`**: Detailed server inspection dossier modal displaying server lore, player capacity, tags, server rules checklist, quick connect pill, official Discord link, and a Cloudflare R2 media showcase with interactive gallery thumbnails.
+- **`app/components/AddServerModal.jsx`**: Server registration modal with inputs for name, IP, port, region, game mode, loot density, max player slots, description, Discord link, custom tags, and Cloudflare R2 image / gallery URLs.
 - **`app/components/PillNav.jsx`**: Navigation bar updated with the **"🌐 Servidores"** floating capsule tab.
-- **`app/globals.css`**: Pure CSS tactical styling for server cards, modal dialogs, rank badges, and copy toasts.
+- **`app/globals.css`**: Pure CSS tactical styling for server cards, CRT monitor frames, LED VU-meters, audio telemetry rows, and Cloudflare R2 gallery previews.
 
 ## How to Test
 1. Open the application and click on the **"🌐 Servidores"** tab in the top navigation bar.
-2. Test filtering by game mode (`Roleplay`, `PvP`, `Hardcore`, `PvE`) or region (`LATAM`, `España`, `NA`).
-3. Click on the IP badge of any server to verify the clipboard copy feedback toast.
-4. Click on **"⭐ Votar"** to test live reputation increment.
-5. Click on any card or **"Ficha →"** to inspect server rules, description, and Discord button.
-6. Click on **"➕ Enlistar Mi Servidor"** to register a new community server and verify it appears dynamically in the ranking.
+2. Confirm that only the server directory is displayed (isolated from the onboarding wizard).
+3. Test filtering by game mode (`Roleplay`, `PvP`, `Hardcore`, `PvE`) or region (`LATAM`, `España`, `NA`).
+4. Click on the frequency badge (`📻 FREQ`) of any server to verify the clipboard copy feedback toast.
+5. Click on **"⭐ Votar"** to test live reputation increment.
+6. Click on any card or **"Dossier →"** to inspect server rules, description, Discord button, and the Cloudflare R2 gallery showcase with thumbnail switching.
+7. Click on **"➕ Enlistar Mi Servidor"** to register a new community server with banner/gallery URLs.
+
+## Cloudflare R2 & Image Storage Architecture
+- The modal and database support `banner_url` and `gallery_images: [...]` arrays.
+- `next.config.mjs` is configured with wildcard `remotePatterns` to allow high-performance image optimization from Cloudflare R2 public bucket URLs and CDNs.
 
 ## Supabase Schema for Production
 To bind to a live Supabase project, execute the following SQL in the Supabase SQL Editor:
@@ -54,6 +59,7 @@ CREATE TABLE servers (
   description TEXT,
   discord_url TEXT,
   banner_url TEXT,
+  gallery_images TEXT[] DEFAULT '{}',
   tags TEXT[] DEFAULT '{}',
   votes INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -70,3 +76,4 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the environment variables on Dokploy / VPS to transition from local fallback to cloud database.
+
