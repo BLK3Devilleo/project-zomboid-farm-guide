@@ -141,9 +141,11 @@ export default function SpiffoOSApp() {
   }
 
   // Determinar vista activa
-  const isViewingOnboarding = playerData.activeView === 'onboarding' || !playerData.activeRouteId;
-  const isViewingLoot = playerData.activeView === 'loot';
   const isViewingServers = playerData.activeView === 'servers';
+  const isViewingLoot = playerData.activeView === 'loot';
+  const isViewingOnboarding =
+    playerData.activeView === 'onboarding' ||
+    (!playerData.activeRouteId && !isViewingServers && !isViewingLoot);
   const activeRoute = routesDatabase.find((r) => r.id === playerData.activeRouteId) || routesDatabase[0];
 
   return (
