@@ -124,7 +124,7 @@ button {
    ========================================================================== */
 .pill-nav-header {
   position: sticky;
-  top: 12px;
+  top: 10px;
   z-index: 100;
   width: 100%;
   padding: 0 16px;
@@ -135,70 +135,129 @@ button {
 
 .pill-nav-bar {
   pointer-events: auto;
-  max-width: 960px;
+  max-width: 1180px;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 6px 10px;
+  gap: 12px;
+  padding: 6px 12px;
   border-radius: 9999px;
-  background: rgba(10, 15, 30, 0.88);
+  background: rgba(8, 12, 24, 0.92);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  flex-wrap: nowrap;
 }
 
+/* Lado Izquierdo: Brand Spiffo */
 .pill-logo-btn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 4px 10px 4px 6px;
+  gap: 8px;
+  padding: 3px 8px;
   cursor: pointer;
   border-radius: 9999px;
+  flex-shrink: 0;
   transition: opacity 0.2s;
+  user-select: none;
 }
 
 .pill-logo-btn:hover {
   opacity: 0.85;
 }
 
-.pill-items-group {
+.pill-logo-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #040814;
+  border: 1.5px solid #10b981;
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(6, 9, 19, 0.6);
-  padding: 4px;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  position: relative;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
 }
 
-.pill-tab-btn {
+.pill-logo-text-group {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.pill-logo-brand {
+  font-size: 13px;
+  font-weight: 900;
+  color: #ffffff;
+  font-family: monospace;
+  letter-spacing: -0.02em;
+}
+
+.pill-logo-badge {
+  font-size: 8px;
+  font-weight: 800;
+  color: #10b981;
+  font-family: monospace;
+  letter-spacing: 0.08em;
+}
+
+/* Centro: Tira Segmentada de Pestañas */
+.pill-nav-center-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pill-nav-center-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.pill-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(4, 7, 16, 0.75);
+  padding: 3px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.pill-tab-item {
   position: relative;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 700;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-muted);
-  transition: color 0.2s;
+  color: #94a3b8;
   cursor: pointer;
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+  user-select: none;
 }
 
-.pill-tab-btn:hover {
+.pill-tab-item:hover {
   color: #ffffff;
 }
 
-.pill-tab-btn.active {
+.pill-tab-item.active {
   color: #04120c;
-  font-weight: 800;
+  font-weight: 900;
 }
 
-.pill-tab-active-indicator {
+.pill-tab-active-glow {
   position: absolute;
   inset: 0;
   border-radius: 9999px;
@@ -207,62 +266,197 @@ button {
   z-index: 1;
 }
 
-.pill-tab-content {
+.pill-tab-icon {
   position: relative;
   z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-size: 13px;
 }
 
-.pill-routes-btn {
-  padding: 6px 12px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 700;
+.pill-tab-label {
+  position: relative;
+  z-index: 2;
+  font-family: inherit;
+}
+
+.pill-routes-trigger {
   color: #cbd5e1;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0 9999px 9999px 0;
+  padding-left: 10px;
 }
 
-.pill-routes-btn:hover {
+.pill-routes-trigger.open {
   background: rgba(255, 255, 255, 0.08);
   color: #ffffff;
 }
 
-.pill-routes-dropdown {
+/* Lado Derecho: Usuario & XP */
+.pill-nav-right-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pill-login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #10b981;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.pill-login-btn:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
+}
+
+.pill-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid;
+  padding: 3px 8px 3px 4px;
+  border-radius: 9999px;
+  cursor: pointer;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+.pill-user-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.pill-user-avatar.fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  color: #000;
+}
+
+.pill-user-meta {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1;
+}
+
+.pill-user-badge {
+  font-size: 9px;
+  font-weight: 900;
+  font-family: monospace;
+}
+
+.pill-user-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pill-xp-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px 3px 5px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  white-space: nowrap;
+}
+
+.pill-xp-level {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #10b981;
+  color: #04120c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 10px;
+  font-family: monospace;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.pill-xp-details {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  line-height: 1;
+}
+
+.pill-xp-rank {
+  font-size: 8px;
+  font-weight: 800;
+  color: #10b981;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pill-xp-points {
+  font-size: 10px;
+  font-weight: 900;
+  color: #ffffff;
+  font-family: monospace;
+}
+
+/* Menú Desplegable */
+.pill-dropdown-menu {
   position: absolute;
-  right: 0;
-  top: calc(100% + 10px);
-  width: 260px;
-  border-radius: 18px;
-  background: rgba(11, 18, 34, 0.96);
+  top: calc(100% + 8px);
+  left: 0;
+  width: 240px;
+  border-radius: 14px;
+  background: rgba(8, 12, 24, 0.98);
   backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
-  padding: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85);
+  padding: 6px;
   z-index: 200;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   max-height: 380px;
   overflow-y: auto;
+}
+
+.pill-dropdown-menu.right {
+  left: auto;
+  right: 0;
 }
 
 .pill-dropdown-item {
   width: 100%;
   text-align: left;
-  padding: 8px 12px;
-  border-radius: 12px;
-  font-size: 12px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 11px;
   font-weight: 600;
   display: flex;
   align-items: center;
   justify-content: space-between;
   color: #e2e8f0;
+  background: transparent;
+  border: none;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -275,16 +469,6 @@ button {
 .pill-dropdown-item.active {
   background: rgba(16, 185, 129, 0.18);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.35);
-}
-
-.pill-xp-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px 4px 6px;
-  border-radius: 9999px;
-  background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
@@ -1251,3 +1435,375 @@ button {
   box-shadow: 0 0 14px rgba(16, 185, 129, 0.3);
   background: #060c1d;
 }
+
+/* ==========================================================================
+   RADAR DE BOTÍN Y PUNTOS DE INTERÉS: ESTILO TÁCTICO DINÁMICO B42
+   ========================================================================== */
+.loot-hero-panel {
+  background: #090e1b;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 22px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loot-hero-badge {
+  font-size: 10px;
+  font-weight: 900;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-family: monospace;
+  letter-spacing: 0.08em;
+}
+
+.loot-filter-scroll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.loot-filter-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tarjeta Dinámica de Botín */
+.loot-card {
+  position: relative;
+  background: #090e1a;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.loot-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 5px;
+  z-index: 2;
+}
+
+.loot-card.risk-high {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.loot-card.risk-high::before {
+  background: repeating-linear-gradient(
+    45deg,
+    #dc2626,
+    #dc2626 6px,
+    #7f1d1d 6px,
+    #7f1d1d 12px
+  );
+}
+.loot-card.risk-high:hover {
+  border-color: #ef4444;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+.loot-card.risk-med {
+  border-color: rgba(245, 158, 11, 0.35);
+}
+.loot-card.risk-med::before {
+  background: repeating-linear-gradient(
+    45deg,
+    #f59e0b,
+    #f59e0b 6px,
+    #78350f 6px,
+    #78350f 12px
+  );
+}
+.loot-card.risk-med:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.loot-card.risk-low {
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.loot-card.risk-low::before {
+  background: repeating-linear-gradient(
+    45deg,
+    #10b981,
+    #10b981 6px,
+    #064e3b 6px,
+    #064e3b 12px
+  );
+}
+.loot-card.risk-low:hover {
+  border-color: #10b981;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+/* Cabecera de la Ficha */
+.loot-card-header {
+  padding: 16px 18px 12px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.loot-card-icon-box {
+  width: 44px;
+  height: 44px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.loot-card-title {
+  font-size: 16px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 0;
+  font-family: monospace;
+  letter-spacing: -0.01em;
+}
+
+.loot-card-category {
+  font-size: 11px;
+  color: #38bdf8;
+  font-family: monospace;
+  font-weight: 700;
+}
+
+.loot-risk-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 900;
+  font-family: monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.loot-risk-pill.high {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid #ef4444;
+  color: #fca5a5;
+}
+
+.loot-risk-pill.med {
+  background: rgba(245, 158, 11, 0.18);
+  border: 1px solid #f59e0b;
+  color: #fde68a;
+}
+
+.loot-risk-pill.low {
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid #10b981;
+  color: #a7f3d0;
+}
+
+.loot-risk-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* Cuándo Ir */
+.loot-timing-box {
+  margin: 12px 18px 0 22px;
+  padding: 8px 12px;
+  background: rgba(4, 8, 18, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Selector de Pestañas Internas */
+.loot-tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 18px 0 22px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.loot-tab-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.loot-tab-btn {
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: monospace;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.loot-tab-btn:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.loot-tab-btn.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border-color: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+/* Contenedor de Contenido */
+.loot-tab-content {
+  padding: 12px 18px 16px 22px;
+  min-height: 140px;
+}
+
+/* Chips de Inventario / Botín */
+.loot-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.loot-item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(4, 9, 20, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e2e8f0;
+  transition: all 0.18s ease;
+}
+
+.loot-item-chip:hover {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.loot-chip-bullet {
+  color: #38bdf8;
+  font-size: 9px;
+}
+
+/* Waypoints de Ubicación */
+.loot-waypoint-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  border-radius: 3px;
+  padding: 7px 10px;
+}
+
+/* Checklist de Equipamiento */
+.loot-gear-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(167, 139, 250, 0.2);
+  border-radius: 3px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.loot-gear-item:hover {
+  background: rgba(167, 139, 250, 0.12);
+  border-color: #a78bfa;
+}
+
+.loot-gear-item.checked {
+  opacity: 0.6;
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.loot-gear-checkbox {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  border: 1.5px solid rgba(167, 139, 250, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 900;
+  color: #a78bfa;
+}
+
+.loot-gear-checkbox.checked {
+  background: #a78bfa;
+  color: #040814;
+}
+
+/* Alertas de Peligro */
+.loot-advisory-box {
+  background: rgba(120, 53, 15, 0.25);
+  border: 1.5px solid rgba(245, 158, 11, 0.4);
+  border-radius: 3px;
+  padding: 12px 14px;
+}
+
+/* Pie de Tarjeta */
+.loot-card-footer {
+  margin-top: auto;
+  padding: 10px 18px 12px 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.loot-route-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: monospace;
+  color: #34d399;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.loot-route-link:hover {
+  color: #10b981;
+  transform: translateX(2px);
+}
+

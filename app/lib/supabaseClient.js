@@ -1,6 +1,6 @@
 import { initialServers } from '../data/serversDatabase';
 
-const STORAGE_KEY = 'spiffo_servers_directory_v1';
+const STORAGE_KEY = 'spiffo_servers_directory_v2';
 
 // Cargar servidores (API /api/servers con fallback a LocalStorage)
 export async function fetchServersList() {
@@ -8,14 +8,17 @@ export async function fetchServersList() {
     const res = await fetch('/api/servers', { cache: 'no-store' });
     if (res.ok) {
       const json = await res.json();
-      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
-        // Guardar copia local de caché
+      if (json.success && Array.isArray(json.data)) {
+        // Filtrar cualquier seed de prueba residual
+        const cleaned = json.data.filter(
+          (s) => !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)
+        );
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(json.data));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
           } catch (e) {}
         }
-        return json.data;
+        return cleaned;
       }
     }
   } catch (err) {
@@ -27,7 +30,13 @@ export async function fetchServersList() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        const filtered = Array.isArray(parsed)
+          ? parsed.filter(
+              (s) => !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)
+            )
+          : [];
+        return filtered;
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initialServers));
     } catch (e) {}
