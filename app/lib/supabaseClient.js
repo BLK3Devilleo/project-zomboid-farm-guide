@@ -1,34 +1,28 @@
-import { createClient } from '@supabase/supabase-js';
 import { initialServers } from '../data/serversDatabase';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-export const supabase =
-  supabaseUrl && supabaseAnonKey
-    ? createClient(supabaseUrl, supabaseAnonKey)
-    : null;
 
 const STORAGE_KEY = 'spiffo_servers_directory_v1';
 
-// Cargar servidores (Supabase o Fallback Local)
+// Cargar servidores (API /api/servers con fallback a LocalStorage)
 export async function fetchServersList() {
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('servers')
-        .select('*')
-        .order('votes', { ascending: false });
-
-      if (!error && data && data.length > 0) {
-        return data;
+  try {
+    const res = await fetch('/api/servers', { cache: 'no-store' });
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+        // Guardar copia local de caché
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(json.data));
+          } catch (e) {}
+        }
+        return json.data;
       }
-    } catch (e) {
-      console.warn('Fallo al conectar con Supabase, usando respaldo local:', e);
     }
+  } catch (err) {
+    console.warn('API /api/servers unreachable, usando caché local:', err);
   }
 
-  // Fallback a LocalStorage o Seed inicial
+  // Fallback a LocalStorage o datos iniciales
   if (typeof window !== 'undefined') {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -48,29 +42,39 @@ export async function createServerEntry(serverData) {
     id: `srv-${Date.now()}`,
     votes: 0,
     players_online: Math.floor(Math.random() * 8) + 2,
-    max_players: parseInt(serverData.max_players) || 32,
+    max_players: parseInt(serverData.max_players, 10) || 32,
     is_online: true,
-    created_at: new Date().toISOString(),
     ...serverData,
   };
 
-  if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('servers')
-        .insert([newServer])
-        .select()
-        .single();
+  try {
+    const res = await fetch('/api/servers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newServer),
+    });
 
-      if (!error && data) {
-        return data;
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data) {
+        // Actualizar cache local
+        if (typeof window !== 'undefined') {
+          try {
+            const current = await fetchServersList();
+            const exists = current.some((s) => s.id === json.data.id);
+            if (!exists) {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify([json.data, ...current]));
+            }
+          } catch (e) {}
+        }
+        return json.data;
       }
-    } catch (e) {
-      console.warn('Error guardando en Supabase, guardando en local:', e);
     }
+  } catch (err) {
+    console.warn('Fallo al registrar servidor en API, guardando en local:', err);
   }
 
-  // Guardar en LocalStorage
+  // Fallback Local
   if (typeof window !== 'undefined') {
     try {
       const current = await fetchServersList();
@@ -84,13 +88,28 @@ export async function createServerEntry(serverData) {
 
 // Votar servidor (+1 Reputación)
 export async function upvoteServerEntry(serverId) {
-  if (supabase) {
-    try {
-      const { data, error } = await supabase.rpc('increment_server_vote', {
-        server_id: serverId,
-      });
-      if (!error) return true;
-    } catch (e) {}
+  try {
+    const res = await fetch('/api/servers', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: serverId }),
+    });
+
+    if (res.ok) {
+      // Actualizar local
+      if (typeof window !== 'undefined') {
+        try {
+          const current = await fetchServersList();
+          const updated = current.map((s) =>
+            s.id === serverId ? { ...s, votes: (s.votes || 0) + 1 } : s
+          );
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } catch (e) {}
+      }
+      return true;
+    }
+  } catch (err) {
+    console.warn('Fallo al registrar voto en API:', err);
   }
 
   // Fallback Local
