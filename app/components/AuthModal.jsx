@@ -87,14 +87,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                overflow: 'hidden',
               }}
             >
               <Image
-                src="/spiffo/spiffo_character.png"
-                alt="Spiffo"
-                width={40}
-                height={40}
-                style={{ objectFit: 'contain' }}
+                src="/spiffo/ferret_mascot.jpg"
+                alt="Huron Superviviente"
+                width={54}
+                height={54}
+                style={{ objectFit: 'cover' }}
               />
             </div>
           </div>

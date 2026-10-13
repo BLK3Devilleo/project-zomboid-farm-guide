@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { ROLE_LABELS } from '../lib/authClient';
 
 export const PZ_AVATARS = [
-  { id: 'spiffo_combat.png', label: 'Spiffo Combatiente' },
+  { id: 'ferret_mascot.jpg', label: 'Hurón Veterano' },
+  { id: 'spiffo_combat.png', label: 'Combatiente Táctico' },
   { id: 'spiffo_crafting.png', label: 'Ingeniero / Carpintero' },
   { id: 'spiffo_farming.png', label: 'Granjero de Knox' },
   { id: 'spiffo_fishing.png', label: 'Pescador Solitario' },

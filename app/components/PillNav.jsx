@@ -53,17 +53,17 @@ export default function PillNav({
           className="pill-logo-btn"
           title="Reiniciar Asistente de Supervivencia"
         >
-          <div className="pill-logo-avatar">
+          <div className="pill-logo-avatar" style={{ overflow: 'hidden', borderRadius: '50%' }}>
             <Image
-              src="/spiffo/spiffo_character.png"
-              alt="Spiffo"
-              width={24}
-              height={24}
-              style={{ objectFit: 'contain' }}
+              src="/spiffo/ferret_mascot.jpg"
+              alt="Huron Superviviente"
+              width={26}
+              height={26}
+              style={{ objectFit: 'cover' }}
             />
           </div>
           <div className="pill-logo-text-group">
-            <span className="pill-logo-brand">SpiffoOS</span>
+            <span className="pill-logo-brand">KnoxOS</span>
             <span className="pill-logo-badge">B42 HUD</span>
           </div>
         </div>
