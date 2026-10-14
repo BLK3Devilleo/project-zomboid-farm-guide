@@ -38,7 +38,9 @@ export default function RouteView({
 
   // Mapeo temático de imágenes para la tarjeta 3D
   const spiffoCardImage =
-    route.id.includes('vehicle') || route.id.includes('nomad')
+    route.id.includes('hotwire')
+      ? '/spiffo/ferret_mascot.jpg'
+      : route.id.includes('vehicle') || route.id.includes('nomad')
       ? '/spiffo/spiffo_vehicle.png'
       : route.id.includes('farm')
       ? '/spiffo/spiffo_farming.png'
@@ -46,12 +48,12 @@ export default function RouteView({
       ? '/spiffo/spiffo_combat.png'
       : route.id.includes('craft') || route.id.includes('carpent')
       ? '/spiffo/spiffo_crafting.png'
-      : '/spiffo/spiffo_character.png';
+      : '/spiffo/ferret_mascot.jpg';
 
   return (
     <div className="hud-container">
       {/* CABECERA HERO CON TARJETA HOLOCARD 3D */}
-      <div className="hud-panel">
+      <div className="hud-panel corner-reticle">
         <div className="hud-hero">
           {/* Lado izquierdo: Metadatos y título de la ruta */}
           <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -76,7 +78,7 @@ export default function RouteView({
                 ⏱️ {route.estimatedTime}
               </span>
               <span style={{ fontSize: 12, color: '#38bdf8', fontWeight: 600 }}>
-                • Nivel Activo {currentLevel.levelNumber} de {route.levels.length}
+                • Fase Activa {currentLevel.levelNumber} de {route.levels.length}
               </span>
             </div>
 
@@ -103,7 +105,7 @@ export default function RouteView({
             {/* Barra de progreso global del nivel */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: '#10b981' }}>
-                Progreso:
+                Progreso Fase:
               </span>
               <div
                 style={{
@@ -145,38 +147,129 @@ export default function RouteView({
               tiltMax={16}
             />
             <span style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.1em', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-              SPIFFO 3D CARD
+              KNOX 3D BADGE
             </span>
+          </div>
+        </div>
+
+        {/* BARRA DE TELEMETRÍA TÁCTICA KNOX (STITCH HUD) */}
+        <div className="knox-telemetry-grid">
+          <div className="knox-telemetry-cell">
+            <span className="knox-telemetry-label">⏱️ Tiempo Vivo</span>
+            <span className="knox-telemetry-value">T+18 Días</span>
+            <span className="knox-telemetry-sub" style={{ color: '#10b981' }}>SECTOR KNOX B42</span>
+          </div>
+          <div className="knox-telemetry-cell">
+            <span className="knox-telemetry-label">💀 Hostiles</span>
+            <span className="knox-telemetry-value">148 Bajas</span>
+            <span className="knox-telemetry-sub" style={{ color: '#ef4444' }}>PERÍMETRO EN ALERTA</span>
+          </div>
+          <div className="knox-telemetry-cell">
+            <span className="knox-telemetry-label">🩸 Infección</span>
+            <span className="knox-telemetry-value" style={{ color: '#10b981' }}>0.00%</span>
+            <span className="knox-telemetry-sub" style={{ color: '#10b981' }}>INMUNIDAD ASIGNADA</span>
+          </div>
+          <div className="knox-telemetry-cell">
+            <span className="knox-telemetry-label">🧠 Cordura</span>
+            <span className="knox-telemetry-value" style={{ color: '#f59e0b' }}>92% Estable</span>
+            <span className="knox-telemetry-sub" style={{ color: '#38bdf8' }}>RADIO 91.5 MHz</span>
+          </div>
+          <div className="knox-telemetry-cell">
+            <span className="knox-telemetry-label">⚙️ Mecánica</span>
+            <span className="knox-telemetry-value" style={{ color: '#38bdf8' }}>Fase {currentLevel.levelNumber}</span>
+            <span className="knox-telemetry-sub" style={{ color: '#a78bfa' }}>{currentLevel.title.split(':')[0]}</span>
           </div>
         </div>
       </div>
 
-      {/* SELECTOR DE NIVELES (TABS CON SEPARACIÓN VISUAL) */}
-      <div className="level-tabs-bar">
-        {route.levels.map((lvl, idx) => {
-          const isSelected = selectedLevelIdx === idx;
-          const completedInThis = lvl.objectives.filter((o) =>
-            routeProgress.completedObjectives.includes(o.id)
-          ).length;
-          const isDone = completedInThis === lvl.objectives.length;
+      {/* MAPA DE NODOS DE FASE (ESTILO TÁCTICO VECTORIAL STITCH) */}
+      <div className="hud-panel" style={{ padding: '14px 18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 13, color: '#10b981' }}>◆</span>
+            <span style={{ fontSize: 11, fontWeight: 900, fontFamily: 'monospace', textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.08em' }}>
+              SECTOR OPS // SECUENCIA DE APRENDIZAJE TÁCTICO
+            </span>
+          </div>
+          <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: 4, border: '1px solid rgba(56, 189, 248, 0.25)' }}>
+            PASO {selectedLevelIdx + 1} DE {route.levels.length}
+          </span>
+        </div>
 
-          return (
-            <button
-              key={lvl.id}
-              onClick={() => setSelectedLevelIdx(idx)}
-              className={`level-tab-btn ${isSelected ? 'active' : isDone ? 'done' : ''}`}
-            >
-              <span>Nivel {lvl.levelNumber}</span>
-              {isDone ? (
-                <span style={{ color: isSelected ? '#04120c' : '#34d399', fontWeight: 900 }}>✓</span>
-              ) : (
-                <span style={{ fontSize: 10, opacity: 0.7 }}>
-                  ({completedInThis}/{lvl.objectives.length})
-                </span>
-              )}
-            </button>
-          );
-        })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflowX: 'auto', paddingBottom: 6 }}>
+          {route.levels.map((lvl, idx) => {
+            const isSelected = selectedLevelIdx === idx;
+            const completedInThis = lvl.objectives.filter((o) =>
+              routeProgress.completedObjectives.includes(o.id)
+            ).length;
+            const isDone = completedInThis === lvl.objectives.length;
+
+            return (
+              <React.Fragment key={lvl.id}>
+                {idx > 0 && (
+                  <div
+                    style={{
+                      height: 2,
+                      width: 24,
+                      minWidth: 24,
+                      background: isDone || isSelected ? 'linear-gradient(90deg, #10b981, #38bdf8)' : 'rgba(255, 255, 255, 0.12)',
+                    }}
+                  />
+                )}
+                <button
+                  onClick={() => setSelectedLevelIdx(idx)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 14px',
+                    borderRadius: 6,
+                    background: isSelected
+                      ? 'rgba(16, 185, 129, 0.22)'
+                      : isDone
+                      ? 'rgba(16, 185, 129, 0.08)'
+                      : 'rgba(15, 23, 42, 0.6)',
+                    border: isSelected
+                      ? '1.5px solid #10b981'
+                      : isDone
+                      ? '1px solid rgba(16, 185, 129, 0.45)'
+                      : '1px solid rgba(255, 255, 255, 0.1)',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    boxShadow: isSelected ? '0 0 14px rgba(16, 185, 129, 0.35)' : 'none',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: isDone ? '#10b981' : isSelected ? '#38bdf8' : 'rgba(255, 255, 255, 0.1)',
+                      color: isDone || isSelected ? '#04120c' : '#94a3b8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 10,
+                      fontWeight: 900,
+                      fontFamily: 'monospace',
+                    }}
+                  >
+                    {isDone ? '✓' : lvl.levelNumber}
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: isSelected ? '#ffffff' : '#cbd5e1' }}>
+                      {lvl.title.split(':')[0]}
+                    </span>
+                    <span style={{ fontSize: 10, fontFamily: 'monospace', color: isDone ? '#34d399' : isSelected ? '#38bdf8' : '#94a3b8' }}>
+                      {isDone ? '[COMPLETADA]' : isSelected ? '[EN CURSO]' : `(${completedInThis}/${lvl.objectives.length})`}
+                    </span>
+                  </div>
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </div>
       </div>
 
       {/* CONTENEDOR PRINCIPAL DEL BUCLE GAMIFICADO */}
@@ -362,11 +455,36 @@ export default function RouteView({
           />
         </div>
 
+        {/* DIRECTIVA TÁCTICA BUILD 42 */}
+        {currentLevel.build42Note && (
+          <div
+            style={{
+              padding: '12px 16px',
+              borderRadius: 6,
+              background: 'rgba(245, 158, 11, 0.12)',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12,
+            }}
+          >
+            <span style={{ fontSize: 20 }}>⚠️</span>
+            <div style={{ flex: 1 }}>
+              <strong style={{ fontSize: 11, fontFamily: 'monospace', textTransform: 'uppercase', color: '#f59e0b', letterSpacing: '0.06em', display: 'block', marginBottom: 2 }}>
+                DIRECTIVA TÁCTICA BUILD 42
+              </strong>
+              <p style={{ fontSize: 12, color: '#fde68a', margin: 0, lineHeight: 1.4 }}>
+                {currentLevel.build42Note}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* CELEBRACIÓN DE MAESTRÍA AL 100% */}
         {levelPercent === 100 ? (
           <div className="mastery-box">
             <HoloCard
-              image="/spiffo/spiffo_character.png"
+              image="/spiffo/ferret_mascot.jpg"
               alt="Maestría Desbloqueada"
               preset="gold"
               width={90}
@@ -376,7 +494,7 @@ export default function RouteView({
             />
             <div style={{ flex: 1 }}>
               <span style={{ fontSize: 12, fontWeight: 900, textTransform: 'uppercase', color: '#34d399', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>
-                🏆 ¡Nivel {currentLevel.levelNumber} Completado con Éxito!
+                🏆 ¡Fase {currentLevel.levelNumber} Completada con Éxito!
               </span>
               <p style={{ fontSize: 12, color: '#d1fae5', margin: 0, lineHeight: 1.4 }}>
                 {currentLevel.unlockReward}

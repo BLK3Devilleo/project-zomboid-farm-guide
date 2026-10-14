@@ -272,5 +272,97 @@ export const routesDatabase = [
         build42Note: 'El abono de compost acelera la maduración de cosechas un 25% y enriquece el sustrato desgastado.'
       }
     ]
+  },
+  {
+    id: 'hotwiring-vehicles',
+    slug: 'puentear-vehiculos-hotwire',
+    title: 'Mecánica: Puentear Coches (Hotwire Master)',
+    icon: '⚡',
+    accentColor: '#f59e0b',
+    description: 'Aprende a arrancar y robar cualquier coche de Kentucky sin necesidad de llaves ni la profesión de Ladrón.',
+    category: 'vehicles',
+    difficulty: 'Principiante / Intermedio',
+    estimatedTime: 'Días 1 a 3 in-game',
+    status: 'available',
+    levels: [
+      {
+        id: 'hotwire-l1',
+        levelNumber: 1,
+        title: 'Fase 1: Electricidad Relámpago (Nivel 1 Requerido)',
+        requirement: 'Destornillador y lectura de Electricidad Vol. 1',
+        requiredGear: [
+          { name: 'Destornillador', img: '/items/Screwdriver.png', desc: 'Herramienta obligatoria para abrir cajas de fusibles y desmontar circuitos.' },
+          { name: 'Relojes o Radios', img: '/items/BlowTorch.png', desc: 'Aparatos electrónicos comunes en casas y zombis para desguazar.' },
+          { name: 'Libro Electricidad 1', img: '/items/sandbag.png', desc: 'Otorga multiplicador de experiencia x3 permanente en nivel 0-2.' }
+        ],
+        lootTarget: {
+          building: 'Dormitorios, salones y oficinas residenciales',
+          priority: 'Mesitas de noche (relojes digitales), estanterías y televisores',
+          risk: 'Bajo',
+          tip: 'Lee siempre Electricidad Vol. 1 antes de desarmar tu primer aparato para no desperdiciar experiencia.'
+        },
+        objectives: [
+          { id: 'hw1-book', label: 'Localiza y lee por completo "Electricidad Vol. 1 (Principiante)" para activar el bonus x3 de XP', xp: 30 },
+          { id: 'hw1-screwdriver', label: 'Equipa un destornillador en tu inventario (lo necesitarás en mano o mochila)', xp: 20 },
+          { id: 'hw1-dismantle-small', label: 'Desmonta con clic derecho entre 8 y 12 radios, walkie-talkies o relojes digitales', xp: 35 },
+          { id: 'hw1-dismantle-tv', label: 'Desmonta al menos 1 televisor o lámpara grande para alcanzar Electricidad Nivel 1', xp: 25 }
+        ],
+        unlockReward: 'Electricidad Nivel 1 alcanzada: Desbloqueas la habilidad técnica para cruzar cables de encendido.',
+        recommendedLootCategory: 'tools',
+        build42Note: 'Desmontar aparatos no gasta la durabilidad del destornillador; hazlo en cualquier casa que visites.'
+      },
+      {
+        id: 'hotwire-l2',
+        levelNumber: 2,
+        title: 'Fase 2: Mecánica Práctica (Nivel 2 Requerido)',
+        requirement: 'Destornillador, Llave inglesa y lectura de Mecánica Vol. 1',
+        requiredGear: [
+          { name: 'Llave inglesa', img: '/items/pipe_wrench.png', desc: 'Para aflojar bornes de batería y soportes de motor.' },
+          { name: 'Destornillador', img: '/items/Screwdriver.png', desc: 'Para retirar tornillos de faros sin riesgo de rotura.' },
+          { name: 'Libro Mecánica 1', img: '/items/sandbag.png', desc: 'Multiplica la experiencia obtenida en cada intervención mecánica.' }
+        ],
+        lootTarget: {
+          building: 'Aparcamientos, calzadas residenciales y talleres',
+          priority: 'Coches abandonados o coches en buen estado para entrenar',
+          risk: 'Bajo - Medio',
+          tip: 'Desinstalar e instalar bombillas de faros tiene 0% de probabilidad de fallar o romper la pieza.'
+        },
+        objectives: [
+          { id: 'hw2-book', label: 'Lee "Mecánica Vol. 1" antes de tocar cualquier vehículo para acelerar tu aprendizaje', xp: 30 },
+          { id: 'hw2-headlights', label: 'Abre el capó [E], desinstala e instala los faros delanteros y traseros con destornillador', xp: 35 },
+          { id: 'hw2-battery-radio', label: 'Desinstala e instala la batería y la radio del vehículo (1 vez por vehículo cada 24h)', xp: 35 },
+          { id: 'hw2-reach-level2', label: 'Repite el procedimiento en 2 o 3 coches cercanos hasta subir Mecánica a Nivel 2', xp: 40 }
+        ],
+        unlockReward: 'Mecánica Nivel 2 alcanzada: Cumples el 100% de los requisitos técnicos para puentear cualquier vehículo.',
+        recommendedLootCategory: 'vehicles',
+        build42Note: 'El juego solo otorga XP de desinstalación de una misma pieza una vez cada 24 horas in-game por coche.'
+      },
+      {
+        id: 'hotwire-l3',
+        levelNumber: 3,
+        title: 'Fase 3: El Puenteado y Huida del Motor',
+        requirement: 'Electricidad Nv. 1, Mecánica Nv. 2 y Destornillador en inventario',
+        requiredGear: [
+          { name: 'Destornillador', img: '/items/Screwdriver.png', desc: 'Imprescindible para pelar y empalmar los cables del contacto.' },
+          { name: 'Lata de Gasolina', img: '/items/watering_can.png', desc: 'Para repostar el depósito si el coche estaba vacío.' }
+        ],
+        lootTarget: {
+          building: 'Aparcamientos con vehículos en buen estado mecánico',
+          priority: 'Coches con depósito de combustible y batería sobre el 20%',
+          risk: 'Medio',
+          tip: 'El puenteo genera ruido metálico leve y puede fallar varias veces antes de encender; ten la zona libre.'
+        },
+        objectives: [
+          { id: 'hw3-clear-area', label: 'Asegura un perímetro de 15 metros alrededor del coche antes de subirte', xp: 25 },
+          { id: 'hw3-enter-driver', label: 'Entra al asiento del conductor [Presiona tecla Z para cambiar de asiento si una puerta está trabada]', xp: 20 },
+          { id: 'hw3-radial-menu', label: 'Mantén pulsada la tecla [V] dentro del habitáculo para abrir el menú radial del vehículo', xp: 20 },
+          { id: 'hw3-hotwire-action', label: 'Haz clic en "Puentear motor" (icono de dos cables) y repite hasta ver los cables cruzados en el tablero', xp: 50 },
+          { id: 'hw3-start-engine', label: 'Verifica que el icono de llave muestre los cables empalmados y arranca con [W]', xp: 30 }
+        ],
+        unlockReward: 'Hotwire Master completado: Eres completamente independiente de las llaves en todo el mapa de Kentucky.',
+        recommendedLootCategory: 'vehicles',
+        build42Note: 'Puentear un coche deja los cables unidos para siempre; no necesitarás volver a puentear ese vehículo específico.'
+      }
+    ]
   }
 ];

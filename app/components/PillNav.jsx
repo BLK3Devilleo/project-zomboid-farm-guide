@@ -33,7 +33,7 @@ export default function PillNav({
       : 'Novato';
 
   const navItems = [
-    { id: 'route', label: 'Ruta Activa', icon: '🎯' },
+    { id: 'route', label: 'Mecánica Activa', icon: '⚡' },
     { id: 'servers', label: 'Servidores', icon: '🌐' },
     { id: 'loot', label: 'Radar de Loot', icon: '📦' },
     { id: 'radio', label: 'Radio 91.5', icon: '📻' },
@@ -92,22 +92,22 @@ export default function PillNav({
               );
             })}
 
-            {/* SELECTOR DESPLEGABLE DE RUTAS */}
+            {/* SELECTOR DESPLEGABLE DE MECÁNICAS */}
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setRoutesMenuOpen(!routesMenuOpen)}
                 className={`pill-tab-item pill-routes-trigger ${routesMenuOpen ? 'open' : ''}`}
-                title="Cambiar Ruta de Supervivencia"
+                title="Cambiar Mecánica de Supervivencia"
               >
-                <span>🗺️</span>
-                <span className="pill-tab-label">Rutas</span>
+                <span>⚙️</span>
+                <span className="pill-tab-label">Mecánicas</span>
                 <span style={{ fontSize: 9, opacity: 0.7 }}>{routesMenuOpen ? '▲' : '▼'}</span>
               </button>
 
               {routesMenuOpen && (
                 <div className="pill-dropdown-menu">
                   <div style={{ padding: '8px 12px', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'monospace' }}>
-                    Rutas de Aprendizaje B42
+                    Mecánicas de Supervivencia B42
                   </div>
                   {routesDatabase.map((r) => {
                     const isCurrent = activeRouteId === r.id;

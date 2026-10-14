@@ -43,7 +43,7 @@ export default function OnboardingWizard({ onComplete }) {
                 alignSelf: 'flex-start',
               }}
             >
-              SPIFFO-OS ASESOR TÁCTICO
+              KNOX-OS // ASESOR DE MECÁNICAS B42
             </span>
             <h1
               style={{
@@ -63,13 +63,13 @@ export default function OnboardingWizard({ onComplete }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <HoloCard
-              image="/spiffo/spiffo_character.png"
-              alt="Spiffo Guía"
+              image="/spiffo/ferret_mascot.jpg"
+              alt="Hurón Táctico KnoxOS"
               preset="bursts"
-              width={110}
+              width={115}
               radius={14}
-              intensity={0.9}
-              edgeSparkle={0.8}
+              intensity={0.95}
+              edgeSparkle={0.85}
               tiltMax={14}
             />
             <span style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.1em', fontFamily: 'monospace', textTransform: 'uppercase' }}>

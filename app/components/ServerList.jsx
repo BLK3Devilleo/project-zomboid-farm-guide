@@ -105,53 +105,62 @@ export default function ServerList({ currentUser = null, onOpenLoginModal = () =
         </div>
       )}
 
-      {/* CABECERA HERO DEL HUB */}
-      <div className="hud-panel">
+      {/* CABECERA: CONSOLA DE MANDO Y EMISIONES */}
+      <div className="pz-mission-panel">
+        <div className="pz-mission-bar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#10b981', fontWeight: 900 }}>●</span>
+            <span>CONSOLA DE MANDO // SECTOR KNOX COUNTY B42</span>
+          </div>
+          <span>CANAL RECEPTOR 16261</span>
+        </div>
+
         <div className="hud-hero">
-          <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 280, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <span
                 style={{
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: 900,
                   textTransform: 'uppercase',
                   color: '#10b981',
                   background: 'rgba(16, 185, 129, 0.15)',
-                  border: '1px solid rgba(16, 185, 129, 0.35)',
-                  padding: '2px 8px',
-                  borderRadius: 6,
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  padding: '3px 10px',
+                  borderRadius: 3,
                   fontFamily: 'monospace',
                   letterSpacing: '0.06em',
                 }}
               >
                 HUB DEDICADO B42
               </span>
-              <span style={{ fontSize: 12, color: '#38bdf8', fontWeight: 700 }}>
+              <span style={{ fontSize: 13, color: '#38bdf8', fontWeight: 800, fontFamily: 'monospace' }}>
                 🟢 {servers.length} Servidores Activos
               </span>
-              <span style={{ fontSize: 12, color: '#94a3b8' }}>
+              <span style={{ fontSize: 13, color: '#94a3b8', fontFamily: 'monospace' }}>
                 • 👥 {totalPlayers} Supervivientes Jugando
               </span>
             </div>
 
             <h1
               style={{
-                fontSize: 28,
+                fontSize: 32,
                 fontWeight: 900,
                 color: '#ffffff',
                 margin: 0,
                 letterSpacing: '-0.02em',
+                fontFamily: 'monospace',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
               }}
             >
               <span>🌐</span>
-              <span>Ranking de Servidores Dedicados</span>
+              <span>Directorio de Servidores Dedicados</span>
             </h1>
 
-            <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.5, margin: 0, maxWidth: 580 }}>
-              Descubre y conéctate a las mejores comunidades de Project Zomboid en español y global. Filtra por estilo de juego, copia la IP con un clic y vota por tu server favorito.
+            <p style={{ fontSize: 14, color: '#cbd5e1', lineHeight: 1.6, margin: 0, maxWidth: 640 }}>
+              Directorio oficial de comunidades y refugios de Project Zomboid. Copia la IP en un clic o emite tu propia frecuencia.
             </p>
           </div>
 
@@ -165,52 +174,58 @@ export default function ServerList({ currentUser = null, onOpenLoginModal = () =
                 }
                 setShowAddModal(true);
               }}
-              className="btn-tactical"
-              style={{ padding: '12px 22px', fontSize: 13 }}
+              className="pz-btn-primary"
             >
-              <span>➕ Enlistar Mi Servidor</span>
+              <span>📡 Transmitir Mi Servidor</span>
             </button>
-            <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>
-              {currentUser ? `Autenticado como ${currentUser.name}` : 'Requiere cuenta de Google verificada'}
+            <span style={{ fontSize: 12, color: '#64748b', fontFamily: 'monospace' }}>
+              {currentUser ? `Operador: ${currentUser.name}` : 'Requiere cuenta de Google verificada'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* BARRA DE BÚSQUEDA Y FILTROS TÁCTICOS */}
-      <div className="hud-panel" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {/* Input de Búsqueda */}
+      {/* RACK DE SINTONIZACIÓN Y FILTROS TÁCTICOS */}
+      <div className="pz-mission-panel" style={{ padding: '20px 26px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="pz-mission-bar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#38bdf8', fontWeight: 900 }}>⚡</span>
+            <span>ESCÁNER DE RADIOFRECUENCIAS // SINTONIZADOR</span>
+          </div>
+          <span>B42.18 SCANNER</span>
+        </div>
+
+        {/* Input de Búsqueda Grande y Legible */}
         <div style={{ position: 'relative' }}>
           <input
             type="text"
-            placeholder="🔍 Buscar por nombre de servidor, IP, mod o tag (ej: Sprinters, RP, Brita)..."
+            placeholder="🔍 Escanear por nombre de servidor, IP, mod o tag (Sprinters, RP, Brita)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-input"
-            style={{ paddingLeft: 16, fontSize: 13 }}
+            className="pz-scanner-input"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 12, cursor: 'pointer' }}
+              style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 14, cursor: 'pointer' }}
             >
               ✕
             </button>
           )}
         </div>
 
-        {/* Chips de Filtros */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        {/* Switches de Filtros */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
           {/* Modos */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginRight: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', fontFamily: 'monospace' }}>
               Modo:
             </span>
             {['ALL', 'Roleplay', 'PvP', 'PvE', 'Hardcore'].map((m) => (
               <button
                 key={m}
                 onClick={() => setSelectedMode(m)}
-                className={`filter-chip ${selectedMode === m ? 'active' : ''}`}
+                className={`pz-switch-tab ${selectedMode === m ? 'active' : ''}`}
               >
                 {m === 'ALL' ? 'Todos' : m}
               </button>
@@ -218,15 +233,15 @@ export default function ServerList({ currentUser = null, onOpenLoginModal = () =
           </div>
 
           {/* Región */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginRight: 4 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', fontFamily: 'monospace' }}>
               Región:
             </span>
             {['ALL', 'LATAM', 'España', 'NA'].map((r) => (
               <button
                 key={r}
                 onClick={() => setSelectedRegion(r)}
-                className={`filter-chip ${selectedRegion === r ? 'active' : ''}`}
+                className={`pz-switch-tab ${selectedRegion === r ? 'active' : ''}`}
               >
                 {r === 'ALL' ? 'Todas' : r}
               </button>
@@ -234,15 +249,15 @@ export default function ServerList({ currentUser = null, onOpenLoginModal = () =
           </div>
 
           {/* Orden */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', fontFamily: 'monospace' }}>
               Ordenar:
             </span>
             <select
               value={selectedSort}
               onChange={(e) => setSelectedSort(e.target.value)}
               className="form-input"
-              style={{ padding: '4px 10px', fontSize: 11, width: 'auto' }}
+              style={{ padding: '8px 14px', fontSize: 13, width: 'auto', minHeight: 38 }}
             >
               <option value="votes">⭐ Más Votados</option>
               <option value="players">👥 Más Jugadores</option>
@@ -251,32 +266,51 @@ export default function ServerList({ currentUser = null, onOpenLoginModal = () =
         </div>
       </div>
 
-      {/* LISTADO DE TARJETAS DE SERVIDORES */}
+      {/* LISTADO DE TARJETAS O ESTADO VACÍO */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#10b981', fontFamily: 'monospace' }}>
-          CARGANDO DIRECTORIO DE SERVIDORES...
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#10b981', fontFamily: 'monospace', fontSize: 15, fontWeight: 800 }}>
+          📡 ESCANEANDO SEÑALES EN EL CONDADO DE KNOX...
         </div>
       ) : filteredServers.length === 0 ? (
-        <div className="hud-panel" style={{ textAlign: 'center', padding: '48px 20px' }}>
-          <span style={{ fontSize: 36, display: 'block', marginBottom: 12 }}>📡</span>
-          <h3 style={{ fontSize: 18, fontWeight: 900, color: '#ffffff', margin: '0 0 6px' }}>
-            No se encontraron servidores con estos filtros
-          </h3>
-          <p style={{ fontSize: 13, color: '#94a3b8', margin: 0 }}>
-            Prueba a restablecer los filtros de búsqueda o sé el primero en enlistar tu servidor.
+        <div className="pz-mission-panel" style={{ textAlign: 'center', padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+          <div className="pz-mission-bar">
+            <span>TELEMETRÍA DE RED</span>
+            <span style={{ color: '#ef4444' }}>● SILENCIO DE RADIO</span>
+          </div>
+
+          <span style={{ fontSize: 44, display: 'block', marginTop: 10 }}>📡</span>
+          <h2 style={{ fontSize: 22, fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'monospace' }}>
+            SILENCIO DE RADIO EN EL CONDADO DE KNOX
+          </h2>
+          <p style={{ fontSize: 14, color: '#94a3b8', margin: 0, maxWidth: 580, lineHeight: 1.6 }}>
+            No se reciben emisiones en esta banda. Si tienes una base fortificada o un refugio comunitario, sé el primero en transmitir tu frecuencia para guiar a los supervivientes.
           </p>
-          <button
-            onClick={() => {
-              setSearchQuery('');
-              setSelectedMode('ALL');
-              setSelectedRegion('ALL');
-              setSelectedLoot('ALL');
-            }}
-            className="btn-secondary"
-            style={{ marginTop: 16 }}
-          >
-            Limpiar Filtros
-          </button>
+          <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button
+              onClick={() => {
+                if (!currentUser) {
+                  showToast('Debes iniciar sesión con Google para enlistar un servidor.');
+                  onOpenLoginModal();
+                  return;
+                }
+                setShowAddModal(true);
+              }}
+              className="pz-btn-primary"
+            >
+              <span>📡 Iniciar Transmisión de Refugio</span>
+            </button>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedMode('ALL');
+                setSelectedRegion('ALL');
+                setSelectedLoot('ALL');
+              }}
+              className="pz-btn-secondary"
+            >
+              Restablecer Filtros
+            </button>
+          </div>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

@@ -139,10 +139,10 @@ export default function SpiffoOSApp() {
   };
 
   // 6. Marcar/Desmarcar Objetivo de Ruta
-  const handleToggleObjective = (routeId, levelId, objIndex, xpReward) => {
+  const handleToggleObjective = (routeId, objId, xpReward) => {
     updateStateAndSave((prev) => {
       const currentRoute = prev.routes?.[routeId] || { completedObjectives: [], earnedXp: 0 };
-      const objKey = `${levelId}-${objIndex}`;
+      const objKey = objId;
       const isCompleted = currentRoute.completedObjectives?.includes(objKey);
 
       let newCompleted = [];
@@ -179,7 +179,7 @@ export default function SpiffoOSApp() {
   if (!playerData) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#060913', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', fontFamily: 'monospace', letterSpacing: '0.1em' }}>
-        INICIALIZANDO SPIFFO-OS TACTICAL HUD...
+        INICIALIZANDO KNOX-OS TACTICAL HUD...
       </div>
     );
   }
@@ -194,7 +194,20 @@ export default function SpiffoOSApp() {
   const activeRoute = routesDatabase.find((r) => r.id === playerData.activeRouteId) || routesDatabase[0];
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#060913', color: '#f8fafc', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#060913', color: '#f8fafc', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* CAPA DIEGÉTICA DE LÍNEAS CRT STITCH */}
+      <div
+        className="crt-scanlines"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
+          pointerEvents: 'none',
+          opacity: 0.22,
+        }}
+        aria-hidden="true"
+      />
+
       {/* NAVBAR EN CÁPSULA FLOTANTE */}
       <PillNav
         activeView={playerData.activeView}
