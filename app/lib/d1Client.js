@@ -10,16 +10,16 @@ import { broadcastLog } from './sseLogger';
  * @returns {Promise<Array<any>|null>}
  */
 export async function queryD1(sql, params = []) {
-  const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const DATABASE_ID = process.env.CLOUDFLARE_D1_DATABASE_ID;
-  const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
+  const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
+  const DATABASE_ID = process.env.CLOUDFLARE_D1_DATABASE_ID?.trim();
+  const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN?.trim();
 
   const required = [
-    'CLOUDFLARE_ACCOUNT_ID',
-    'CLOUDFLARE_D1_DATABASE_ID',
-    'CLOUDFLARE_API_TOKEN',
+    { key: 'CLOUDFLARE_ACCOUNT_ID', val: ACCOUNT_ID },
+    { key: 'CLOUDFLARE_D1_DATABASE_ID', val: DATABASE_ID },
+    { key: 'CLOUDFLARE_API_TOKEN', val: API_TOKEN },
   ];
-  const missing = required.filter((key) => !process.env[key]);
+  const missing = required.filter((item) => !item.val).map((item) => item.key);
   if (missing.length) {
     const errMsg = `Faltan variables D1: ${missing.join(', ')}`;
     broadcastLog('error', errMsg);
