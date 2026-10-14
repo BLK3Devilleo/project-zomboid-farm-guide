@@ -35,6 +35,7 @@ export default function PillNav({
 
   const navItems = [
     { id: 'route', label: 'Mecánica Activa', icon: '⚡' },
+    { id: 'events', label: 'Meta-Eventos', icon: '📡' },
     { id: 'servers', label: 'Servidores', icon: '🌐' },
     { id: 'loot', label: 'Radar de Loot', icon: '📦' },
     { id: 'radio', label: 'Radio 91.5', icon: '📻' },

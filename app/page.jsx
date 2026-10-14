@@ -6,6 +6,7 @@ import OnboardingWizard from './components/OnboardingWizard';
 import RouteView from './components/RouteView';
 import LootView from './components/LootView';
 import ServerList from './components/ServerList';
+import MetaEventsView from './components/MetaEventsView';
 import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
 import TacticalLogModal from './components/TacticalLogModal';
@@ -191,9 +192,10 @@ export default function SpiffoOSApp() {
   const isViewingServers = playerData.activeView === 'servers';
   const isViewingRadio = playerData.activeView === 'radio';
   const isViewingLoot = playerData.activeView === 'loot';
+  const isViewingEvents = playerData.activeView === 'events';
   const isViewingOnboarding =
     playerData.activeView === 'onboarding' ||
-    (!playerData.activeRouteId && !isViewingServers && !isViewingLoot && !isViewingRadio);
+    (!playerData.activeRouteId && !isViewingServers && !isViewingLoot && !isViewingRadio && !isViewingEvents);
   const activeRoute = routesDatabase.find((r) => r.id === playerData.activeRouteId) || routesDatabase[0];
 
   return (
@@ -233,6 +235,10 @@ export default function SpiffoOSApp() {
           <OnboardingWizard onComplete={handleCompleteOnboarding} />
         )}
 
+        {isViewingEvents && (
+          <MetaEventsView />
+        )}
+
         {isViewingServers && (
           <ServerList
             currentUser={currentUser}
@@ -259,7 +265,7 @@ export default function SpiffoOSApp() {
           />
         )}
 
-        {!isViewingOnboarding && !isViewingLoot && !isViewingServers && !isViewingRadio && (
+        {!isViewingOnboarding && !isViewingLoot && !isViewingServers && !isViewingRadio && !isViewingEvents && (
           <RouteView
             route={activeRoute}
             progress={playerData}
