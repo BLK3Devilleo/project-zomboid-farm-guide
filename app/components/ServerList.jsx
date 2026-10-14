@@ -388,74 +388,49 @@ export default function ServerList({
                 onClick={() => setActiveModalServer(server)}
                 className={`server-card-item ${modeClass}`}
               >
-                {/* Cantoneras tácticas */}
-                <div className="pz-corner-tick tl" />
-                <div className="pz-corner-tick tr" />
-                <div className="pz-corner-tick bl" />
-                <div className="pz-corner-tick br" />
-
-                {/* Barra superior de ventana estilo terminal */}
-                <div className="pz-window-bar">
+                {/* Cabecera sutil y minimalista */}
+                <div className="server-card-topbar">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ color: '#10b981', fontWeight: 900 }}>●</span>
-                    <span style={{ color: '#94a3b8' }}>
-                      KNOX FREQ-0{rank} // [{statusLabel}]
+                    <span className={`server-rank-pill ${rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : ''}`}>
+                      #{rank}
                     </span>
+                    <span className="server-freq-code">
+                      KNOX FREQ-0{rank}
+                    </span>
+                    <span style={{ color: '#475569' }}>•</span>
+                    <span className="server-status-pill">{statusLabel}</span>
                   </div>
-                  <div className="pz-window-controls">
-                    <span className="pz-window-btn">_</span>
-                    <span className="pz-window-btn">□</span>
-                    <span className="pz-window-btn close">✕</span>
+
+                  <div className="server-tags-strip">
+                    <span className="server-badge-mode">{server.mode}</span>
+                    <span className="server-badge-region">🌍 {server.region}</span>
+                    <span className="server-badge-loot">📦 {server.loot_tier}</span>
                   </div>
                 </div>
 
-                {/* Cuerpo de la tarjeta */}
+                {/* Cuerpo principal limpio */}
                 <div className="server-card-body">
-                  {/* LADO IZQUIERDO: RANGO + ICONO + INFO */}
+                  {/* LADO IZQUIERDO: BANNER/ICONO + TITULAR + DESCRIPCIÓN + OCUPACIÓN */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
-                    {/* Badge de Posición en Ranking */}
-                    <div className={`server-rank-badge rank-${rank <= 3 ? rank : 'normal'}`}>
-                      <span style={{ fontSize: 9, opacity: 0.8, letterSpacing: '0.05em' }}>
-                        {rank === 1 ? 'TOP' : rank === 2 ? 'VAN' : rank === 3 ? 'OUT' : 'SEC'}
-                      </span>
-                      <span style={{ fontSize: 16 }}>#{rank}</span>
-                    </div>
-
-                    {/* Icono / Banner */}
-                    <div
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 4,
-                        background: 'rgba(0, 0, 0, 0.65)',
-                        border: '1.5px solid rgba(255, 255, 255, 0.12)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        position: 'relative',
-                        overflow: 'hidden',
-                      }}
-                    >
+                    <div className="server-avatar-box">
                       <Image
-                        src={server.banner_url || '/spiffo/spiffo_character.png'}
+                        src={server.banner_url || '/spiffo/ferret_mascot.jpg'}
                         alt={server.name}
-                        width={34}
-                        height={34}
-                        style={{ objectFit: 'contain' }}
+                        width={42}
+                        height={42}
+                        style={{ objectFit: 'cover' }}
                       />
                     </div>
 
-                    {/* Info Principal */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                        <span className="server-badge-mode">{server.mode}</span>
-                        <span className="server-badge-region">🌍 {server.region}</span>
-                        <span className="server-badge-loot">📦 {server.loot_tier}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <h3 className="server-title-text">
+                          {server.name}
+                        </h3>
 
-                        {/* VU-Meter de Capacidad de Supervivientes */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 4 }}>
-                          <div className="pz-vu-meter" title={`Ocupación: ${server.players_online}/${server.max_players}`}>
+                        {/* VU-Meter de Capacidad */}
+                        <div className="server-occupancy-row" title={`Ocupación: ${server.players_online || 0}/${server.max_players || 32}`}>
+                          <div className="pz-vu-meter">
                             {[...Array(8)].map((_, i) => {
                               const isActive = i < activeSegments;
                               let segmentColor = '';
@@ -465,53 +440,41 @@ export default function ServerList({
                                 else segmentColor = 'active-green';
                               }
                               return (
-                                <div
-                                  key={i}
-                                  className={`pz-vu-segment ${segmentColor}`}
-                                />
+                                <div key={i} className={`pz-vu-segment ${segmentColor}`} />
                               );
                             })}
                           </div>
-                          <span style={{ fontSize: 11, color: '#f1f5f9', fontWeight: 900, fontFamily: 'monospace' }}>
-                            {server.players_online}/{server.max_players}
+                          <span className="server-occupancy-num">
+                            {server.players_online || 0}/{server.max_players || 32}
                           </span>
                         </div>
                       </div>
 
-                      <h3 style={{ fontSize: 17, fontWeight: 900, color: '#ffffff', margin: 0, letterSpacing: '-0.01em', fontFamily: 'monospace' }}>
-                        {server.name}
-                      </h3>
-
-                      <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                        {server.description}
+                      <p className="server-desc-text">
+                        {server.description || 'Frecuencia comunitaria abierta para supervivientes en el Condado de Knox.'}
                       </p>
                     </div>
                   </div>
 
-                  {/* LADO DERECHO: TELEMETRÍA DE AUDIO + FRECUENCIA IP + VOTOS */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                    {/* Telemetría de onda de audio */}
-                    <div className="pz-audio-bar-row" style={{ color: modeClass === 'mode-hardcore' ? '#ef4444' : modeClass === 'mode-roleplay' ? '#f59e0b' : '#10b981' }}>
-                      {[8, 14, 5, 12, 10, 6, 13, 9].map((h, idx) => (
-                        <div key={idx} className="pz-audio-bar" style={{ height: h }} />
-                      ))}
-                    </div>
-
-                    {/* Botón Copiar Frecuencia / IP */}
-                    <div
+                  {/* LADO DERECHO: ACCIONES DIRECTAS */}
+                  <div className="server-actions-cluster">
+                    {/* Botón Copiar IP */}
+                    <button
+                      type="button"
                       onClick={(e) => handleCopyIP(e, server)}
                       className="server-ip-btn"
-                      title="Copiar Frecuencia de Conexión"
+                      title="Copiar Frecuencia / IP de Conexión"
                     >
-                      <span>📻 FREQ</span>
+                      <span style={{ opacity: 0.7 }}>📻</span>
                       <span>{fullAddress}</span>
-                    </div>
+                    </button>
 
                     {/* Botón de Votar */}
                     <button
+                      type="button"
                       onClick={(e) => handleVote(e, server.id)}
                       className="server-vote-btn"
-                      title="Votar por este servidor"
+                      title="Otorgar voto de reputación"
                     >
                       <span>⭐</span>
                       <span>{server.votes || 0}</span>
@@ -526,21 +489,14 @@ export default function ServerList({
                       )
                     ) && (
                       <button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingServer(server);
                           setShowAddModal(true);
                         }}
-                        className="btn-tactical"
-                        style={{
-                          padding: '6px 12px',
-                          fontSize: 11,
-                          borderRadius: 3,
-                          background: 'rgba(56, 189, 248, 0.12)',
-                          border: '1px solid rgba(56, 189, 248, 0.45)',
-                          color: '#38bdf8',
-                        }}
-                        title="Modificar Frecuencia y Configuración"
+                        className="btn-tactical-edit"
+                        title="Modificar Frecuencia Militar"
                       >
                         ✏️ Editar
                       </button>
@@ -548,9 +504,9 @@ export default function ServerList({
 
                     {/* Ver Ficha Dossier */}
                     <button
+                      type="button"
                       onClick={() => setActiveModalServer(server)}
-                      className="btn-tactical"
-                      style={{ padding: '6px 14px', fontSize: 11, borderRadius: 3 }}
+                      className="btn-tactical-dossier"
                     >
                       Dossier →
                     </button>

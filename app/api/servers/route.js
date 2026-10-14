@@ -19,7 +19,7 @@ export async function GET(request) {
 
   try {
     const results = await queryD1('SELECT * FROM servers ORDER BY votes DESC');
-    if (results && results.length > 0) {
+    if (Array.isArray(results)) {
       const parsed = results.map((server) => ({
         ...server,
         is_online: Boolean(server.is_online),
