@@ -8,9 +8,21 @@ export const GoogleAuthSchema = z.object({
     .max(4096, 'Token de Google excede longitud permitida'),
 });
 
-// Expresión regular segura para IPv4, IPv6 o Dominio válido
+// Extrae de forma segura el mensaje de error de Zod v3 o v4
+export function getZodErrorMessage(error) {
+  if (!error) return 'Datos inválidos';
+  if (Array.isArray(error.issues) && error.issues.length > 0) {
+    return error.issues[0].message;
+  }
+  if (Array.isArray(error.errors) && error.errors.length > 0) {
+    return error.errors[0].message;
+  }
+  return error.message || 'Datos inválidos';
+}
+
+// Expresión regular para IPv4, IPv6 o Dominio/Host válido
 const IP_OR_HOSTNAME_REGEX =
-  /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$/;
+  /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$|^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)+([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$|^[a-zA-Z0-9.-]+$/;
 
 // Esquema de validación estricta para crear servidores
 export const CreateServerSchema = z.object({
@@ -22,32 +34,37 @@ export const CreateServerSchema = z.object({
   ip: z
     .string({ required_error: 'La dirección IP o Dominio es obligatoria' })
     .trim()
-    .regex(IP_OR_HOSTNAME_REGEX, 'Formato de IP o Dominio inválido (ej: 142.44.215.89 o play.servidor.com)'),
+    .min(3, 'La dirección IP o Dominio debe tener al menos 3 caracteres')
+    .max(128, 'La dirección IP o Dominio no puede exceder 128 caracteres')
+    .refine(
+      (val) => IP_OR_HOSTNAME_REGEX.test(val),
+      { message: 'Formato de IP o Dominio inválido (ej: 142.44.215.89 o play.servidor.com)' }
+    ),
   port: z.coerce
     .number({ required_error: 'El puerto es obligatorio' })
     .int('El puerto debe ser un número entero')
     .min(1024, 'El puerto debe estar entre 1024 y 65535')
     .max(65535, 'El puerto no puede ser mayor a 65535')
     .default(16261),
-  region: z.enum(['LATAM', 'ES', 'NA', 'EU', 'GLOBAL'], {
-    errorMap: () => ({ message: 'Región inválida. Opciones: LATAM, ES, NA, EU, GLOBAL' }),
+  region: z.enum(['LATAM', 'ES', 'España', 'NA', 'EU', 'GLOBAL'], {
+    errorMap: () => ({ message: 'Región inválida. Opciones: LATAM, España, NA, EU, GLOBAL' }),
   }).default('LATAM'),
-  gamemode: z.enum(['PvE', 'PvP', 'Hardcore', 'Rol'], {
-    errorMap: () => ({ message: 'Modo inválido. Opciones: PvE, PvP, Hardcore, Rol' }),
+  gamemode: z.enum(['PvE', 'PvP', 'Hardcore', 'Rol', 'Roleplay'], {
+    errorMap: () => ({ message: 'Modo inválido. Opciones: PvE, PvP, Hardcore, Roleplay' }),
   }).default('PvE'),
-  loot_multiplier: z.string().trim().max(32).default('Normal (x1.0)'),
+  loot_multiplier: z.string().trim().max(32).default('Normal'),
   zombie_speed: z.string().trim().max(32).default('Fast Shamblers'),
   pvp_rules: z.string().trim().max(64).default('Desactivado'),
   max_players: z.coerce
     .number()
     .int()
-    .min(4, 'El cupo mínimo es 4 jugadores')
+    .min(1, 'El cupo mínimo es 1 jugador')
     .max(128, 'El cupo máximo permitido es 128')
     .default(32),
   description: z
     .string()
     .trim()
-    .max(500, 'La descripción no puede exceder 500 caracteres')
+    .max(1000, 'La descripción no puede exceder 1000 caracteres')
     .default(''),
   rules: z
     .string()
@@ -57,16 +74,26 @@ export const CreateServerSchema = z.object({
   discord_url: z
     .string()
     .trim()
-    .max(200)
+    .max(300)
     .optional()
     .or(z.literal(''))
     .refine(
-      (val) => !val || val.startsWith('https://discord.gg/') || val.startsWith('https://discord.com/'),
-      { message: 'El enlace de Discord debe iniciar con https://discord.gg/ o https://discord.com/' }
+      (val) => !val || val.startsWith('http://') || val.startsWith('https://'),
+      { message: 'El enlace debe ser una URL válida que inicie con http:// o https://' }
     ),
+  banner_url: z
+    .string()
+    .trim()
+    .max(1024)
+    .optional()
+    .default('/spiffo/spiffo_character.png'),
+  gallery_images: z
+    .array(z.string().trim().max(1024))
+    .optional()
+    .default([]),
   tags: z
-    .array(z.string().trim().max(24))
-    .max(8, 'Máximo 8 etiquetas permitidas')
+    .array(z.string().trim().max(32))
+    .max(12, 'Máximo 12 etiquetas permitidas')
     .default([]),
 });
 

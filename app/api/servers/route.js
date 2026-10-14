@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { initialServers } from '../../data/serversDatabase';
 import { queryD1 } from '../../lib/d1Client';
-import { CreateServerSchema, VoteServerSchema } from '../../lib/validations';
+import { CreateServerSchema, VoteServerSchema, getZodErrorMessage } from '../../lib/validations';
 import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
 import { getSessionUser, hasRequiredRole } from '../../lib/session';
 
@@ -24,6 +24,7 @@ export async function GET(request) {
         ...server,
         is_online: Boolean(server.is_online),
         tags: typeof server.tags === 'string' ? JSON.parse(server.tags) : (server.tags || []),
+        gallery_images: typeof server.gallery_images === 'string' ? JSON.parse(server.gallery_images) : (server.gallery_images || []),
       }));
       return NextResponse.json({ success: true, source: 'cloudflare_d1', data: parsed });
     }
@@ -39,8 +40,8 @@ export async function GET(request) {
 export async function POST(request) {
   const clientIp = getClientIp(request);
 
-  // 1. Rate Limit: Máximo 5 servidores por hora por IP
-  const rate = checkRateLimit(`servers:create:${clientIp}`, 5, 60 * 60 * 1000);
+  // 1. Rate Limit: Máximo 10 servidores por hora por IP
+  const rate = checkRateLimit(`servers:create:${clientIp}`, 10, 60 * 60 * 1000);
   if (!rate.allowed) {
     return NextResponse.json(
       {
@@ -69,7 +70,7 @@ export async function POST(request) {
     const parseResult = CreateServerSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
-      const firstError = parseResult.error.errors[0]?.message || 'Datos del servidor inválidos';
+      const firstError = getZodErrorMessage(parseResult.error);
       return NextResponse.json({ success: false, error: firstError }, { status: 400 });
     }
 
@@ -82,8 +83,8 @@ export async function POST(request) {
       `INSERT INTO servers (
         id, name, ip, port, region, mode, loot_tier,
         players_online, max_players, is_online, votes,
-        description, discord_url, tags, owner_id, owner_email
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        description, discord_url, banner_url, gallery_images, tags, owner_id, owner_email
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         newServerId,
         validData.name,
@@ -98,7 +99,9 @@ export async function POST(request) {
         0, // votes
         validData.description,
         validData.discord_url || '',
-        JSON.stringify(validData.tags),
+        validData.banner_url || '/spiffo/spiffo_character.png',
+        JSON.stringify(validData.gallery_images || []),
+        JSON.stringify(validData.tags || []),
         sessionUser.id,
         sessionUser.email,
       ]
@@ -118,6 +121,8 @@ export async function POST(request) {
       votes: 0,
       description: validData.description,
       discord_url: validData.discord_url,
+      banner_url: validData.banner_url,
+      gallery_images: validData.gallery_images,
       tags: validData.tags,
       owner_id: sessionUser.id,
       owner_email: sessionUser.email,
@@ -127,7 +132,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Error insertando servidor en D1:', error);
     return NextResponse.json(
-      { success: false, error: 'Fallo interno al registrar el servidor.' },
+      { success: false, error: error.message || 'Fallo interno al registrar el servidor.' },
       { status: 500 }
     );
   }
@@ -155,7 +160,7 @@ export async function PATCH(request) {
 
     if (!parseResult.success) {
       return NextResponse.json(
-        { success: false, error: parseResult.error.errors[0]?.message || 'ID inválido' },
+        { success: false, error: getZodErrorMessage(parseResult.error) || 'ID inválido' },
         { status: 400 }
       );
     }
@@ -168,7 +173,7 @@ export async function PATCH(request) {
     return NextResponse.json({ success: true, id });
   } catch (error) {
     console.error('Error procesando voto:', error);
-    return NextResponse.json({ success: false, error: 'Fallo al computar el voto' }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || 'Fallo al computar el voto' }, { status: 500 });
   }
 }
 
@@ -210,7 +215,7 @@ export async function DELETE(request) {
     return NextResponse.json({ success: true, message: 'Servidor eliminado correctamente.' });
   } catch (error) {
     console.error('Error al eliminar servidor:', error);
-    return NextResponse.json({ success: false, error: 'Fallo interno al eliminar.' }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message || 'Fallo interno al eliminar.' }, { status: 500 });
   }
 }
 
@@ -232,7 +237,7 @@ export async function PUT(request) {
     const parseResult = CreateServerSchema.safeParse(dataToValidate);
     if (!parseResult.success) {
       return NextResponse.json(
-        { success: false, error: parseResult.error.errors[0]?.message || 'Datos inválidos' },
+        { success: false, error: getZodErrorMessage(parseResult.error) },
         { status: 400 }
       );
     }

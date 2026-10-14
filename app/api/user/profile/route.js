@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '../../../lib/session';
 import { queryD1 } from '../../../lib/d1Client';
-import { UpdateProfileSchema } from '../../../lib/validations';
+import { UpdateProfileSchema, getZodErrorMessage } from '../../../lib/validations';
 import { checkRateLimit, getClientIp } from '../../../lib/rateLimit';
 
 // GET: Obtener perfil completo del usuario actual
@@ -54,7 +54,7 @@ export async function PUT(request) {
 
     if (!parseResult.success) {
       return NextResponse.json(
-        { success: false, error: parseResult.error.errors[0]?.message || 'Datos de perfil inválidos' },
+        { success: false, error: getZodErrorMessage(parseResult.error) },
         { status: 400 }
       );
     }

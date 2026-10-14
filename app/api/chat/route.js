@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser } from '../../lib/session';
 import { queryD1 } from '../../lib/d1Client';
-import { ChatMessageSchema } from '../../lib/validations';
+import { ChatMessageSchema, getZodErrorMessage } from '../../lib/validations';
 import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
 
 // GET: Obtener los últimos 50 mensajes de la radio comunitaria
@@ -50,7 +50,7 @@ export async function POST(request) {
 
     if (!parseResult.success) {
       return NextResponse.json(
-        { success: false, error: parseResult.error.errors[0]?.message || 'Mensaje inválido' },
+        { success: false, error: getZodErrorMessage(parseResult.error) },
         { status: 400 }
       );
     }

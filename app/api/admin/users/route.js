@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSessionUser, hasRequiredRole } from '../../../lib/session';
 import { queryD1 } from '../../../lib/d1Client';
-import { UpdateUserRoleSchema } from '../../../lib/validations';
+import { UpdateUserRoleSchema, getZodErrorMessage } from '../../../lib/validations';
 
 // GET: Listar usuarios registrados (Solo staff: moderador, admin o super_admin)
 export async function GET(request) {
@@ -34,7 +34,7 @@ export async function PATCH(request) {
 
     if (!parseResult.success) {
       return NextResponse.json(
-        { success: false, error: parseResult.error.errors[0]?.message || 'Datos inválidos' },
+        { success: false, error: getZodErrorMessage(parseResult.error) },
         { status: 400 }
       );
     }

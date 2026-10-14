@@ -8,6 +8,7 @@ import LootView from './components/LootView';
 import ServerList from './components/ServerList';
 import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
+import TacticalLogModal from './components/TacticalLogModal';
 import LiveRadioChat from './components/LiveRadioChat';
 import { routesDatabase } from './data/routesDatabase';
 import { loadProgress, saveProgress } from './lib/progressStorage';
@@ -47,6 +48,7 @@ export default function SpiffoOSApp() {
   const [currentUser, setCurrentUser] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [logsModalOpen, setLogsModalOpen] = useState(false);
   const [serversList, setServersList] = useState([]);
 
   // Carga inicial del progreso guardado en localStorage, sesión activa y lista de servers
@@ -220,6 +222,7 @@ export default function SpiffoOSApp() {
         currentUser={currentUser}
         onOpenLoginModal={() => setAuthModalOpen(true)}
         onOpenProfileModal={() => setProfileModalOpen(true)}
+        onOpenLogsModal={() => setLogsModalOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -280,6 +283,12 @@ export default function SpiffoOSApp() {
         onOpenAddServer={() => {
           updateStateAndSave((p) => ({ ...p, activeView: 'servers' }));
         }}
+      />
+
+      {/* MODAL TERMINAL DE LOGS SSE EN VIVO */}
+      <TacticalLogModal
+        isOpen={logsModalOpen}
+        onClose={() => setLogsModalOpen(false)}
       />
     </div>
   );

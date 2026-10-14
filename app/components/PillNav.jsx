@@ -16,6 +16,7 @@ export default function PillNav({
   currentUser = null,
   onOpenLoginModal = () => {},
   onOpenProfileModal = () => {},
+  onOpenLogsModal = () => {},
   onLogout = () => {},
 }) {
   const [routesMenuOpen, setRoutesMenuOpen] = useState(false);
@@ -135,8 +136,26 @@ export default function PillNav({
           </div>
         </div>
 
-        {/* LADO DERECHO: ACCESO / USUARIO & XP */}
+        {/* LADO DERECHO: ACCESO / USUARIO & XP & LOGS */}
         <div className="pill-nav-right-strip">
+          {/* BOTÓN TERMINAL LOGS SSE */}
+          <button
+            onClick={onOpenLogsModal}
+            className="pill-tab-item"
+            style={{
+              padding: '5px 9px',
+              gap: 4,
+              border: '1px solid rgba(16, 185, 129, 0.4)',
+              background: 'rgba(16, 185, 129, 0.12)',
+              borderRadius: 6,
+              cursor: 'pointer',
+            }}
+            title="Abrir Terminal de Telemetría y Logs SSE en Vivo"
+          >
+            <span style={{ fontSize: 11 }}>🛰️</span>
+            <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 900, color: '#34d399' }}>LOGS</span>
+          </button>
+
           {currentUser ? (
             <div style={{ position: 'relative' }}>
               <button
@@ -208,6 +227,16 @@ export default function PillNav({
                     style={{ color: '#10b981', fontWeight: 800 }}
                   >
                     <span>🪪 Ficha de Superviviente</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      onOpenLogsModal();
+                    }}
+                    className="pill-dropdown-item"
+                    style={{ color: '#38bdf8', fontWeight: 800 }}
+                  >
+                    <span>🛰️ Terminal SSE Logs</span>
                   </button>
                   <button
                     onClick={() => {
