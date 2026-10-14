@@ -50,6 +50,7 @@ export default function SpiffoOSApp() {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [logsModalOpen, setLogsModalOpen] = useState(false);
   const [serversList, setServersList] = useState([]);
+  const [serverToEditInList, setServerToEditInList] = useState(null);
 
   // Carga inicial del progreso guardado en localStorage, sesión activa y lista de servers
   useEffect(() => {
@@ -236,6 +237,8 @@ export default function SpiffoOSApp() {
           <ServerList
             currentUser={currentUser}
             onOpenLoginModal={() => setAuthModalOpen(true)}
+            serverToEdit={serverToEditInList}
+            onClearServerToEdit={() => setServerToEditInList(null)}
           />
         )}
 
@@ -280,7 +283,8 @@ export default function SpiffoOSApp() {
         currentUser={currentUser}
         globalXp={playerData.globalXp}
         onProfileUpdated={handleProfileUpdated}
-        onOpenAddServer={() => {
+        onOpenAddServer={(serverToEdit) => {
+          setServerToEditInList(serverToEdit || null);
           updateStateAndSave((p) => ({ ...p, activeView: 'servers' }));
         }}
       />

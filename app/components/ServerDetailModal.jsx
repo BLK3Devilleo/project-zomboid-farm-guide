@@ -5,13 +5,24 @@ import Image from 'next/image';
 
 export default function ServerDetailModal({
   server,
+  currentUser = null,
   onClose,
   onVote,
+  onEdit,
+  onDelete,
 }) {
   const [copied, setCopied] = useState(false);
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
 
   if (!server) return null;
+
+  const isOwner = Boolean(
+    currentUser && (
+      (server.owner_id && server.owner_id === currentUser.id) ||
+      (server.owner_email && server.owner_email === currentUser.email) ||
+      currentUser.role === 'admin'
+    )
+  );
 
   const fullAddress = `${server.ip}:${server.port || 16261}`;
   
@@ -277,16 +288,56 @@ export default function ServerDetailModal({
             </div>
           )}
 
-          {/* PIE DE ACCIONES: VOTAR + DISCORD */}
+          {/* PIE DE ACCIONES: VOTAR + DISCORD + GESTIÓN DE PROPIETARIO */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            <button
-              onClick={() => onVote(server.id)}
-              className="server-vote-btn"
-              style={{ padding: '9px 18px', fontSize: 13 }}
-            >
-              <span>⭐</span>
-              <span>Otorgar Reputación Knox ({server.votes || 0})</span>
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                onClick={() => onVote(server.id)}
+                className="server-vote-btn"
+                style={{ padding: '9px 18px', fontSize: 13 }}
+              >
+                <span>⭐</span>
+                <span>Otorgar Reputación Knox ({server.votes || 0})</span>
+              </button>
+
+              {/* Botones de Propietario / Admin */}
+              {isOwner && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={() => onEdit(server)}
+                    className="btn-tactical"
+                    style={{
+                      background: 'rgba(56, 189, 248, 0.15)',
+                      border: '1px solid rgba(56, 189, 248, 0.5)',
+                      color: '#38bdf8',
+                      padding: '9px 16px',
+                      fontSize: 12,
+                      borderRadius: 3,
+                    }}
+                    title="Editar Frecuencia Militar"
+                  >
+                    ✏️ Modificar
+                  </button>
+                  <button
+                    onClick={() => onDelete(server.id)}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.5)',
+                      color: '#ef4444',
+                      padding: '9px 14px',
+                      fontSize: 12,
+                      borderRadius: 3,
+                      cursor: 'pointer',
+                      fontWeight: 800,
+                      fontFamily: 'monospace',
+                    }}
+                    title="Eliminar este servidor"
+                  >
+                    🗑️ Eliminar
+                  </button>
+                </div>
+              )}
+            </div>
 
             {server.discord_url && (
               <a

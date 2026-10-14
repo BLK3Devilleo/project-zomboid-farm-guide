@@ -264,7 +264,7 @@ export async function PUT(request) {
     await queryD1(
       `UPDATE servers SET
         name = ?, ip = ?, port = ?, region = ?, mode = ?, loot_tier = ?,
-        max_players = ?, description = ?, discord_url = ?, tags = ?
+        max_players = ?, description = ?, discord_url = ?, banner_url = ?, gallery_images = ?, tags = ?
        WHERE id = ?`,
       [
         validData.name,
@@ -276,12 +276,30 @@ export async function PUT(request) {
         validData.max_players,
         validData.description,
         validData.discord_url || '',
-        JSON.stringify(validData.tags),
+        validData.banner_url || server.banner_url || '/spiffo/spiffo_character.png',
+        JSON.stringify(validData.gallery_images || []),
+        JSON.stringify(validData.tags || []),
         id,
       ]
     );
 
-    return NextResponse.json({ success: true, message: 'Servidor actualizado con éxito.' });
+    const updatedServer = {
+      ...server,
+      name: validData.name,
+      ip: validData.ip,
+      port: validData.port,
+      region: validData.region,
+      mode: validData.gamemode,
+      loot_tier: validData.loot_multiplier,
+      max_players: validData.max_players,
+      description: validData.description,
+      discord_url: validData.discord_url,
+      banner_url: validData.banner_url || server.banner_url,
+      gallery_images: validData.gallery_images || [],
+      tags: validData.tags,
+    };
+
+    return NextResponse.json({ success: true, message: 'Servidor actualizado con éxito.', data: updatedServer });
   } catch (error) {
     console.error('Error al actualizar servidor:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

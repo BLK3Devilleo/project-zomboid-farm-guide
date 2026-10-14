@@ -1,8 +1,5 @@
 import { broadcastLog } from './sseLogger';
 
-const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
-const DATABASE_ID = process.env.CLOUDFLARE_D1_DATABASE_ID;
-const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
 
 /**
  * Ejecuta una consulta SQL parametrizada hacia Cloudflare D1 mediante la API REST.
@@ -13,9 +10,20 @@ const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
  * @returns {Promise<Array<any>|null>}
  */
 export async function queryD1(sql, params = []) {
-  if (!ACCOUNT_ID || !DATABASE_ID || !API_TOKEN) {
-    broadcastLog('warn', 'Credenciales de Cloudflare D1 ausentes en entorno. Operando en modo memoria/fallback.');
-    return null;
+  const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const DATABASE_ID = process.env.CLOUDFLARE_D1_DATABASE_ID;
+  const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
+
+  const required = [
+    'CLOUDFLARE_ACCOUNT_ID',
+    'CLOUDFLARE_D1_DATABASE_ID',
+    'CLOUDFLARE_API_TOKEN',
+  ];
+  const missing = required.filter((key) => !process.env[key]);
+  if (missing.length) {
+    const errMsg = `Faltan variables D1: ${missing.join(', ')}`;
+    broadcastLog('error', errMsg);
+    throw new Error(errMsg);
   }
 
   const cleanSql = sql.replace(/\s+/g, ' ').trim();

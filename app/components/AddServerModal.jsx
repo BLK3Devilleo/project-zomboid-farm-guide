@@ -31,21 +31,22 @@ const PRESET_BANNERS = [
   { label: 'Combate Militar', url: '/spiffo/spiffo_combat.png' },
 ];
 
-export default function AddServerModal({ onClose, onSubmit }) {
+export default function AddServerModal({ onClose, onSubmit, editingServer = null }) {
+  const isEditMode = Boolean(editingServer);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
-    name: '',
-    ip: '',
-    port: '16261',
-    region: 'LATAM',
-    mode: 'PvE',
-    loot_tier: 'Normal',
-    max_players: '32',
-    description: '',
-    discord_url: '',
-    banner_url: '/spiffo/ferret_mascot.jpg',
-    gallery_images: [],
-    tags: ['Comunidad', 'B42 Ready'],
+    name: editingServer?.name || '',
+    ip: editingServer?.ip || '',
+    port: String(editingServer?.port || '16261'),
+    region: editingServer?.region || 'LATAM',
+    mode: editingServer?.mode || 'PvE',
+    loot_tier: editingServer?.loot_tier || 'Normal',
+    max_players: String(editingServer?.max_players || '32'),
+    description: editingServer?.description || '',
+    discord_url: editingServer?.discord_url || '',
+    banner_url: editingServer?.banner_url || '/spiffo/ferret_mascot.jpg',
+    gallery_images: Array.isArray(editingServer?.gallery_images) ? editingServer.gallery_images : [],
+    tags: Array.isArray(editingServer?.tags) && editingServer.tags.length > 0 ? editingServer.tags : ['Comunidad', 'B42 Ready'],
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -190,10 +191,10 @@ export default function AddServerModal({ onClose, onSubmit }) {
     };
 
     try {
-      await onSubmit(payload);
+      await onSubmit(payload, editingServer?.id);
       onClose();
     } catch (err) {
-      setErrorMsg(err.message || 'Error al registrar el servidor en el índice.');
+      setErrorMsg(err.message || 'Error al procesar la frecuencia.');
     } finally {
       setIsSubmitting(false);
     }
@@ -215,13 +216,13 @@ export default function AddServerModal({ onClose, onSubmit }) {
         {/* Cabecera diegética */}
         <div className="pz-dossier-header" style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ color: '#10b981', fontSize: 14 }}>●</span>
+            <span style={{ color: isEditMode ? '#38bdf8' : '#10b981', fontSize: 14 }}>●</span>
             <div>
-              <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', color: '#10b981', letterSpacing: '0.08em', fontFamily: 'monospace', display: 'block' }}>
-                KNOX_NET // TRANSMISOR DE FRECUENCIA B42
+              <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', color: isEditMode ? '#38bdf8' : '#10b981', letterSpacing: '0.08em', fontFamily: 'monospace', display: 'block' }}>
+                {isEditMode ? 'KNOX_NET // RECONFIGURACIÓN DE PARÁMETROS' : 'KNOX_NET // TRANSMISOR DE FRECUENCIA B42'}
               </span>
               <h2 style={{ fontSize: 18, fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'monospace' }}>
-                ENLISTAR REFUGIO O SERVIDOR
+                {isEditMode ? 'EDITAR FRECUENCIA MILITAR' : 'ENLISTAR REFUGIO O SERVIDOR'}
               </h2>
             </div>
           </div>
@@ -729,7 +730,7 @@ export default function AddServerModal({ onClose, onSubmit }) {
               className="pz-btn-primary"
               style={{ minWidth: 160 }}
             >
-              {isSubmitting ? 'Transmitiendo...' : '🚀 Publicar en el Ranking'}
+              {isSubmitting ? 'Transmitiendo...' : isEditMode ? '💾 Guardar Cambios' : '🚀 Publicar en el Ranking'}
             </button>
           )}
         </div>

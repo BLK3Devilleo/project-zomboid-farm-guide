@@ -2,11 +2,16 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { fetchServersList, createServerEntry, upvoteServerEntry } from '../lib/supabaseClient';
+import { fetchServersList, createServerEntry, updateServerEntry, deleteServerEntry, upvoteServerEntry } from '../lib/supabaseClient';
 import ServerDetailModal from './ServerDetailModal';
 import AddServerModal from './AddServerModal';
 
-export default function ServerList({ currentUser = null, onOpenLoginModal = () => {} }) {
+export default function ServerList({
+  currentUser = null,
+  onOpenLoginModal = () => {},
+  serverToEdit = null,
+  onClearServerToEdit = () => {},
+}) {
   const [servers, setServers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -17,7 +22,17 @@ export default function ServerList({ currentUser = null, onOpenLoginModal = () =
   
   const [activeModalServer, setActiveModalServer] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingServer, setEditingServer] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Apertura externa para edición (desde ProfileModal)
+  useEffect(() => {
+    if (serverToEdit) {
+      setEditingServer(serverToEdit);
+      setShowAddModal(true);
+      onClearServerToEdit();
+    }
+  }, [serverToEdit, onClearServerToEdit]);
 
   // Carga inicial
   useEffect(() => {
@@ -61,11 +76,37 @@ export default function ServerList({ currentUser = null, onOpenLoginModal = () =
     await upvoteServerEntry(serverId);
   };
 
-  // Crear nuevo servidor
-  const handleAddServer = async (serverData) => {
-    const created = await createServerEntry(serverData);
-    setServers((prev) => [created, ...prev]);
-    showToast('¡Servidor publicado con éxito en el ranking!');
+  // Crear o actualizar servidor (CRUD)
+  const handleSaveServer = async (serverData, serverId) => {
+    if (serverId) {
+      const updated = await updateServerEntry(serverId, serverData);
+      setServers((prev) => prev.map((s) => (s.id === serverId ? { ...s, ...updated } : s)));
+      if (activeModalServer && activeModalServer.id === serverId) {
+        setActiveModalServer((prev) => ({ ...prev, ...updated }));
+      }
+      showToast('¡Frecuencia militar actualizada con éxito!');
+    } else {
+      const created = await createServerEntry(serverData);
+      setServers((prev) => [created, ...prev]);
+      showToast('¡Servidor publicado con éxito en el ranking!');
+    }
+    setEditingServer(null);
+    setShowAddModal(false);
+  };
+
+  // Eliminar servidor
+  const handleDeleteServer = async (serverId) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este servidor del ranking?')) return;
+    try {
+      await deleteServerEntry(serverId);
+      setServers((prev) => prev.filter((s) => s.id !== serverId));
+      if (activeModalServer && activeModalServer.id === serverId) {
+        setActiveModalServer(null);
+      }
+      showToast('Servidor eliminado correctamente.');
+    } catch (err) {
+      showToast(err.message || 'Error al eliminar servidor.');
+    }
   };
 
   // Filtrado y ordenación
@@ -476,6 +517,35 @@ export default function ServerList({ currentUser = null, onOpenLoginModal = () =
                       <span>{server.votes || 0}</span>
                     </button>
 
+                    {/* Botón Editar Frecuencia (Solo Dueño o Admin) */}
+                    {Boolean(
+                      currentUser && (
+                        (server.owner_id && server.owner_id === currentUser.id) ||
+                        (server.owner_email && server.owner_email === currentUser.email) ||
+                        currentUser.role === 'admin'
+                      )
+                    ) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingServer(server);
+                          setShowAddModal(true);
+                        }}
+                        className="btn-tactical"
+                        style={{
+                          padding: '6px 12px',
+                          fontSize: 11,
+                          borderRadius: 3,
+                          background: 'rgba(56, 189, 248, 0.12)',
+                          border: '1px solid rgba(56, 189, 248, 0.45)',
+                          color: '#38bdf8',
+                        }}
+                        title="Modificar Frecuencia y Configuración"
+                      >
+                        ✏️ Editar
+                      </button>
+                    )}
+
                     {/* Ver Ficha Dossier */}
                     <button
                       onClick={() => setActiveModalServer(server)}
@@ -496,16 +566,27 @@ export default function ServerList({ currentUser = null, onOpenLoginModal = () =
       {activeModalServer && (
         <ServerDetailModal
           server={activeModalServer}
+          currentUser={currentUser}
           onClose={() => setActiveModalServer(null)}
           onVote={(id) => handleVote(null, id)}
+          onEdit={(srv) => {
+            setActiveModalServer(null);
+            setEditingServer(srv);
+            setShowAddModal(true);
+          }}
+          onDelete={(id) => handleDeleteServer(id)}
         />
       )}
 
-      {/* MODAL DE ENLISTAR NUEVO SERVIDOR */}
+      {/* MODAL DE ENLISTAR / EDITAR SERVIDOR */}
       {showAddModal && (
         <AddServerModal
-          onClose={() => setShowAddModal(false)}
-          onSubmit={handleAddServer}
+          editingServer={editingServer}
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingServer(null);
+          }}
+          onSubmit={handleSaveServer}
         />
       )}
     </div>

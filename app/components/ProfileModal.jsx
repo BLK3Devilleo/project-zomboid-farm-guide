@@ -501,6 +501,24 @@ export default function ProfileModal({
 
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button
+                          onClick={() => {
+                            onClose();
+                            onOpenAddServer(srv);
+                          }}
+                          style={{
+                            background: 'rgba(56, 189, 248, 0.15)',
+                            border: '1px solid rgba(56, 189, 248, 0.4)',
+                            color: '#38bdf8',
+                            borderRadius: 6,
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
                           onClick={() => handleDeleteServer(srv.id)}
                           style={{
                             background: 'rgba(239, 68, 68, 0.15)',

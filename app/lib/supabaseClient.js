@@ -9,16 +9,12 @@ export async function fetchServersList() {
     if (res.ok) {
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
-        // Filtrar cualquier seed de prueba residual
-        const cleaned = json.data.filter(
-          (s) => !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)
-        );
         if (typeof window !== 'undefined') {
           try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(cleaned));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(json.data));
           } catch (e) {}
         }
-        return cleaned;
+        return json.data;
       }
     }
   } catch (err) {
@@ -31,12 +27,7 @@ export async function fetchServersList() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        const filtered = Array.isArray(parsed)
-          ? parsed.filter(
-              (s) => !['srv-1', 'srv-2', 'srv-3', 'srv-4', 'srv-5', 'srv-6'].includes(s.id)
-            )
-          : [];
-        return filtered;
+        return Array.isArray(parsed) ? parsed : [];
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initialServers));
     } catch (e) {}
@@ -137,4 +128,60 @@ export async function upvoteServerEntry(serverId) {
   }
 
   return false;
+}
+
+// Actualizar servidor existente (PUT /api/servers)
+export async function updateServerEntry(serverId, serverData) {
+  try {
+    const res = await fetch('/api/servers', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: serverId, ...serverData }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || 'Error al actualizar el servidor.');
+    }
+
+    if (json.data && typeof window !== 'undefined') {
+      try {
+        const current = await fetchServersList();
+        const updated = current.map((s) => (s.id === serverId ? { ...s, ...json.data } : s));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {}
+    }
+
+    return json.data;
+  } catch (err) {
+    console.warn('Error al actualizar servidor en API:', err);
+    throw err;
+  }
+}
+
+// Eliminar servidor (DELETE /api/servers?id=...)
+export async function deleteServerEntry(serverId) {
+  try {
+    const res = await fetch(`/api/servers?id=${encodeURIComponent(serverId)}`, {
+      method: 'DELETE',
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.success) {
+      throw new Error(json.error || 'Error al eliminar el servidor.');
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const current = await fetchServersList();
+        const updated = current.filter((s) => s.id !== serverId);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {}
+    }
+
+    return true;
+  } catch (err) {
+    console.warn('Error al eliminar servidor en API:', err);
+    throw err;
+  }
 }
