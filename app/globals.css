@@ -2073,3 +2073,176 @@ button {
   font-weight: 700;
 }
 
+/* ==========================================================================
+   ASISTENTE TÁCTICO DE SERVIDORES (WIZARD & UPLOAD DROPZONE)
+   ========================================================================== */
+.pz-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(10, 14, 24, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  padding: 8px 14px;
+  margin-bottom: 18px;
+}
+
+.pz-step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  color: #64748b;
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.pz-step-item.active {
+  color: #10b981;
+  font-weight: 800;
+}
+
+.pz-step-item.done {
+  color: #38bdf8;
+}
+
+.pz-step-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.pz-step-item.active .pz-step-circle {
+  background: #10b981;
+  color: #04120c;
+  border-color: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.pz-step-item.done .pz-step-circle {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: #38bdf8;
+}
+
+.pz-step-connector {
+  flex: 1;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pz-step-connector.done {
+  background: linear-gradient(90deg, #38bdf8, #10b981);
+}
+
+/* Tarjetas de Modo de Juego */
+.pz-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.pz-mode-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 6px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.pz-mode-card:hover {
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.pz-mode-card.selected {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  box-shadow: 0 0 14px rgba(16, 185, 129, 0.3);
+}
+
+/* Zona Dropzone para Carga de Imágenes */
+.pz-dropzone {
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  background: rgba(10, 14, 24, 0.5);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.pz-dropzone:hover,
+.pz-dropzone.drag-over {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  box-shadow: inset 0 0 16px rgba(16, 185, 129, 0.15);
+}
+
+.pz-dropzone.has-preview {
+  padding: 0;
+  border-style: solid;
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+/* Chips Clicables de Tags */
+.pz-tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pz-tag-chip {
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pz-tag-chip:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.pz-tag-chip.active {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: #10b981;
+  color: #34d399;
+  font-weight: 800;
+}
+
+/* Caja de Previsualización en Vivo */
+.pz-live-preview-box {
+  background: rgba(8, 12, 22, 0.95);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin-top: 14px;
+}
+
+
