@@ -55,3 +55,20 @@ Se ha completado con éxito la transformación de la aplicación hacia la arquit
   - `npm run build` exitoso con Turbopack (Exit Code 0).
   - Confirmado en el head del layout raíz.
 
+---
+
+## Migración Cloudflare D1 & Rediseño Minimalista de Servidores
+* **Vinculación D1 Real**:
+  - Conectado con la cuenta `devimeo03@gmail.com` (`Account ID: 216412448f9fbc402b01b33d58e67559`).
+  - Base de datos D1: `spiffo-servers-db` (`fe48dd49-cb2a-4d9a-9176-2046cce536c7` / `69c97405-6803-4bc4-b9eb-c892e301d9ab`).
+  - Migración ejecutada: `ALTER TABLE servers ADD COLUMN gallery_images TEXT;`.
+  - Índices creados: `idx_servers_owner` y `idx_chat_server_ref`.
+  - Mock data depurada: 0 servidores ficticios en base de datos.
+* **Rediseño Minimalista de Tarjetas**:
+  - Eliminados los botones de ventana falsa (`_ [] X`) y el badge voluminoso `TOP #1 / VAN #2`.
+  - Estructura limpia: Topbar sutil con rango militar (#1, #2, #3), código de frecuencia Knox, estado de radio y badges de modo/región/loot.
+  - Avatar táctico compacto, VU-meter de ocupación, descripción resumida y clúster de acciones directas (Copiar IP, Votar, Editar, Dossier).
+* **Verificación de Terminal**:
+  - `npm run build` ejecutado exitosamente con **Exit Code 0**.
+  - `GET /api/servers` responde HTTP 200 con `source: cloudflare_d1` y `data: []`.
+
