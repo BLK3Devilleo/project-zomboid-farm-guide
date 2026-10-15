@@ -1,13 +1,29 @@
 import { getRecentLogs, subscribeLogs, broadcastLog } from '../../../lib/sseLogger';
+import { getSessionUser, hasRequiredRole } from '../../../lib/session';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request) {
+  // Verificación RLS: Solo Super Admin y Admin tienen acceso a la terminal SSE
+  const sessionUser = await getSessionUser(request);
+  if (!sessionUser || !hasRequiredRole(sessionUser.role, 'admin')) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Acceso no autorizado a la terminal de telemetría de superadministrador.',
+      }),
+      {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
   const encoder = new TextEncoder();
 
   // Emite evento de conexión de cliente al stream
-  broadcastLog('info', '🛰️ Terminal de telemetría SSE conectada a la transmisión.');
+  broadcastLog('info', `🛰️ Terminal de telemetría SSE conectada por ${sessionUser.name || sessionUser.email}.`);
 
   const stream = new ReadableStream({
     start(controller) {

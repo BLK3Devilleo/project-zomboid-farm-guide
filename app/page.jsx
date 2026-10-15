@@ -299,6 +299,7 @@ export default function SpiffoOSApp() {
       <TacticalLogModal
         isOpen={logsModalOpen}
         onClose={() => setLogsModalOpen(false)}
+        currentUser={currentUser}
       />
     </div>
   );

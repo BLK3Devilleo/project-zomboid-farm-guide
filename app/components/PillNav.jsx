@@ -60,6 +60,10 @@ export default function PillNav({
     ? ROLE_LABELS[currentUser.role] || ROLE_LABELS.usuario
     : null;
 
+  const isAdmin = Boolean(
+    currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin')
+  );
+
   const currentActiveRoute = routesDatabase.find((r) => r.id === activeRouteId) || routesDatabase[0];
 
   return (
@@ -156,23 +160,25 @@ export default function PillNav({
 
           {/* LADO DERECHO: ACCESO / USUARIO & XP & BOTÓN HAMBURGUESA MÓVIL */}
           <div className="pill-nav-right-strip">
-            {/* BOTÓN TERMINAL LOGS SSE (DESKTOP) */}
-            <button
-              onClick={onOpenLogsModal}
-              className="pill-tab-item desktop-only"
-              style={{
-                padding: '5px 9px',
-                gap: 4,
-                border: '1px solid rgba(16, 185, 129, 0.4)',
-                background: 'rgba(16, 185, 129, 0.12)',
-                borderRadius: 6,
-                cursor: 'pointer',
-              }}
-              title="Abrir Terminal de Telemetría y Logs SSE en Vivo"
-            >
-              <span style={{ fontSize: 11 }}>🛰️</span>
-              <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 900, color: '#34d399' }}>LOGS</span>
-            </button>
+            {/* BOTÓN TERMINAL LOGS SSE (SOLO VISIBLE PARA ADMIN O SUPER_ADMIN) */}
+            {isAdmin && (
+              <button
+                onClick={onOpenLogsModal}
+                className="pill-tab-item desktop-only"
+                style={{
+                  padding: '5px 9px',
+                  gap: 4,
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                }}
+                title="Abrir Terminal de Telemetría y Logs SSE en Vivo (Administrador)"
+              >
+                <span style={{ fontSize: 11 }}>🛰️</span>
+                <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 900, color: '#34d399' }}>LOGS</span>
+              </button>
+            )}
 
             {/* USUARIO LOGUEADO O ACCESO */}
             {currentUser ? (
@@ -247,16 +253,18 @@ export default function PillNav({
                     >
                       <span>🪪 Ficha de Superviviente</span>
                     </button>
-                    <button
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        onOpenLogsModal();
-                      }}
-                      className="pill-dropdown-item"
-                      style={{ color: '#38bdf8', fontWeight: 800 }}
-                    >
-                      <span>🛰️ Terminal SSE Logs</span>
-                    </button>
+                    {isAdmin && (
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          onOpenLogsModal();
+                        }}
+                        className="pill-dropdown-item"
+                        style={{ color: '#38bdf8', fontWeight: 800 }}
+                      >
+                        <span>🛰️ Terminal SSE Logs</span>
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         setUserMenuOpen(false);
@@ -439,21 +447,25 @@ export default function PillNav({
                 </div>
 
                 {/* Accesos de Perfil / Sistema */}
-                <span className="pill-mobile-nav-section-title" style={{ marginTop: 16 }}>
-                  SISTEMA & TELEMETRÍA
-                </span>
+                {isAdmin && (
+                  <>
+                    <span className="pill-mobile-nav-section-title" style={{ marginTop: 16 }}>
+                      SISTEMA & TELEMETRÍA (ADMIN)
+                    </span>
 
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenLogsModal();
-                  }}
-                  className="pill-mobile-nav-item"
-                  style={{ color: '#38bdf8' }}
-                >
-                  <span className="pill-mobile-nav-icon">🛰️</span>
-                  <span className="pill-mobile-nav-label">Terminal SSE Logs en Vivo</span>
-                </button>
+                    <button
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        onOpenLogsModal();
+                      }}
+                      className="pill-mobile-nav-item"
+                      style={{ color: '#38bdf8' }}
+                    >
+                      <span className="pill-mobile-nav-icon">🛰️</span>
+                      <span className="pill-mobile-nav-label">Terminal SSE Logs en Vivo</span>
+                    </button>
+                  </>
+                )}
 
                 {currentUser ? (
                   <>

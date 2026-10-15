@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 
-export default function TacticalLogModal({ isOpen, onClose }) {
+export default function TacticalLogModal({ isOpen, onClose, currentUser = null }) {
   const [logs, setLogs] = useState([]);
   const [filterLevel, setFilterLevel] = useState('ALL');
   const [searchFilter, setSearchFilter] = useState('');
@@ -11,8 +11,12 @@ export default function TacticalLogModal({ isOpen, onClose }) {
 
   const logsEndRef = useRef(null);
 
+  const isAdmin = Boolean(
+    currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin')
+  );
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !isAdmin) return;
 
     let eventSource = null;
     let isMounted = true;
@@ -51,7 +55,7 @@ export default function TacticalLogModal({ isOpen, onClose }) {
         eventSource.close();
       }
     };
-  }, [isOpen]);
+  }, [isOpen, isAdmin]);
 
   useEffect(() => {
     if (autoScroll && logsEndRef.current) {
@@ -60,6 +64,33 @@ export default function TacticalLogModal({ isOpen, onClose }) {
   }, [logs, autoScroll]);
 
   if (!isOpen) return null;
+
+  if (!isAdmin) {
+    return (
+      <div className="server-modal-backdrop" onClick={onClose}>
+        <div
+          className="server-modal-box"
+          style={{ maxWidth: 440, textAlign: 'center', borderColor: '#ef4444' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{ fontSize: 36, marginBottom: 10 }}>🔒</div>
+          <h2 style={{ color: '#ef4444', fontFamily: 'monospace', fontSize: 16, margin: '0 0 8px' }}>
+            ACCESO CLASIFICADO // RESTRINGIDO
+          </h2>
+          <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.5, margin: '0 0 16px' }}>
+            La terminal de telemetría y logs SSE en tiempo real está reservada exclusivamente para Super Administradores y Administradores de Knox-OS.
+          </p>
+          <button
+            onClick={onClose}
+            className="btn-tactical"
+            style={{ width: '100%', padding: '10px' }}
+          >
+            Cerrar Terminal
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const filteredLogs = logs.filter((l) => {
     const matchesLevel =

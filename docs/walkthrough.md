@@ -97,3 +97,20 @@ Se ha completado con éxito la transformación de la aplicación hacia la arquit
 * **Validación**:
   - `npm run build` ejecutado exitosamente con **Exit Code 0**.
 
+---
+
+## Privatización y Protección del Sistema de Logs SSE
+* **Seguridad en Endpoint ([`app/api/logs/stream/route.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/api/logs/stream/route.js))**:
+  - Implementada autenticación JWT mediante `getSessionUser(request)`.
+  - Verificación estricta de jerarquía de roles: solo usuarios con rol `super_admin` o `admin` pueden abrir la conexión SSE.
+  - Conexiones anónimas o de usuarios estándar son rechazadas con **HTTP 403 Forbidden**.
+* **Ocultamiento en Interfaz ([`app/components/PillNav.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/PillNav.jsx))**:
+  - Botón `🛰️ LOGS` en la barra superior ocultado para visitantes públicos y usuarios estándar.
+  - Opción de `Terminal SSE Logs` en el menú de usuario y en el menú hamburguesa móvil visible exclusivamente para administradores.
+* **Control en Cliente ([`app/components/TacticalLogModal.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/TacticalLogModal.jsx))**:
+  - El modal bloquea la apertura de `EventSource` si el usuario no es administrador y despliega un diálogo de *"Acceso Clasificado // Restringido"*.
+* **Validación**:
+  - `npm run build` con **Exit Code 0**.
+  - Petición curl a `/api/logs/stream` sin token responde **HTTP 403 Forbidden**.
+
+
