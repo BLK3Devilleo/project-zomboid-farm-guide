@@ -72,3 +72,28 @@ Se ha completado con éxito la transformación de la aplicación hacia la arquit
   - `npm run build` ejecutado exitosamente con **Exit Code 0**.
   - `GET /api/servers` responde HTTP 200 con `source: cloudflare_d1` y `data: []`.
 
+---
+
+## Radar Táctico de Loot (Build 42) & Menú Hamburguesa Móvil
+* **Sonar Táctico Interactivo ([`LootView.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/LootView.jsx))**:
+  - Pantalla circular de sonar militar con retícula SVG concéntrica (r=20, 60, 100, 140) y ejes cartesianos.
+  - Haz de barrido giratorio animado (`conic-gradient` con `@keyframes radarSweep 4s linear infinite`).
+  - Nodo central del superviviente (con ping animado) y blips interactivos según el radio de alcance (Armería, Ferretería, Farmacia, Spiffo Food, Fossoil Gas).
+  - Al hacer clic en un blip del sonar, la pantalla hace scroll automático suave hacia la tarjeta y la resalta con una animación de pulso.
+* **Selectores de Escala y Telemetría DEFCON**:
+  - Pips de radio: `500 M`, `1.5 KM` y `5.0 KM` que recalibran la escala del sonar y filtran los alijos en rango.
+  - Cinta de alerta DEFCON-1 (`AMENAZA ACTIVA // KNOX DENSITY`) con pulso luminoso y estado `RADAR ACTIVO`.
+  - Cajas de telemetría HUD: Objetivos detectados, ruido ambiental (38 dB) y sensores activos.
+* **Filtros de Rareza y Tarjetas de Alijo**:
+  - Chips de categoría: `TODO`, `MILITAR (ORO)`, `ÉPICO (PÚRPURA / B42 CRAFT)`, `MÉDICO (CIAN)`, `HERRAMIENTAS` y `ALIMENTOS`.
+  - Tarjetas con resplandor superior por rareza, métrica de densidad de peligro de zeds (`PELIGRO EXTREMO // 140+ ZEDS`), captura de reconocimiento con scanlines y chips de botín detectado por escáner.
+  - Acciones tácticas: `RASTREAR RUTA` (fija el objetivo en el toast GPS flotante), `ALERTA HORDA` (conmuta alarma visual y sonora), `GUARDAR EN GPS` y enlace a ruta de supervivencia.
+  - Dock flotante con toast activo de rumbo (`RADAR GPS FIJADO`) y botón flotante para registrar nuevas balizas de campo.
+* **Navegación Móvil Hamburguesa ([`PillNav.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/PillNav.jsx))**:
+  - Botón hamburguesa táctico visible en pantallas móviles (`< 860px`).
+  - Drawer lateral deslizable con backdrop difuminado y bloqueo de scroll de fondo.
+  - Acceso directo a todas las vistas: Mecánicas Activas (con acordeón de rutas), Meta-Eventos, Servidores, Radar de Loot, Radio 91.5 y Asistente.
+  - Acceso directo a Ficha de Superviviente, Terminal SSE Logs y autenticación.
+* **Validación**:
+  - `npm run build` ejecutado exitosamente con **Exit Code 0**.
+
