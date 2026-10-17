@@ -78,3 +78,22 @@ Se ha culminado la reestructuración arquitectónica y de diseño de la platafor
    - Iniciar sesión con un usuario con rol de `moderador` o `admin`.
    - Se activará el botón **[ADMIN]** en el Navbar.
    - Al pulsar se abrirá el `AdminPanelModal` mostrando la lista de supervivientes y permitiendo alternar roles con feedback en tiempo real.
+
+---
+
+## 4. Almacenamiento Multimedia Cloudflare R2 (Persistencia Permanente)
+
+### 4.1 Problema detectado
+- Las imágenes subidas por los usuarios se almacenaban únicamente en el sistema de archivos local (`public/uploads`) dentro del contenedor Docker.
+- Cada despliegue en Dokploy o reinicio del contenedor eliminaba físicamente las imágenes del disco, dejando enlaces rotos (404) en la base de datos Cloudflare D1.
+
+### 4.2 Solución implementada
+1. **Cliente S3 para Cloudflare R2**:
+   - Integrado `@aws-sdk/client-s3` en `app/lib/storage/storageService.js`.
+   - Subida binaria con `PutObjectCommand` directamente al bucket `pzguiaimagenes` a través del endpoint `https://216412448f9fbc402b01b33d58e67559.r2.cloudflarestorage.com`.
+   - Generación de URLs públicas canónicas bajo `https://pub-73cf5761b1284ebd8f90a8557c6b2b54.r2.dev`.
+2. **Volumen persistente Docker**:
+   - Configurado volumen `pz_uploads:/app/public/uploads` en `docker-compose.yml` para garantizar que incluso el modo de respaldo local nunca pierda archivos ante reinicios.
+3. **Resiliencia en Frontend**:
+   - Añadido `onError` y mapa de estado `failedImages` en `ServerDetailModal.jsx` para sustituir automáticamente imágenes 404 antiguas por el fallback táctico oficial de Spiffo sin romper la interfaz.
+

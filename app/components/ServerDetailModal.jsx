@@ -26,6 +26,7 @@ export default function ServerDetailModal({
   const { modalContainerProps } = useTacticalModal(Boolean(server), onClose);
   const [copied, setCopied] = useState(false);
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
+  const [failedImages, setFailedImages] = useState({});
 
   if (!server) return null;
 
@@ -44,7 +45,14 @@ export default function ServerDetailModal({
     ? server.gallery_images
     : [server.banner_url || '/spiffo/spiffo_character.png'];
 
-  const currentImage = images[selectedImgIndex] || images[0];
+  const rawCurrentImage = images[selectedImgIndex] || images[0];
+  const currentImage = failedImages[rawCurrentImage]
+    ? (server.banner_url && !failedImages[server.banner_url] ? server.banner_url : '/spiffo/spiffo_character.png')
+    : rawCurrentImage;
+
+  const handleImageError = (imgUrl) => {
+    setFailedImages((prev) => ({ ...prev, [imgUrl]: true }));
+  };
 
   const handleCopy = () => {
     try {
@@ -123,6 +131,7 @@ export default function ServerDetailModal({
               style={{ objectFit: 'cover' }}
               sizes="(max-width: 820px) 100vw, 820px"
               priority
+              onError={() => handleImageError(rawCurrentImage)}
             />
             {/* Overlay sutil de viñeta y textura CRT */}
             <div
@@ -189,22 +198,26 @@ export default function ServerDetailModal({
             <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#64748b', textTransform: 'uppercase', marginRight: 4, flexShrink: 0 }}>
               CAPTURAS [{images.length}]:
             </span>
-            {images.map((img, idx) => (
-              <div
-                key={idx}
-                onClick={() => setSelectedImgIndex(idx)}
-                className={`pz-thumb-item ${selectedImgIndex === idx ? 'active' : ''}`}
-                style={{ position: 'relative' }}
-              >
-                <Image
-                  src={img}
-                  alt={`Captura ${idx + 1}`}
-                  fill
-                  style={{ objectFit: 'cover' }}
-                  sizes="68px"
-                />
-              </div>
-            ))}
+            {images.map((img, idx) => {
+              const thumbSrc = failedImages[img] ? '/spiffo/spiffo_character.png' : img;
+              return (
+                <div
+                  key={idx}
+                  onClick={() => setSelectedImgIndex(idx)}
+                  className={`pz-thumb-item ${selectedImgIndex === idx ? 'active' : ''}`}
+                  style={{ position: 'relative' }}
+                >
+                  <Image
+                    src={thumbSrc}
+                    alt={`Captura ${idx + 1}`}
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    sizes="68px"
+                    onError={() => handleImageError(img)}
+                  />
+                </div>
+              );
+            })}
           </div>
         )}
 

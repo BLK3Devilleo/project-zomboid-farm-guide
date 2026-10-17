@@ -9,6 +9,7 @@
     "check": "node node_modules/next/dist/bin/next build"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1152.0",
     "@microsoft/clarity": "^1.0.2",
     "jose": "^6.2.12",
     "motion": "^14.0.0",

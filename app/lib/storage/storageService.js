@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 /**
  * Servicio Modular de Almacenamiento KnoxOS
@@ -32,6 +33,28 @@ export function validateImage(file) {
 }
 
 /**
+ * Instancia el cliente de Cloudflare R2 utilizando la API compatible con S3.
+ */
+function getR2Client() {
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
+  const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY?.trim();
+
+  if (!accountId || !accessKeyId || !secretAccessKey) {
+    return null;
+  }
+
+  return new S3Client({
+    region: 'auto',
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: {
+      accessKeyId,
+      secretAccessKey,
+    },
+  });
+}
+
+/**
  * Guarda un archivo multimedia y retorna la URL pública canónica.
  * 
  * @param {File} file Objeto File proveniente de FormData
@@ -49,23 +72,36 @@ export async function saveMediaFile(file, metadata = {}) {
   const fileName = `pz-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${safeExt}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  // Comprobar si hay credenciales para Cloudflare R2 / S3 API
+  // 1. Intentar subida a Cloudflare R2 vía S3 API
+  const r2Client = getR2Client();
   const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET?.trim();
   const R2_PUBLIC_DOMAIN = process.env.CLOUDFLARE_R2_PUBLIC_DOMAIN?.trim();
 
-  if (R2_BUCKET && R2_PUBLIC_DOMAIN) {
-    // Modo Cloudflare R2 Cloud Storage
-    // Cuando el bucket y dominio público de R2 están inyectados
-    const cloudUrl = `${R2_PUBLIC_DOMAIN.replace(/\/$/, '')}/${fileName}`;
-    return {
-      url: cloudUrl,
-      size: file.size,
-      name: fileName,
-      provider: 'cloudflare-r2',
-    };
+  if (r2Client && R2_BUCKET && R2_PUBLIC_DOMAIN) {
+    try {
+      const putCommand = new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: fileName,
+        Body: buffer,
+        ContentType: file.type || 'image/png',
+        CacheControl: 'public, max-age=31536000, immutable',
+      });
+
+      await r2Client.send(putCommand);
+
+      const cloudUrl = `${R2_PUBLIC_DOMAIN.replace(/\/$/, '')}/${fileName}`;
+      return {
+        url: cloudUrl,
+        size: file.size,
+        name: fileName,
+        provider: 'cloudflare-r2',
+      };
+    } catch (r2Error) {
+      console.error('Fallo al subir a Cloudflare R2, recurriendo a disco local:', r2Error);
+    }
   }
 
-  // Modo Sistema de Archivos / Local Persistence
+  // 2. Modo Sistema de Archivos / Local Persistence (Fallback)
   const uploadDir = path.join(process.cwd(), 'public', 'uploads');
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
