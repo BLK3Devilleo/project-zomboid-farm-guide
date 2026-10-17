@@ -3,6 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { ROLE_LABELS } from '../lib/authClient';
+import { useTacticalModal } from '../hooks/useTacticalModal';
+import {
+  UserIcon,
+  RadarServerIcon,
+  WrenchIcon,
+  CrosshairIcon,
+  RadioAntennaIcon,
+  CloudCheckIcon,
+  VoteIcon,
+  CloseCrossIcon,
+  HazardIcon,
+} from './icons/KnoxIcons';
 
 export const PZ_AVATARS = [
   { id: 'ferret_mascot.jpg', label: 'Hurón Veterano' },
@@ -49,6 +61,7 @@ export default function ProfileModal({
   onProfileUpdated = () => {},
   onOpenAddServer = () => {},
 }) {
+  const { modalContainerProps } = useTacticalModal(isOpen, onClose);
   const [activeTab, setActiveTab] = useState('card'); // 'card' | 'servers'
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -98,12 +111,12 @@ export default function ProfileModal({
         const resServ = await fetch('/api/user/servers');
         if (resServ.ok) {
           const jsonServ = await resServ.json();
-          if (jsonServ.success) {
-            setMyServers(jsonServ.servers || []);
+          if (jsonServ.success && Array.isArray(jsonServ.servers)) {
+            setMyServers(jsonServ.servers);
           }
         }
-      } catch (e) {
-        console.warn('Error cargando datos de usuario:', e);
+      } catch (err) {
+        console.warn('Error cargando ficha o servidores:', err);
       } finally {
         setLoading(false);
       }
@@ -129,11 +142,11 @@ export default function ProfileModal({
         throw new Error(json.error || 'Error al guardar el perfil.');
       }
 
-      setFeedback('¡Ficha militar de superviviente actualizada!');
+      setFeedback('Ficha militar de superviviente sincronizada en la nube.');
       onProfileUpdated(json.profile);
       setTimeout(() => setFeedback(''), 3000);
     } catch (err) {
-      setFeedback(`⚠️ ${err.message}`);
+      setFeedback(err.message);
     } finally {
       setSaving(false);
     }
@@ -158,6 +171,7 @@ export default function ProfileModal({
   return (
     <div className="server-modal-backdrop" onClick={onClose}>
       <div
+        {...modalContainerProps}
         className="server-modal-card"
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 780, maxHeight: '90vh', overflowY: 'auto' }}
@@ -196,8 +210,8 @@ export default function ProfileModal({
             >
               {currentRoleMeta?.badge}
             </div>
-            <button onClick={onClose} className="server-modal-close-btn">
-              ✕
+            <button onClick={onClose} className="server-modal-close-btn" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <CloseCrossIcon size={14} />
             </button>
           </div>
         </div>
@@ -215,9 +229,13 @@ export default function ProfileModal({
               fontSize: 13,
               fontWeight: 800,
               cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
             }}
           >
-            🪪 Tarjeta de Superviviente (PZ)
+            <UserIcon size={15} color={activeTab === 'card' ? '#10b981' : '#94a3b8'} />
+            <span>Tarjeta de Superviviente (PZ)</span>
           </button>
           <button
             onClick={() => setActiveTab('servers')}
@@ -230,9 +248,13 @@ export default function ProfileModal({
               fontSize: 13,
               fontWeight: 800,
               cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
             }}
           >
-            🌐 Mis Servidores ({myServers.length})
+            <RadarServerIcon size={15} color={activeTab === 'servers' ? '#10b981' : '#94a3b8'} />
+            <span>Mis Servidores ({myServers.length})</span>
           </button>
         </div>
 
@@ -244,12 +266,16 @@ export default function ProfileModal({
               borderRadius: 8,
               fontSize: 12,
               fontWeight: 700,
-              background: feedback.includes('⚠️') ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-              border: feedback.includes('⚠️') ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
-              color: feedback.includes('⚠️') ? '#f87171' : '#34d399',
+              background: feedback.includes('Error') || feedback.includes('demasiadas') ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+              border: feedback.includes('Error') || feedback.includes('demasiadas') ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
+              color: feedback.includes('Error') || feedback.includes('demasiadas') ? '#f87171' : '#34d399',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
             }}
           >
-            {feedback}
+            <HazardIcon size={14} />
+            <span>{feedback}</span>
           </div>
         )}
 
@@ -302,15 +328,18 @@ export default function ProfileModal({
                     {profileData.nickname || currentUser.name}
                   </h3>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
-                    <span style={{ fontSize: 11, background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
-                      🔨 {profileData.profession}
+                    <span style={{ fontSize: 11, background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 8px', borderRadius: 4, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <WrenchIcon size={12} color="#38bdf8" />
+                      <span>{profileData.profession}</span>
                     </span>
-                    <span style={{ fontSize: 11, background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
-                      🎮 {profileData.playstyle}
+                    <span style={{ fontSize: 11, background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '2px 8px', borderRadius: 4, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <CrosshairIcon size={12} color="#c084fc" />
+                      <span>{profileData.playstyle}</span>
                     </span>
                     {profileData.discord_tag && (
-                      <span style={{ fontSize: 11, background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
-                        💬 Discord: {profileData.discord_tag}
+                      <span style={{ fontSize: 11, background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', padding: '2px 8px', borderRadius: 4, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <RadioAntennaIcon size={12} color="#818cf8" />
+                        <span>Discord: {profileData.discord_tag}</span>
                       </span>
                     )}
                   </div>
@@ -433,9 +462,10 @@ export default function ProfileModal({
                   type="submit"
                   disabled={saving}
                   className="btn-tactical"
-                  style={{ padding: '10px 24px', fontSize: 13 }}
+                  style={{ padding: '10px 24px', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 8 }}
                 >
-                  {saving ? 'Guardando...' : '💾 Guardar Ficha de Superviviente'}
+                  <CloudCheckIcon size={16} />
+                  <span>{saving ? 'Guardando en la nube...' : 'Guardar Ficha de Superviviente'}</span>
                 </button>
               </div>
             </form>
@@ -454,15 +484,18 @@ export default function ProfileModal({
                     onOpenAddServer();
                   }}
                   className="btn-tactical"
-                  style={{ padding: '6px 14px', fontSize: 12 }}
+                  style={{ padding: '6px 14px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 >
-                  ➕ Enlistar Nuevo
+                  <RadarServerIcon size={14} />
+                  <span>Enlistar Nuevo</span>
                 </button>
               </div>
 
               {myServers.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 10px', color: '#64748b' }}>
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>📡</div>
+                  <div style={{ marginBottom: 8 }}>
+                    <RadarServerIcon size={32} color="#64748b" />
+                  </div>
                   <p style={{ fontSize: 13, margin: 0 }}>Aún no has registrado ningún servidor.</p>
                 </div>
               ) : (
@@ -487,8 +520,9 @@ export default function ProfileModal({
                           <span style={{ fontSize: 11, fontWeight: 800, color: '#10b981', fontFamily: 'monospace' }}>
                             {srv.region} · {srv.mode}
                           </span>
-                          <span style={{ fontSize: 11, color: '#38bdf8' }}>
-                            ⭐ {srv.votes || 0} Votos
+                          <span style={{ fontSize: 11, color: '#38bdf8', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                            <VoteIcon size={12} color="#f59e0b" />
+                            <span>{srv.votes || 0} Votos</span>
                           </span>
                         </div>
                         <h4 style={{ fontSize: 15, fontWeight: 800, color: '#ffffff', margin: '3px 0' }}>
@@ -514,9 +548,13 @@ export default function ProfileModal({
                             fontSize: 12,
                             fontWeight: 700,
                             cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
                           }}
                         >
-                          ✏️ Editar
+                          <WrenchIcon size={13} color="#38bdf8" />
+                          <span>Editar</span>
                         </button>
                         <button
                           onClick={() => handleDeleteServer(srv.id)}
@@ -529,9 +567,13 @@ export default function ProfileModal({
                             fontSize: 12,
                             fontWeight: 700,
                             cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
                           }}
                         >
-                          🗑️ Eliminar
+                          <CloseCrossIcon size={13} color="#ef4444" />
+                          <span>Eliminar</span>
                         </button>
                       </div>
                     </div>

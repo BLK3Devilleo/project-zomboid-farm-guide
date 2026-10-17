@@ -1,882 +1,418 @@
 'use client';
 
-import React, { useState, useMemo, useRef } from 'react';
-import Image from 'next/image';
-import { lootDatabase } from '../data/lootDatabase';
+import React, { useState, useMemo } from 'react';
+import { lootZoneTypes, MAP_REGIONS } from '../data/lootDatabase';
+import { useTacticalModal } from '../hooks/useTacticalModal';
+import {
+  CrosshairIcon,
+  BackpackIcon,
+  RadarServerIcon,
+  HazardIcon,
+  ShieldAdminIcon,
+  SignalPulseIcon,
+  VoteIcon,
+  CloseCrossIcon,
+  WrenchIcon,
+  MedicalCrossIcon,
+  CheckIcon,
+} from './icons/KnoxIcons';
 
-export default function LootView({ selectedCategory = 'all', onSelectRoute }) {
-  const [activeRadius, setActiveRadius] = useState('1.5km'); // '500m' | '1.5km' | '5.0km'
-  const [activeCategory, setActiveCategory] = useState(selectedCategory === 'all' ? 'TODO' : selectedCategory);
-  const [trackedRoute, setTrackedRoute] = useState(null);
-  const [hordeAlerts, setHordeAlerts] = useState({});
-  const [savedGpsPings, setSavedGpsPings] = useState({});
-  const [expandedCards, setExpandedCards] = useState({});
-  const [activeTabByCard, setActiveTabByCard] = useState({});
-  const [checkedGear, setCheckedGear] = useState({});
-  const [stashModalOpen, setStashModalOpen] = useState(false);
-  const [customStashes, setCustomStashes] = useState([]);
-  const [newStashName, setNewStashName] = useState('');
-  const [newStashCategory, setNewStashCategory] = useState('Militar');
-  const [newStashItems, setNewStashItems] = useState('');
+export default function LootView({ onSelectRoute }) {
+  const [selectedRegion, setSelectedRegion] = useState('ALL');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedPoi, setExpandedPoi] = useState({});
+  const [savedPois, setSavedPois] = useState({});
 
-  const cardRefs = useRef({});
+  // Modal para registrar una baliza GPS personalizada
+  const [beaconModalOpen, setBeaconModalOpen] = useState(false);
+  const { modalContainerProps } = useTacticalModal(beaconModalOpen, () => setBeaconModalOpen(false));
+  const [customBeacons, setCustomBeacons] = useState([]);
+  const [beaconName, setBeaconName] = useState('');
+  const [beaconCity, setBeaconCity] = useState('Rosewood');
+  const [beaconDesc, setBeaconDesc] = useState('');
 
-  // Categorías de filtro militar
-  const filterCategories = [
-    { id: 'TODO', label: 'TODO', color: '#10b981', dot: '#10b981' },
-    { id: 'militar', label: 'MILITAR (ORO)', color: '#fbbf24', dot: '#f59e0b' },
-    { id: 'epico', label: 'ÉPICO (PÚRPURA)', color: '#c084fc', dot: '#a855f7' },
-    { id: 'medico', label: 'MÉDICO (CIAN)', color: '#38bdf8', dot: '#00a6e0' },
-    { id: 'herramientas', label: 'HERRAMIENTAS', color: '#34d399', dot: '#10b981' },
-    { id: 'alimentos', label: 'ALIMENTOS', color: '#fed7aa', dot: '#f97316' },
+  const categories = [
+    { id: 'ALL', label: 'Todas las Zonas' },
+    { id: 'Militar', label: 'Militar & Armamento' },
+    { id: 'Herramientas', label: 'Herramientas & Forja B42' },
+    { id: 'Médica', label: 'Clínicas & Farmacia' },
+    { id: 'Alimentos', label: 'Supermercados & Comida' },
+    { id: 'Automotriz', label: 'Talleres & Gasolineras' },
+    { id: 'Residencial', label: 'Residencial & Libros' },
   ];
 
-  // Distancia máxima en metros según radio
-  const radiusLimit = useMemo(() => {
-    if (activeRadius === '500m') return 550;
-    if (activeRadius === '1.5km') return 1600;
-    return 6000;
-  }, [activeRadius]);
-
-  // Lista combinada (base de datos + alijos personalizados del jugador)
-  const allStashes = useMemo(() => {
-    return [...customStashes, ...lootDatabase];
-  }, [customStashes]);
-
-  // Filtrado activo por radio, categoría y búsqueda
-  const filteredList = useMemo(() => {
-    return allStashes.filter((item) => {
-      // Filtro por radio de sonar
-      const inRadius = item.distanceMeters <= radiusLimit;
-
-      // Filtro por categoría / tier
-      let matchesCategory = true;
-      if (activeCategory !== 'TODO') {
-        matchesCategory =
-          item.tier === activeCategory ||
-          item.category.toLowerCase().includes(activeCategory.toLowerCase());
+  // Filtrado reactivo de POIs
+  const filteredPois = useMemo(() => {
+    return lootZoneTypes.filter((poi) => {
+      // Filtro de región/ciudad
+      if (selectedRegion !== 'ALL' && !poi.cities.includes(selectedRegion)) {
+        return false;
       }
-
-      // Filtro por búsqueda
-      const q = searchQuery.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
-        item.title.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q) ||
-        (item.scanItems && item.scanItems.some((s) => s.toLowerCase().includes(q))) ||
-        (item.whatToLookFor && item.whatToLookFor.some((w) => w.toLowerCase().includes(q)));
-
-      return inRadius && matchesCategory && matchesSearch;
-    });
-  }, [allStashes, radiusLimit, activeCategory, searchQuery]);
-
-  // Objetivos visibles en la pantalla de radar según radio
-  const visibleRadarBlips = useMemo(() => {
-    return allStashes.filter((item) => item.distanceMeters <= radiusLimit);
-  }, [allStashes, radiusLimit]);
-
-  // Acción: Clic en blip de radar -> Scroll y Resaltar tarjeta
-  const handleBlipClick = (cardId) => {
-    const el = cardRefs.current[cardId];
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('pz-card-pulse-highlight');
-      setTimeout(() => {
-        el.classList.remove('pz-card-pulse-highlight');
-      }, 1500);
-    }
-  };
-
-  // Acción: Fijar o cancelar ruta en GPS
-  const handleToggleRoute = (stash) => {
-    if (trackedRoute?.id === stash.id) {
-      setTrackedRoute(null);
-    } else {
-      setTrackedRoute(stash);
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.08, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.3);
-      } catch (e) {}
-    }
-  };
-
-  // Acción: Conmutar Alerta de Horda en zona
-  const handleToggleHordeAlert = (cardId) => {
-    setHordeAlerts((prev) => {
-      const nextState = !prev[cardId];
-      if (nextState) {
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'sawtooth';
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.frequency.setValueAtTime(220, ctx.currentTime);
-          osc.frequency.setValueAtTime(180, ctx.currentTime + 0.15);
-          gain.gain.setValueAtTime(0.12, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.45);
-        } catch (e) {}
+      // Filtro de categoría
+      if (selectedCategory !== 'ALL' && poi.category !== selectedCategory) {
+        return false;
       }
-      return { ...prev, [cardId]: nextState };
+      // Filtro de búsqueda
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchTitle = poi.title.toLowerCase().includes(q);
+        const matchDesc = poi.zoneBadge.toLowerCase().includes(q);
+        const matchLoc = poi.knownLocations.some((l) =>
+          l.location.toLowerCase().includes(q) || l.city.toLowerCase().includes(q)
+        );
+        return matchTitle || matchDesc || matchLoc;
+      }
+      return true;
     });
+  }, [selectedRegion, selectedCategory, searchQuery]);
+
+  const toggleExpand = (id) => {
+    setExpandedPoi((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Acción: Guardar alijo en GPS personal
-  const handleSaveGps = (stash) => {
-    setSavedGpsPings((prev) => ({
-      ...prev,
-      [stash.id]: !prev[stash.id],
-    }));
+  const toggleSavePoi = (id) => {
+    setSavedPois((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Acción: Crear alijo personalizado
-  const handleCreateCustomStash = (e) => {
+  const handleCreateBeacon = (e) => {
     e.preventDefault();
-    if (!newStashName.trim()) return;
+    if (!beaconName.trim()) return;
 
-    const newId = `custom-${Date.now()}`;
-    const newEntry = {
-      id: newId,
-      tier: newStashCategory.toLowerCase() === 'militar' ? 'militar' : newStashCategory.toLowerCase() === 'épico' ? 'epico' : newStashCategory.toLowerCase() === 'médico' ? 'medico' : 'herramientas',
-      tierLabel: `TIER: PERSONAL // ${newStashCategory.toUpperCase()}`,
-      tierColor: '#10b981',
-      glowColor: '#4edea3',
-      category: newStashCategory,
-      icon: 'add_location_alt',
-      title: newStashName.trim(),
-      sector: 'SECTOR 03: POSICIÓN DE CAMPO',
-      freq: '142.80',
-      distanceMeters: Math.floor(Math.random() * 400) + 150,
-      distanceDisplay: 'Posición Marcada en Terreno',
-      radarPos: {
-        top: `${Math.floor(Math.random() * 60) + 20}%`,
-        left: `${Math.floor(Math.random() * 60) + 20}%`,
-      },
-      radarLabel: `${newStashName.substring(0, 10).toUpperCase()} // MARCADOR`,
-      hazardLevel: 'PELIGRO VARIABLE // ZONA RECONOCIMIENTO',
-      hazardNote: 'BALIZA ACTIVA DE SUPERVIVIENTE',
-      respawnTimer: 'Permanente',
-      isCritical: false,
-      image: '/spiffo/ferret_mascot.jpg',
-      imageTag: 'BALIZA GPS REGISTRADA',
-      scanItems: newStashItems
-        ? newStashItems.split(',').map((s) => s.trim())
-        : ['Suministros varios', 'Caja de clavos', 'Munición de reserva'],
-      riskLevel: 'Medio',
-      whenToGo: 'A discreción del superviviente',
-      whatToLookFor: ['Objetos almacenados en la baliza de campaña'],
-      whereToFind: ['Coordenadas GPS fijadas en este sector'],
-      recommendedGear: ['Mochila para transporte de suministros'],
-      tacticalTips: ['No dejes marcas visibles si juegas en servidores PvP.'],
-      relatedRoutes: ['survival-basics'],
+    const newBeacon = {
+      id: `custom-${Date.now()}`,
+      category: 'Personalizado',
+      title: beaconName.trim(),
+      zoneBadge: 'BALIZA DE CAMPO SUPERVIVIENTE',
+      threatLevel: 'Variable',
+      threatColor: '#10b981',
+      alarmRisk: 'Desconocido',
+      cities: [beaconCity],
+      knownLocations: [{ city: beaconCity, location: beaconDesc.trim() || 'Coordenadas marcadas en PDA' }],
+      targetContainers: [{ container: 'Alijo Táctico Personal', probability: '100%', lootTypes: 'Recursos almacenados por el operador' }],
+      tacticalBreach: ['Punto seguro fijado por el usuario.'],
+      disclaimer: 'Marcador personalizado de supervivencia en memoria local.',
     };
 
-    setCustomStashes((prev) => [newEntry, ...prev]);
-    setNewStashName('');
-    setNewStashItems('');
-    setStashModalOpen(false);
+    setCustomBeacons([newBeacon, ...customBeacons]);
+    setBeaconName('');
+    setBeaconDesc('');
+    setBeaconModalOpen(false);
   };
 
+  const allVisiblePois = [...customBeacons, ...filteredPois];
+
   return (
-    <div className="radar-view-container">
-      {/* 1. DEFCON TACTICAL ZONE ALERT RIBBON */}
-      <div className="radar-defcon-ribbon">
-        <div className="radar-defcon-strip-pulse"></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingLeft: 10 }}>
-          <span className="radar-defcon-warning-icon">⚠️</span>
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span className="radar-defcon-label">AMENAZA ACTIVA // KNOX DENSITY</span>
-            <span className="radar-defcon-sub">DEFCON-1 : ZONA INFESTADA CRÍTICA</span>
+    <div style={{ maxWidth: 1100, width: '100%', margin: '0 auto', padding: '24px 20px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* 1. HERO DIEGÉTICO */}
+      <div className="pz-mission-panel" style={{ padding: '24px 28px' }}>
+        <div className="pz-mission-bar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <SignalPulseIcon size={14} color="#10b981" />
+            <span>RADAR TÁCTICO // RECONOCIMIENTO DE POIs & ZONAS DE BOTÍN</span>
           </div>
+          <span>B42 HEURISTIC SCANNER</span>
         </div>
-        <div className="radar-active-status-pill">
-          <span className="radar-ping-dot"></span>
-          <span className="radar-ping-text">RADAR ACTIVO</span>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 280 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <BackpackIcon size={26} color="#10b981" />
+              <span>Loot Points & Zonas de Saqueo</span>
+            </h1>
+            <p style={{ fontSize: 13, color: '#94a3b8', margin: 0, maxWidth: 660, lineHeight: 1.5 }}>
+              Inteligencia predictiva de arquitectura y contenedores de Project Zomboid Build 42. Consulta probabilidades heurísticas según la tipología de edificio y ciudad sin promesas falsas de botín fijo garantizado.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setBeaconModalOpen(true)}
+            className="pz-btn-primary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
+            <RadarServerIcon size={16} color="currentColor" />
+            <span>+ Fijar Baliza GPS</span>
+          </button>
         </div>
       </div>
 
-      <div className="radar-content-wrapper">
-        {/* 2. TERMINAL Y SONAR TAC-HUD VIEWPORT */}
-        <div className="radar-sonar-card">
-          {/* Header de Sector & Frecuencia */}
-          <div className="radar-sector-header">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div className="radar-sector-pulse-beacon"></div>
-              <span className="radar-sector-title">SECTOR 03: WEST POINT</span>
-            </div>
-            <span className="radar-freq-badge">FREQ 142.80</span>
-          </div>
-
-          {/* Selectores de Radio (500M / 1.5KM / 5.0KM) */}
-          <div className="radar-radius-selector">
-            {['500m', '1.5km', '5.0km'].map((rad) => {
-              const isActive = activeRadius === rad;
-              return (
-                <button
-                  key={rad}
-                  onClick={() => setActiveRadius(rad)}
-                  className={`radar-radius-btn ${isActive ? 'active' : ''}`}
-                >
-                  {rad.toUpperCase().replace('M', ' M').replace('KM', ' KM')}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* SONAR CIRCULAR DIEGÉTICO */}
-          <div className="radar-sonar-viewport">
-            {/* Retícula SVG concéntrica y ejes */}
-            <svg
-              className="radar-svg-grid"
-              viewBox="0 0 300 300"
-              aria-hidden="true"
-            >
-              <circle cx="150" cy="150" fill="none" r="140" stroke="rgba(78, 222, 163, 0.25)" strokeDasharray="4 4" strokeWidth="1.5" />
-              <circle cx="150" cy="150" fill="none" r="100" stroke="rgba(78, 222, 163, 0.3)" strokeWidth="1" />
-              <circle cx="150" cy="150" fill="none" r="60" stroke="rgba(78, 222, 163, 0.2)" strokeDasharray="2 2" strokeWidth="1" />
-              <circle cx="150" cy="150" fill="none" r="20" stroke="rgba(78, 222, 163, 0.35)" strokeWidth="1" />
-              <line stroke="rgba(78, 222, 163, 0.2)" strokeWidth="1" x1="150" x2="150" y1="5" y2="295" />
-              <line stroke="rgba(78, 222, 163, 0.2)" strokeWidth="1" x1="5" x2="295" y1="150" y2="150" />
-            </svg>
-
-            {/* Haz de Barrido Giratorio (Radar Sweep Beam) */}
-            <div className="radar-sweep-beam"></div>
-
-            {/* Nodo Central del Superviviente */}
-            <div className="radar-player-center" title="Tu Posición Actual (GPS)">
-              <span className="radar-player-ping"></span>
-              <span className="radar-player-icon">▲</span>
-            </div>
-
-            {/* Blips Interactivos en el Sonar */}
-            {visibleRadarBlips.map((stash) => {
-              const isArmory = stash.tier === 'militar';
-              const isEpic = stash.tier === 'epico';
-              const isMedical = stash.tier === 'medico';
-              const isFood = stash.tier === 'alimentos';
-
-              let blipColor = '#10b981';
-              if (isArmory) blipColor = '#f59e0b';
-              else if (isEpic) blipColor = '#a855f7';
-              else if (isMedical) blipColor = '#00a6e0';
-              else if (isFood) blipColor = '#f97316';
-
-              return (
-                <div
-                  key={stash.id}
-                  onClick={() => handleBlipClick(stash.id)}
-                  className="radar-blip-node"
-                  style={{
-                    top: stash.radarPos.top,
-                    left: stash.radarPos.left,
-                  }}
-                  title={`Clic para inspeccionar alijo: ${stash.title}`}
-                >
-                  <div
-                    className="radar-blip-dot-wrapper"
-                    style={{
-                      background: `${blipColor}33`,
-                      boxShadow: `0 0 10px ${blipColor}`,
-                    }}
-                  >
-                    <span
-                      className="radar-blip-core"
-                      style={{ background: blipColor }}
-                    ></span>
-                  </div>
-                  <span
-                    className="radar-blip-tag"
-                    style={{ color: blipColor }}
-                  >
-                    {stash.radarLabel || `${stash.title.substring(0, 10)}`}
-                  </span>
-                </div>
-              );
-            })}
-
-            {/* Puntos Cardinales */}
-            <span className="radar-cardinal-pt north">N</span>
-            <span className="radar-cardinal-pt south">S</span>
-            <span className="radar-cardinal-pt west">O</span>
-            <span className="radar-cardinal-pt east">E</span>
-          </div>
-
-          {/* Telemetría Rápida HUD (3 Cajas Inferiores) */}
-          <div className="radar-telemetry-grid">
-            <div className="radar-telemetry-box">
-              <span className="radar-telemetry-label">OBJETIVOS DETECTADOS</span>
-              <span className="radar-telemetry-value green">{filteredList.length} PUNTOS</span>
-            </div>
-            <div className="radar-telemetry-box">
-              <span className="radar-telemetry-label">RUIDO AMBIENTAL</span>
-              <span className="radar-telemetry-value amber">38 dB (SEGURO)</span>
-            </div>
-            <div className="radar-telemetry-box">
-              <span className="radar-telemetry-label">SENSORES ACTIVOS</span>
-              <span className="radar-telemetry-value cyan">3 NODOS</span>
-            </div>
+      {/* 2. SELECTOR DE CIUDAD / MAPA & FILTROS */}
+      <div className="pz-mission-panel" style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {/* Selector de Ciudad/Región */}
+        <div>
+          <span style={{ fontSize: 11, fontWeight: 900, color: '#38bdf8', fontFamily: 'monospace', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 8 }}>
+            SECTOR / MAPA DEL CONDADO DE KNOX
+          </span>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {MAP_REGIONS.map((region) => (
+              <button
+                key={region.id}
+                type="button"
+                onClick={() => setSelectedRegion(region.id)}
+                className={`pz-switch-tab ${selectedRegion === region.id ? 'active' : ''}`}
+                style={{ padding: '6px 14px', fontSize: 12 }}
+              >
+                {region.name}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* 3. BARRA DE BÚSQUEDA Y FILTROS CATEGORÍA */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
-          {/* Búsqueda en Vivo */}
-          <div style={{ position: 'relative' }}>
+        {/* Buscador y Categorías */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+          {/* Categorías */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flex: 1, minWidth: 260 }}>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`pz-switch-tab ${selectedCategory === cat.id ? 'active' : ''}`}
+                style={{ padding: '5px 12px', fontSize: 11 }}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Buscador */}
+          <div style={{ position: 'relative', width: 260 }}>
             <input
               type="text"
-              placeholder="🔍 Buscar alijo, munición, arma, medicina o forja B42..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="radar-search-input"
+              placeholder="Buscar zona, contenedor o ciudad..."
+              className="pz-scanner-input"
+              style={{ padding: '6px 12px', fontSize: 12 }}
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => setSearchQuery('')}
-                style={{
-                  position: 'absolute',
-                  right: 12,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#94a3b8',
-                  cursor: 'pointer',
-                  fontWeight: 900,
-                }}
+                style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
               >
-                ✕
+                <CloseCrossIcon size={12} color="#94a3b8" />
               </button>
             )}
           </div>
-
-          {/* Filtros por Categoría Rápida */}
-          <div className="radar-filter-chips-strip">
-            {filterCategories.map((cat) => {
-              const isActive = activeCategory === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setActiveCategory(cat.id)}
-                  className={`radar-cat-chip ${isActive ? 'active' : ''}`}
-                  style={{
-                    color: isActive ? '#ffffff' : cat.color,
-                  }}
-                >
-                  <span
-                    className="radar-cat-dot"
-                    style={{ background: cat.dot }}
-                  ></span>
-                  <span>{cat.label}</span>
-                </button>
-              );
-            })}
-          </div>
         </div>
+      </div>
 
-        {/* 4. CABECERA DE LISTA DE ALIJOS */}
-        <div className="radar-stash-list-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 16 }}>🎯</span>
-            <span className="radar-stash-list-title">ALIJOS Y PUNTOS DE INTERÉS</span>
+      {/* 3. LISTADO DE ZONAS Y POIs */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {allVisiblePois.length === 0 ? (
+          <div className="pz-mission-panel" style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
+            <RadarServerIcon size={36} color="#64748b" style={{ display: 'block', margin: '0 auto 10px' }} />
+            <strong style={{ color: '#ffffff', display: 'block', fontSize: 16, fontFamily: 'monospace' }}>
+              NO SE DETECTAN ZONAS CON ESTOS PARÁMETROS
+            </strong>
+            <p style={{ fontSize: 13, marginTop: 4 }}>
+              Intenta seleccionar "Todo Knox" o restablecer los filtros de búsqueda.
+            </p>
           </div>
-          <span className="radar-stash-list-order">ORDEN: PROXIMIDAD ({filteredList.length})</span>
-        </div>
+        ) : (
+          allVisiblePois.map((poi) => {
+            const isExpanded = Boolean(expandedPoi[poi.id]);
+            const isSaved = Boolean(savedPois[poi.id]);
 
-        {/* 5. TARJETAS TÁCTICAS DE BOTÍN */}
-        <div className="radar-cards-stack">
-          {filteredList.length === 0 ? (
-            <div className="radar-empty-box">
-              <span style={{ fontSize: 36, display: 'block', marginBottom: 12 }}>📡</span>
-              <h3 style={{ color: '#ffffff', fontSize: 16, margin: '0 0 6px', fontFamily: 'monospace' }}>
-                SIN SEÑAL EN ESTE RADIO DE ESCANEO
-              </h3>
-              <p style={{ color: '#94a3b8', fontSize: 12, margin: 0, maxWidth: 440 }}>
-                Prueba ampliando el rango del radar a <strong>1.5 KM</strong> o <strong>5.0 KM</strong>, o selecciona la categoría <strong>TODO</strong>.
-              </p>
-            </div>
-          ) : (
-            filteredList.map((stash) => {
-              const isHordeAlertActive = Boolean(hordeAlerts[stash.id]);
-              const isGpsSaved = Boolean(savedGpsPings[stash.id]);
-              const isTracked = trackedRoute?.id === stash.id;
-              const isExpanded = Boolean(expandedCards[stash.id]);
-              const activeTab = activeTabByCard[stash.id] || 'look';
-
-              // Colores según rareza
-              let tierBorder = 'rgba(255, 255, 255, 0.12)';
-              let tierGlow = 'rgba(255, 255, 255, 0.05)';
-              let tierTopLine = '#94a3b8';
-              if (stash.tier === 'militar') {
-                tierBorder = 'rgba(245, 158, 11, 0.4)';
-                tierGlow = 'rgba(245, 158, 11, 0.12)';
-                tierTopLine = '#f59e0b';
-              } else if (stash.tier === 'epico') {
-                tierBorder = 'rgba(168, 85, 247, 0.4)';
-                tierGlow = 'rgba(168, 85, 247, 0.12)';
-                tierTopLine = '#a855f7';
-              } else if (stash.tier === 'medico') {
-                tierBorder = 'rgba(0, 166, 224, 0.4)';
-                tierGlow = 'rgba(0, 166, 224, 0.12)';
-                tierTopLine = '#00a6e0';
-              } else if (stash.tier === 'alimentos') {
-                tierBorder = 'rgba(249, 115, 22, 0.4)';
-                tierGlow = 'rgba(249, 115, 22, 0.12)';
-                tierTopLine = '#f97316';
-              } else if (stash.tier === 'herramientas') {
-                tierBorder = 'rgba(16, 185, 129, 0.4)';
-                tierGlow = 'rgba(16, 185, 129, 0.12)';
-                tierTopLine = '#10b981';
-              }
-
-              return (
-                <div
-                  key={stash.id}
-                  id={stash.id}
-                  ref={(el) => {
-                    if (el) cardRefs.current[stash.id] = el;
-                  }}
-                  className={`radar-loot-card ${isHordeAlertActive ? 'horde-alert-glow' : ''}`}
-                  style={{
-                    borderColor: isHordeAlertActive ? '#ef4444' : tierBorder,
-                  }}
-                >
-                  {/* Línea Superior de Resplandor por Tier */}
-                  <div
-                    className="radar-card-glow-bar"
-                    style={{
-                      background: isHordeAlertActive ? '#ef4444' : tierTopLine,
-                      boxShadow: `0 0 12px ${isHordeAlertActive ? '#ef4444' : tierTopLine}`,
-                    }}
-                  ></div>
-
-                  {/* Cabecera de la Tarjeta */}
-                  <div className="radar-card-header">
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span
-                          className="radar-tier-badge"
-                          style={{
-                            color: tierTopLine,
-                            borderColor: `${tierTopLine}66`,
-                            background: tierGlow,
-                          }}
-                        >
-                          {stash.tierLabel || `TIER: ${stash.tier?.toUpperCase()}`}
-                        </span>
-                        {stash.respawnTimer && (
-                          <span className="radar-respawn-chip">
-                            ⏳ Respawn: {stash.respawnTimer}
-                          </span>
-                        )}
-                      </div>
-
-                      <h2 className="radar-card-title">{stash.title}</h2>
-
-                      <span className="radar-distance-text">
-                        📍 {stash.distanceDisplay || `${stash.distanceMeters}m de proximidad`}
+            return (
+              <div key={poi.id} className="pz-mission-panel" style={{ padding: '20px 24px' }}>
+                {/* Cabecera de la Tarjeta */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 260 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 4, background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontFamily: 'monospace', fontWeight: 800 }}>
+                        {poi.zoneBadge}
+                      </span>
+                      <span style={{ fontSize: 11, color: poi.threatColor || '#f59e0b', fontFamily: 'monospace', fontWeight: 800 }}>
+                        Amenaza: {poi.threatLevel}
+                      </span>
+                      <span style={{ fontSize: 11, color: '#94a3b8', fontFamily: 'monospace' }}>
+                        Alarma: {poi.alarmRisk}
                       </span>
                     </div>
 
-                    {/* Emblema Táctico */}
-                    <div
-                      className="radar-emblem-box"
-                      style={{
-                        borderColor: `${tierTopLine}44`,
-                        color: tierTopLine,
-                      }}
-                    >
-                      {stash.tier === 'militar'
-                        ? '🛡️'
-                        : stash.tier === 'epico'
-                        ? '⚒️'
-                        : stash.tier === 'medico'
-                        ? '💉'
-                        : stash.tier === 'alimentos'
-                        ? '🥫'
-                        : '🔧'}
-                    </div>
+                    <h2 style={{ fontSize: 20, fontWeight: 900, color: '#ffffff', margin: '4px 0 0', fontFamily: 'monospace' }}>
+                      {poi.title}
+                    </h2>
                   </div>
 
-                  {/* Peligro & Densidad de Zeds */}
-                  <div className="radar-hazard-strip">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span
-                        className="radar-hazard-dot"
-                        style={{
-                          background: stash.hazardLevel.includes('EXTREMO')
-                            ? '#ef4444'
-                            : stash.hazardLevel.includes('MEDIO')
-                            ? '#f59e0b'
-                            : '#10b981',
-                        }}
-                      ></span>
-                      <span
-                        className="radar-hazard-title"
-                        style={{
-                          color: stash.hazardLevel.includes('EXTREMO')
-                            ? '#fca5a5'
-                            : stash.hazardLevel.includes('MEDIO')
-                            ? '#fde68a'
-                            : '#a7f3d0',
-                        }}
-                      >
-                        {stash.hazardLevel}
-                      </span>
-                    </div>
-                    <span className="radar-hazard-note">{stash.hazardNote}</span>
-                  </div>
-
-                  {/* Imagen de Reconocimiento Táctico */}
-                  {stash.image && (
-                    <div className="radar-card-img-container">
-                      <img
-                        src={stash.image}
-                        alt={stash.title}
-                        className="radar-card-recon-img"
-                      />
-                      <div className="radar-card-img-gradient"></div>
-                      <div className="radar-card-img-tag">
-                        <span>🔒</span>
-                        <span>{stash.imageTag || 'ESTRUCTURA FORTIFICADA'}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Chips de Botín Detectado por Escáner */}
-                  {stash.scanItems && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <span className="radar-scan-header-text">
-                        BOTÍN DETECTADO POR ESCÁNER:
-                      </span>
-                      <div className="radar-scan-chips-row">
-                        {stash.scanItems.map((item, idx) => (
-                          <span
-                            key={idx}
-                            className="radar-scan-chip"
-                            style={{
-                              borderColor: idx === 0 ? `${tierTopLine}88` : 'rgba(255, 255, 255, 0.1)',
-                              color: idx === 0 ? tierTopLine : '#e2e8f0',
-                            }}
-                          >
-                            {idx === 0 && <span style={{ opacity: 0.8 }}>⚡</span>}
-                            <span>{item}</span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Pestañas Desplegables de Inteligencia Profunda (Dossier Expandible) */}
-                  <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <button
-                        onClick={() =>
-                          setExpandedCards((prev) => ({
-                            ...prev,
-                            [stash.id]: !prev[stash.id],
-                          }))
-                        }
-                        className="radar-expand-intel-btn"
-                      >
-                        <span>{isExpanded ? '▲ Ocultar Dossier Táctico' : '▼ Expandir Inteligencia Táctica (Mochila, Tips, Zonas)'}</span>
-                      </button>
-
-                      {stash.relatedRoutes && stash.relatedRoutes.length > 0 && (
-                        <button
-                          onClick={() => onSelectRoute && onSelectRoute(stash.relatedRoutes[0])}
-                          className="radar-open-route-link"
-                          title="Abrir la ruta de supervivencia relacionada"
-                        >
-                          <span>Ver Ruta Guía →</span>
-                        </button>
-                      )}
-                    </div>
-
-                    {isExpanded && (
-                      <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {/* Selector de Pestaña Interna */}
-                        <div className="radar-intel-tabs-row">
-                          <button
-                            onClick={() =>
-                              setActiveTabByCard((p) => ({ ...p, [stash.id]: 'look' }))
-                            }
-                            className={`radar-intel-tab-btn ${activeTab === 'look' ? 'active' : ''}`}
-                          >
-                            📦 Qué Buscar
-                          </button>
-                          <button
-                            onClick={() =>
-                              setActiveTabByCard((p) => ({ ...p, [stash.id]: 'where' }))
-                            }
-                            className={`radar-intel-tab-btn ${activeTab === 'where' ? 'active' : ''}`}
-                          >
-                            📍 Dónde Buscar
-                          </button>
-                          <button
-                            onClick={() =>
-                              setActiveTabByCard((p) => ({ ...p, [stash.id]: 'gear' }))
-                            }
-                            className={`radar-intel-tab-btn ${activeTab === 'gear' ? 'active' : ''}`}
-                          >
-                            🎒 Mochila
-                          </button>
-                          <button
-                            onClick={() =>
-                              setActiveTabByCard((p) => ({ ...p, [stash.id]: 'tips' }))
-                            }
-                            className={`radar-intel-tab-btn ${activeTab === 'tips' ? 'active' : ''}`}
-                          >
-                            💡 Tips de Escape
-                          </button>
-                        </div>
-
-                        {/* Contenido según pestaña */}
-                        <div className="radar-intel-tab-body">
-                          {activeTab === 'look' && (
-                            <ul style={{ margin: 0, paddingLeft: 18, color: '#cbd5e1', fontSize: 12, lineHeight: 1.6 }}>
-                              {stash.whatToLookFor?.map((item, idx) => (
-                                <li key={idx}>{item}</li>
-                              ))}
-                            </ul>
-                          )}
-
-                          {activeTab === 'where' && (
-                            <ul style={{ margin: 0, paddingLeft: 18, color: '#93c5fd', fontSize: 12, lineHeight: 1.6 }}>
-                              {stash.whereToFind?.map((loc, idx) => (
-                                <li key={idx}>{loc}</li>
-                              ))}
-                            </ul>
-                          )}
-
-                          {activeTab === 'gear' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              {stash.recommendedGear?.map((gear, idx) => {
-                                const gearKey = `${stash.id}-gear-${idx}`;
-                                const isChecked = Boolean(checkedGear[gearKey]);
-                                return (
-                                  <label
-                                    key={idx}
-                                    onClick={() =>
-                                      setCheckedGear((p) => ({ ...p, [gearKey]: !p[gearKey] }))
-                                    }
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 8,
-                                      cursor: 'pointer',
-                                      fontSize: 12,
-                                      color: isChecked ? '#64748b' : '#f1f5f9',
-                                      textDecoration: isChecked ? 'line-through' : 'none',
-                                    }}
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={isChecked}
-                                      readOnly
-                                      style={{ accentColor: '#10b981' }}
-                                    />
-                                    <span>{gear}</span>
-                                  </label>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          {activeTab === 'tips' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              {stash.tacticalTips?.map((tip, idx) => (
-                                <div
-                                  key={idx}
-                                  style={{
-                                    display: 'flex',
-                                    gap: 6,
-                                    fontSize: 12,
-                                    color: '#fef08a',
-                                    lineHeight: 1.5,
-                                    background: 'rgba(245, 158, 11, 0.08)',
-                                    padding: '6px 10px',
-                                    borderRadius: 4,
-                                    borderLeft: '2px solid #f59e0b',
-                                  }}
-                                >
-                                  <span>⚠️</span>
-                                  <span>{tip}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Acciones de la Tarjeta */}
-                  <div className="radar-card-actions-grid">
+                  {/* Botones de Acción */}
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <button
                       type="button"
-                      onClick={() => handleToggleRoute(stash)}
-                      className={`radar-action-btn primary ${isTracked ? 'tracking-active' : ''}`}
-                    >
-                      <span>🧭</span>
-                      <span>{isTracked ? 'RUTA ACTIVA' : 'RASTREAR RUTA'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleToggleHordeAlert(stash.id)}
-                      className={`radar-action-btn alert ${isHordeAlertActive ? 'alerting' : ''}`}
-                    >
-                      <span>🚨</span>
-                      <span>{isHordeAlertActive ? 'HORDA ACTIVA' : 'ALERTA HORDA'}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSaveGps(stash)}
-                      className={`radar-action-btn secondary ${isGpsSaved ? 'saved' : ''}`}
+                      onClick={() => toggleSavePoi(poi.id)}
+                      className={`server-vote-btn ${isSaved ? 'voted' : ''}`}
+                      style={{ fontSize: 12, padding: '6px 12px' }}
                       title="Guardar en GPS de campo"
                     >
-                      <span>{isGpsSaved ? '⭐' : '📌'}</span>
-                      <span>{isGpsSaved ? 'GUARDADO' : 'EN GPS'}</span>
+                      <VoteIcon size={12} color={isSaved ? '#eab308' : '#94a3b8'} />
+                      <span>{isSaved ? 'EN GPS' : 'GUARDAR'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(poi.id)}
+                      className="pz-btn-secondary"
+                      style={{ fontSize: 12, padding: '6px 14px' }}
+                    >
+                      {isExpanded ? '[-] Menos Intel' : '[+] Desplegar Intel'}
                     </button>
                   </div>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </div>
 
-      {/* 6. TACTICAL QUICK ACTION FLOATING DOCK (STICKY BOTTOM HUD) */}
-      <div className="radar-floating-dock-layer">
-        {/* Banner de Ruta Activa */}
-        {trackedRoute && (
-          <div className="radar-active-route-toast">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="radar-route-toast-pulse">🎯</span>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span className="radar-route-toast-label">RADAR GPS FIJADO</span>
-                <span className="radar-route-toast-target">
-                  Rumbo: {trackedRoute.title} ({trackedRoute.distanceDisplay || `${trackedRoute.distanceMeters}m`})
-                </span>
+                {/* Ubicaciones Conocidas en el Sector */}
+                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <span style={{ fontSize: 10, fontWeight: 900, color: '#38bdf8', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+                    EDIFICIOS CANÓNICOS DETECTADOS POR SECTOR
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {poi.knownLocations
+                      .filter((l) => selectedRegion === 'ALL' || l.city === selectedRegion)
+                      .map((loc, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#cbd5e1' }}>
+                          <span style={{ color: '#10b981', fontFamily: 'monospace' }}>• [{loc.city}]</span>
+                          <span>{loc.location}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Detalle Expandido: Contenedores y Probabilidad */}
+                {isExpanded && (
+                  <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    {/* Tabla de Contenedores */}
+                    <div>
+                      <span style={{ fontSize: 11, fontWeight: 900, color: '#10b981', fontFamily: 'monospace', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
+                        CONTENEDORES PRIORITARIOS & PROBABILIDAD DE SPAWN
+                      </span>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+                        {poi.targetContainers.map((tc, idx) => (
+                          <div
+                            key={idx}
+                            style={{
+                              padding: '10px 12px',
+                              borderRadius: 4,
+                              background: 'rgba(15, 23, 42, 0.7)',
+                              border: '1px solid rgba(255, 255, 255, 0.06)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 2,
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <strong style={{ fontSize: 12, color: '#f8fafc' }}>{tc.container}</strong>
+                              <span style={{ fontSize: 11, color: '#34d399', fontFamily: 'monospace', fontWeight: 800 }}>
+                                {tc.probability}
+                              </span>
+                            </div>
+                            <span style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.3 }}>
+                              Botín: {tc.lootTypes}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Protocolo de Brecha y Entrada */}
+                    <div style={{ background: 'rgba(30, 41, 59, 0.3)', borderRadius: 4, padding: '12px 14px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                      <span style={{ fontSize: 11, fontWeight: 900, color: '#f59e0b', fontFamily: 'monospace', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
+                        TÁCTICA DE ACCESO & SEGURIDAD
+                      </span>
+                      <ul style={{ margin: 0, paddingLeft: 16, color: '#cbd5e1', fontSize: 12, lineHeight: 1.5 }}>
+                        {poi.tacticalBreach.map((tb, idx) => (
+                          <li key={idx}>{tb}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Disclaimer de Sandbox */}
+                    <span style={{ fontSize: 11, color: '#64748b', fontStyle: 'italic', fontFamily: 'monospace' }}>
+                      * {poi.disclaimer}
+                    </span>
+                  </div>
+                )}
               </div>
-            </div>
-            <button
-              onClick={() => setTrackedRoute(null)}
-              className="radar-route-toast-cancel"
-            >
-              CANCELAR
-            </button>
-          </div>
+            );
+          })
         )}
-
-        {/* Botón Flotante: Registrar Nuevo Alijo de Botín */}
-        <button
-          onClick={() => setStashModalOpen(true)}
-          className="radar-floating-fab-btn"
-        >
-          <span>📍</span>
-          <span>+ REGISTRAR NUEVO ALIJO DE BOTÍN</span>
-          <span>»</span>
-        </button>
       </div>
 
-      {/* MODAL DE NUEVA BALIZA / ALIJO */}
-      {stashModalOpen && (
-        <div className="server-modal-backdrop" onClick={() => setStashModalOpen(false)}>
-          <div
-            className="radar-modal-box"
-            onClick={(e) => e.stopPropagation()}
-          >
+      {/* MODAL PARA REGISTRAR BALIZA GPS */}
+      {beaconModalOpen && (
+        <div className="server-modal-backdrop" onClick={() => setBeaconModalOpen(false)}>
+          <div className="radar-modal-box" onClick={(e) => e.stopPropagation()} {...modalContainerProps}>
             <div className="radar-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ color: '#10b981', fontSize: 18 }}>📍</span>
+                <RadarServerIcon size={18} color="#10b981" />
                 <span style={{ fontWeight: 900, fontFamily: 'monospace', color: '#ffffff' }}>
-                  REGISTRAR BALIZA GPS DE CAMPO
+                  REGISTRAR BALIZA TÁCTICA EN GPS
                 </span>
               </div>
               <button
-                onClick={() => setStashModalOpen(false)}
-                style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: 18, cursor: 'pointer' }}
+                type="button"
+                onClick={() => setBeaconModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 4 }}
+                aria-label="Cerrar modal"
               >
-                ✕
+                <CloseCrossIcon size={16} color="#94a3b8" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateCustomStash} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <form onSubmit={handleCreateBeacon} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontFamily: 'monospace', color: '#94a3b8', marginBottom: 4 }}>
-                  NOMBRE DEL ALIJO O EDIFICIO
-                </label>
+                <label className="form-label">Nombre del Refugio o Alijo</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Cobertizo con Generador y Combustible"
-                  value={newStashName}
-                  onChange={(e) => setNewStashName(e.target.value)}
-                  className="form-input"
-                  style={{ width: '100%' }}
+                  value={beaconName}
+                  onChange={(e) => setBeaconName(e.target.value)}
+                  placeholder="Ej: Base en Almacén Norte con Generador"
+                  className="pz-scanner-input"
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontFamily: 'monospace', color: '#94a3b8', marginBottom: 4 }}>
-                  CATEGORÍA / TIER
-                </label>
+                <label className="form-label">Ciudad / Sector</label>
                 <select
-                  value={newStashCategory}
-                  onChange={(e) => setNewStashCategory(e.target.value)}
+                  value={beaconCity}
+                  onChange={(e) => setBeaconCity(e.target.value)}
                   className="form-input"
                   style={{ width: '100%' }}
                 >
-                  <option value="Militar">Militar (Armamento / Munición)</option>
-                  <option value="Épico">Épico (Forja B42 / Yunque / Herramientas Pesadas)</option>
-                  <option value="Médico">Médico (Antibióticos / Suturas)</option>
-                  <option value="Herramientas">Herramientas & Construcción</option>
-                  <option value="Alimentos">Alimentos & Semillas</option>
+                  <option value="Rosewood">Rosewood</option>
+                  <option value="West Point">West Point</option>
+                  <option value="Muldraugh">Muldraugh</option>
+                  <option value="Riverside">Riverside</option>
+                  <option value="Louisville">Louisville</option>
                 </select>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 11, fontFamily: 'monospace', color: '#94a3b8', marginBottom: 4 }}>
-                  OBJETOS CRÍTICOS (SEPARADOS POR COMA)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej: 2 bidones de gasolina, batería de coche, sierra"
-                  value={newStashItems}
-                  onChange={(e) => setNewStashItems(e.target.value)}
-                  className="form-input"
-                  style={{ width: '100%' }}
+                <label className="form-label">Descripción y Recursos Asegurados</label>
+                <textarea
+                  rows={3}
+                  value={beaconDesc}
+                  onChange={(e) => setBeaconDesc(e.target.value)}
+                  placeholder="Ej: 2 bidones de combustible, comida enlatada, puerta barreada..."
+                  className="pz-scanner-input"
+                  style={{ resize: 'vertical' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 10 }}>
                 <button
                   type="button"
-                  onClick={() => setStashModalOpen(false)}
-                  className="btn-tactical"
-                  style={{ padding: '8px 16px', fontSize: 12 }}
+                  onClick={() => setBeaconModalOpen(false)}
+                  className="pz-btn-secondary"
+                  style={{ fontSize: 12, padding: '8px 16px' }}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="btn-tactical-success"
-                  style={{ padding: '8px 18px', fontSize: 12 }}
+                  className="pz-btn-primary"
+                  style={{ fontSize: 12, padding: '8px 18px' }}
                 >
                   Fijar Baliza en Sonar
                 </button>

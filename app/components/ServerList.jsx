@@ -5,6 +5,18 @@ import Image from 'next/image';
 import { fetchServersList, createServerEntry, updateServerEntry, deleteServerEntry, upvoteServerEntry } from '../lib/supabaseClient';
 import ServerDetailModal from './ServerDetailModal';
 import AddServerModal from './AddServerModal';
+import { serverEvents } from '../data/eventsDatabase';
+import {
+  SignalPulseIcon,
+  UserProfileIcon,
+  RadarServerIcon,
+  RadioAntennaIcon,
+  VoteIcon,
+  WrenchIcon,
+  HazardIcon,
+  CloseCrossIcon,
+  BackpackIcon,
+} from './icons/KnoxIcons';
 
 export default function ServerList({
   currentUser = null,
@@ -21,6 +33,7 @@ export default function ServerList({
   const [selectedSort, setSelectedSort] = useState('votes'); // 'votes' | 'players'
   
   const [activeModalServer, setActiveModalServer] = useState(null);
+  const [showEventsBoard, setShowEventsBoard] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingServer, setEditingServer] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
@@ -175,11 +188,13 @@ export default function ServerList({
               >
                 HUB DEDICADO B42
               </span>
-              <span style={{ fontSize: 13, color: '#38bdf8', fontWeight: 800, fontFamily: 'monospace' }}>
-                🟢 {servers.length} Servidores Activos
+              <span style={{ fontSize: 13, color: '#38bdf8', fontWeight: 800, fontFamily: 'monospace', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <SignalPulseIcon size={12} color="#10b981" />
+                <span>{servers.length} Servidores Activos</span>
               </span>
-              <span style={{ fontSize: 13, color: '#94a3b8', fontFamily: 'monospace' }}>
-                • 👥 {totalPlayers} Supervivientes Jugando
+              <span style={{ fontSize: 13, color: '#94a3b8', fontFamily: 'monospace', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                • <UserProfileIcon size={13} color="#94a3b8" />
+                <span>{totalPlayers} Supervivientes Jugando</span>
               </span>
             </div>
 
@@ -196,7 +211,7 @@ export default function ServerList({
                 gap: 12,
               }}
             >
-              <span>🌐</span>
+              <RadarServerIcon size={28} color="#38bdf8" />
               <span>Directorio de Servidores Dedicados</span>
             </h1>
 
@@ -216,8 +231,10 @@ export default function ServerList({
                 setShowAddModal(true);
               }}
               className="pz-btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
             >
-              <span>📡 Transmitir Mi Servidor</span>
+              <RadioAntennaIcon size={16} color="currentColor" />
+              <span>Transmitir Mi Servidor</span>
             </button>
             <span style={{ fontSize: 12, color: '#64748b', fontFamily: 'monospace' }}>
               {currentUser ? `Operador: ${currentUser.name}` : 'Requiere cuenta de Google verificada'}
@@ -226,11 +243,75 @@ export default function ServerList({
         </div>
       </div>
 
+      {/* CARTEL DE ANUNCIOS DE EVENTOS Y DIRECTIVAS GLOBALES */}
+      <div className="pz-mission-panel" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="pz-mission-bar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <HazardIcon size={14} color="#f59e0b" />
+            <span>TABLÓN MILITAR DE ANUNCIOS // EVENTOS DE SERVIDORES</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowEventsBoard(!showEventsBoard)}
+            style={{ background: 'transparent', border: 'none', color: '#38bdf8', fontSize: 11, fontFamily: 'monospace', cursor: 'pointer', fontWeight: 800 }}
+          >
+            {showEventsBoard ? '[-] COLAPSAR ANUNCIOS' : '[+] EXPANDIR ANUNCIOS'}
+          </button>
+        </div>
+
+        {showEventsBoard && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
+            {serverEvents.map((evt) => (
+              <div
+                key={evt.id}
+                style={{
+                  background: 'rgba(15, 23, 42, 0.65)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: 6,
+                  padding: '14px 16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  position: 'relative',
+                  borderTop: evt.urgency === 'CRÍTICA' || evt.urgency === 'PELIGRO MÁXIMO' ? '3px solid #ef4444' : '3px solid #38bdf8',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 3, background: 'rgba(239, 68, 68, 0.15)', color: evt.urgency === 'CRÍTICA' ? '#fca5a5' : '#38bdf8', fontFamily: 'monospace', fontWeight: 800 }}>
+                    {evt.type}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#10b981', fontFamily: 'monospace' }}>
+                    {evt.status}
+                  </span>
+                </div>
+
+                <strong style={{ fontSize: 13, color: '#ffffff', fontFamily: 'monospace', lineHeight: 1.3 }}>
+                  {evt.title}
+                </strong>
+
+                <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.4 }}>
+                  {evt.description}
+                </p>
+
+                <div style={{ marginTop: 'auto', paddingTop: 8, borderTop: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 10, color: '#64748b', fontFamily: 'monospace' }}>
+                    {evt.frequency}
+                  </span>
+                  <span style={{ fontSize: 10, color: '#f59e0b', fontFamily: 'monospace', fontWeight: 700 }}>
+                    {evt.dateDisplay}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* RACK DE SINTONIZACIÓN Y FILTROS TÁCTICOS */}
       <div className="pz-mission-panel" style={{ padding: '20px 26px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div className="pz-mission-bar">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ color: '#38bdf8', fontWeight: 900 }}>⚡</span>
+            <HazardIcon size={14} color="#38bdf8" />
             <span>ESCÁNER DE RADIOFRECUENCIAS // SINTONIZADOR</span>
           </div>
           <span>B42.18 SCANNER</span>
@@ -240,7 +321,7 @@ export default function ServerList({
         <div style={{ position: 'relative' }}>
           <input
             type="text"
-            placeholder="🔍 Escanear por nombre de servidor, IP, mod o tag (Sprinters, RP, Brita)..."
+            placeholder="Escanear por nombre de servidor, IP, mod o tag (Sprinters, RP, Brita)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pz-scanner-input"
@@ -248,9 +329,10 @@ export default function ServerList({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', fontSize: 14, cursor: 'pointer' }}
+              style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', background: 'transparent', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+              aria-label="Borrar búsqueda"
             >
-              ✕
+              <CloseCrossIcon size={14} color="#94a3b8" />
             </button>
           )}
         </div>
@@ -300,8 +382,8 @@ export default function ServerList({
               className="form-input"
               style={{ padding: '8px 14px', fontSize: 13, width: 'auto', minHeight: 38 }}
             >
-              <option value="votes">⭐ Más Votados</option>
-              <option value="players">👥 Más Jugadores</option>
+              <option value="votes">Más Votados</option>
+              <option value="players">Más Jugadores</option>
             </select>
           </div>
         </div>
@@ -309,8 +391,9 @@ export default function ServerList({
 
       {/* LISTADO DE TARJETAS O ESTADO VACÍO */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#10b981', fontFamily: 'monospace', fontSize: 15, fontWeight: 800 }}>
-          📡 ESCANEANDO SEÑALES EN EL CONDADO DE KNOX...
+        <div style={{ textAlign: 'center', padding: '60px 20px', color: '#10b981', fontFamily: 'monospace', fontSize: 15, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <SignalPulseIcon size={20} color="#10b981" />
+          <span>ESCANEANDO SEÑALES EN EL CONDADO DE KNOX...</span>
         </div>
       ) : filteredServers.length === 0 ? (
         <div className="pz-mission-panel" style={{ textAlign: 'center', padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
@@ -319,7 +402,9 @@ export default function ServerList({
             <span style={{ color: '#ef4444' }}>● SILENCIO DE RADIO</span>
           </div>
 
-          <span style={{ fontSize: 44, display: 'block', marginTop: 10 }}>📡</span>
+          <div style={{ marginTop: 10, display: 'flex', justifyContent: 'center' }}>
+            <RadarServerIcon size={44} color="#64748b" />
+          </div>
           <h2 style={{ fontSize: 22, fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'monospace' }}>
             SILENCIO DE RADIO EN EL CONDADO DE KNOX
           </h2>
@@ -337,8 +422,10 @@ export default function ServerList({
                 setShowAddModal(true);
               }}
               className="pz-btn-primary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
             >
-              <span>📡 Iniciar Transmisión de Refugio</span>
+              <RadioAntennaIcon size={16} color="currentColor" />
+              <span>Iniciar Transmisión de Refugio</span>
             </button>
             <button
               onClick={() => {
@@ -403,8 +490,14 @@ export default function ServerList({
 
                   <div className="server-tags-strip">
                     <span className="server-badge-mode">{server.mode}</span>
-                    <span className="server-badge-region">🌍 {server.region}</span>
-                    <span className="server-badge-loot">📦 {server.loot_tier}</span>
+                    <span className="server-badge-region" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <RadarServerIcon size={11} color="currentColor" />
+                      <span>{server.region}</span>
+                    </span>
+                    <span className="server-badge-loot" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                      <BackpackIcon size={11} color="currentColor" />
+                      <span>{server.loot_tier}</span>
+                    </span>
                   </div>
                 </div>
 
@@ -464,8 +557,9 @@ export default function ServerList({
                       onClick={(e) => handleCopyIP(e, server)}
                       className="server-ip-btn"
                       title="Copiar Frecuencia / IP de Conexión"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
                     >
-                      <span style={{ opacity: 0.7 }}>📻</span>
+                      <RadioAntennaIcon size={14} color="currentColor" style={{ opacity: 0.7 }} />
                       <span>{fullAddress}</span>
                     </button>
 
@@ -475,8 +569,9 @@ export default function ServerList({
                       onClick={(e) => handleVote(e, server.id)}
                       className="server-vote-btn"
                       title="Otorgar voto de reputación"
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                     >
-                      <span>⭐</span>
+                      <VoteIcon size={13} color="#eab308" />
                       <span>{server.votes || 0}</span>
                     </button>
 
@@ -497,8 +592,10 @@ export default function ServerList({
                         }}
                         className="btn-tactical-edit"
                         title="Modificar Frecuencia Militar"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
                       >
-                        ✏️ Editar
+                        <WrenchIcon size={12} color="currentColor" />
+                        <span>Editar</span>
                       </button>
                     )}
 

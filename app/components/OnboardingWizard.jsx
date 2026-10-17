@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import HoloCard from './HoloCard';
+import { KnoxIcon } from './icons/KnoxIcons';
 import { ONBOARDING_FLOW } from '../data/onboardingOptions';
 
 export default function OnboardingWizard({ onComplete }) {
@@ -25,19 +26,24 @@ export default function OnboardingWizard({ onComplete }) {
   return (
     <div className="hud-container">
       {/* CABECERA TÁCTICA CON HOLOCARD */}
-      <div className="hud-panel">
+      <div className="pz-mission-panel">
+        <div className="pz-corner-tick tl" />
+        <div className="pz-corner-tick tr" />
+        <div className="pz-corner-tick bl" />
+        <div className="pz-corner-tick br" />
+
         <div className="hud-hero">
           <div style={{ flex: 1, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span
               style={{
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: 900,
                 textTransform: 'uppercase',
                 color: '#10b981',
                 background: 'rgba(16, 185, 129, 0.15)',
                 border: '1px solid rgba(16, 185, 129, 0.35)',
                 padding: '2px 8px',
-                borderRadius: 6,
+                borderRadius: 4,
                 fontFamily: 'monospace',
                 letterSpacing: '0.06em',
                 alignSelf: 'flex-start',
@@ -72,7 +78,7 @@ export default function OnboardingWizard({ onComplete }) {
               edgeSparkle={0.85}
               tiltMax={14}
             />
-            <span style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.1em', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.1em', fontFamily: 'monospace', textTransform: 'uppercase' }}>
               TOCA / INCLINA 3D
             </span>
           </div>
@@ -83,8 +89,8 @@ export default function OnboardingWizard({ onComplete }) {
       {currentStep === 'step2_newbie' && (
         <button
           onClick={() => setCurrentStep('step1')}
-          className="btn-secondary"
-          style={{ alignSelf: 'flex-start' }}
+          className="btn-secondary pz-btn-secondary"
+          style={{ alignSelf: 'flex-start', fontSize: 13 }}
         >
           <span>←</span>
           <span>Volver a opciones principales</span>
@@ -105,15 +111,15 @@ export default function OnboardingWizard({ onComplete }) {
                   position: 'absolute',
                   top: 14,
                   right: 14,
-                  fontSize: 9,
+                  fontSize: 12,
                   fontFamily: 'monospace',
                   fontWeight: 900,
                   textTransform: 'uppercase',
                   background: 'rgba(16, 185, 129, 0.18)',
                   color: '#34d399',
                   border: '1px solid rgba(16, 185, 129, 0.45)',
-                  padding: '2px 6px',
-                  borderRadius: 6,
+                  padding: '2px 8px',
+                  borderRadius: 4,
                 }}
               >
                 {opt.badge}
@@ -126,16 +132,15 @@ export default function OnboardingWizard({ onComplete }) {
                   width: 44,
                   height: 44,
                   minWidth: 44,
-                  borderRadius: 12,
+                  borderRadius: 8,
                   background: 'rgba(255, 255, 255, 0.05)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: 22,
                 }}
               >
-                {opt.icon}
+                <KnoxIcon name={opt.icon || 'backpack'} size={22} color="#10b981" />
               </div>
               <h3 style={{ fontSize: 16, fontWeight: 900, color: '#ffffff', margin: 0 }}>
                 {opt.title}
@@ -147,7 +152,7 @@ export default function OnboardingWizard({ onComplete }) {
             </p>
 
             <div style={{ marginTop: 'auto', paddingTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: '#10b981' }}>
+              <span style={{ fontSize: 12, fontWeight: 900, color: '#10b981' }}>
                 {opt.action === 'next_step' ? 'Continuar →' : 'Empezar esta ruta →'}
               </span>
             </div>

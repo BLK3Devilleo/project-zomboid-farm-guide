@@ -1,8 +1,17 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useTacticalModal } from '../hooks/useTacticalModal';
+import {
+  ShieldAdminIcon,
+  CloseCrossIcon,
+  TerminalLogsIcon,
+  SearchIcon,
+  RefreshIcon,
+} from './icons/KnoxIcons';
 
 export default function TacticalLogModal({ isOpen, onClose, currentUser = null }) {
+  const { modalContainerProps } = useTacticalModal(isOpen, onClose);
   const [logs, setLogs] = useState([]);
   const [filterLevel, setFilterLevel] = useState('ALL');
   const [searchFilter, setSearchFilter] = useState('');
@@ -33,11 +42,10 @@ export default function TacticalLogModal({ isOpen, onClose, currentUser = null }
         try {
           const newEntry = JSON.parse(event.data);
           setLogs((prev) => {
-            // Prevenir duplicados si se reconecta
             const exists = prev.some((l) => l.id === newEntry.id);
             if (exists) return prev;
             const updated = [...prev, newEntry];
-            return updated.slice(-300); // Guardar máximo 300 en cliente
+            return updated.slice(-300);
           });
         } catch (e) {}
       };
@@ -69,11 +77,14 @@ export default function TacticalLogModal({ isOpen, onClose, currentUser = null }
     return (
       <div className="server-modal-backdrop" onClick={onClose}>
         <div
+          {...modalContainerProps}
           className="server-modal-box"
           style={{ maxWidth: 440, textAlign: 'center', borderColor: '#ef4444' }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div style={{ fontSize: 36, marginBottom: 10 }}>🔒</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+            <ShieldAdminIcon size={40} color="#ef4444" />
+          </div>
           <h2 style={{ color: '#ef4444', fontFamily: 'monospace', fontSize: 16, margin: '0 0 8px' }}>
             ACCESO CLASIFICADO // RESTRINGIDO
           </h2>
@@ -85,7 +96,7 @@ export default function TacticalLogModal({ isOpen, onClose, currentUser = null }
             className="btn-tactical"
             style={{ width: '100%', padding: '10px' }}
           >
-            Cerrar Terminal
+            Cerrar Terminal [ESC]
           </button>
         </div>
       </div>
@@ -123,6 +134,7 @@ export default function TacticalLogModal({ isOpen, onClose, currentUser = null }
   return (
     <div className="server-modal-backdrop" onClick={onClose}>
       <div
+        {...modalContainerProps}
         className="server-modal-card corner-reticle"
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 880, width: '95vw', height: '80vh', display: 'flex', flexDirection: 'column' }}
@@ -143,16 +155,18 @@ export default function TacticalLogModal({ isOpen, onClose, currentUser = null }
               <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', color: '#10b981', letterSpacing: '0.08em', fontFamily: 'monospace', display: 'block' }}>
                 KNOX_NET // RECEPTOR SSE DE TELEMETRÍA Y ERRORES
               </span>
-              <h2 style={{ fontSize: 16, fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'monospace' }}>
-                TERMINAL DE LOGS EN VIVO {isConnected ? '[TRANSMISIÓN ACTIVA]' : '[RECONECTANDO...]'}
+              <h2 style={{ fontSize: 16, fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <TerminalLogsIcon size={16} color="#34d399" />
+                <span>TERMINAL DE LOGS EN VIVO {isConnected ? '[TRANSMISIÓN ACTIVA]' : '[RECONECTANDO...]'}</span>
               </h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            style={{ fontSize: 18, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: 6 }}
+            style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center' }}
+            title="Cerrar [ESC]"
           >
-            ✕
+            <CloseCrossIcon size={16} />
           </button>
         </div>
 
@@ -190,22 +204,26 @@ export default function TacticalLogModal({ isOpen, onClose, currentUser = null }
           </div>
 
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <input
-              type="text"
-              placeholder="Buscar en logs..."
-              value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
-              style={{
-                background: 'rgba(0, 0, 0, 0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: '#f8fafc',
-                fontSize: 12,
-                padding: '4px 10px',
-                borderRadius: 4,
-                fontFamily: 'monospace',
-                width: 140,
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <SearchIcon size={12} color="#64748b" style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)' }} />
+              <input
+                type="text"
+                placeholder="Buscar en logs..."
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+                style={{
+                  background: 'rgba(0, 0, 0, 0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#f8fafc',
+                  fontSize: 12,
+                  padding: '4px 8px 4px 24px',
+                  borderRadius: 4,
+                  fontFamily: 'monospace',
+                  width: 150,
+                  outline: 'none',
+                }}
+              />
+            </div>
             <button
               onClick={() => setAutoScroll(!autoScroll)}
               style={{
@@ -248,54 +266,58 @@ export default function TacticalLogModal({ isOpen, onClose, currentUser = null }
             overflowY: 'auto',
             padding: '14px 18px',
             background: '#040711',
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+            fontFamily: 'monospace',
             fontSize: 12,
             lineHeight: 1.6,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
           }}
         >
           {filteredLogs.length === 0 ? (
-            <div style={{ color: '#64748b', textAlign: 'center', padding: '40px 0' }}>
-              Esperando señales o telemetría en el canal SSE...
+            <div style={{ textAlign: 'center', color: '#64748b', padding: '40px 0' }}>
+              ESPERANDO TRANSMISIONES DE TELEMETRÍA EN VIVO...
             </div>
           ) : (
             filteredLogs.map((log) => {
-              const badge = getLevelBadgeStyle(log.level);
+              const badgeStyle = getLevelBadgeStyle(log.level);
+              const timeFormatted = new Date(log.timestamp).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              });
+
               return (
                 <div
                   key={log.id}
                   style={{
                     display: 'flex',
-                    gap: 10,
                     alignItems: 'flex-start',
-                    padding: '4px 0',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.03)',
+                    gap: 10,
+                    padding: '4px 8px',
+                    borderRadius: 4,
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    borderLeft: `2px solid ${badgeStyle.color}`,
                   }}
                 >
-                  <span style={{ color: '#64748b', fontSize: 10, flexShrink: 0, marginTop: 2 }}>
-                    {new Date(log.timestamp).toLocaleTimeString()}
+                  <span style={{ color: '#64748b', fontSize: 11, flexShrink: 0 }}>
+                    [{timeFormatted}]
                   </span>
                   <span
                     style={{
-                      fontSize: 9,
+                      fontSize: 10,
                       fontWeight: 900,
-                      textTransform: 'uppercase',
-                      padding: '1px 5px',
+                      color: badgeStyle.color,
+                      background: badgeStyle.bg,
+                      border: badgeStyle.border,
+                      padding: '1px 6px',
                       borderRadius: 3,
-                      background: badge.bg,
-                      color: badge.color,
-                      border: badge.border,
                       flexShrink: 0,
                     }}
                   >
-                    {log.level}
+                    {log.level.toUpperCase()}
                   </span>
-                  <span
-                    style={{
-                      flex: 1,
-                      wordBreak: 'break-all',
-                      color: log.level === 'error' ? '#fca5a5' : log.level === 'warn' ? '#fde047' : log.level === 'd1' ? '#bae6fd' : '#e2e8f0',
-                    }}
-                  >
+                  <span style={{ color: '#e2e8f0', wordBreak: 'break-all' }}>
                     {log.message}
                   </span>
                 </div>

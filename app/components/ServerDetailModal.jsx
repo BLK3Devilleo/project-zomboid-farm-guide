@@ -2,6 +2,18 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { useTacticalModal } from '../hooks/useTacticalModal';
+import {
+  CloudCheckIcon,
+  RadarServerIcon,
+  BackpackIcon,
+  RadioAntennaIcon,
+  HazardIcon,
+  VoteIcon,
+  CheckIcon,
+  WrenchIcon,
+  CloseCrossIcon,
+} from './icons/KnoxIcons';
 
 export default function ServerDetailModal({
   server,
@@ -11,6 +23,7 @@ export default function ServerDetailModal({
   onEdit,
   onDelete,
 }) {
+  const { modalContainerProps } = useTacticalModal(Boolean(server), onClose);
   const [copied, setCopied] = useState(false);
   const [selectedImgIndex, setSelectedImgIndex] = useState(0);
 
@@ -25,7 +38,7 @@ export default function ServerDetailModal({
   );
 
   const fullAddress = `${server.ip}:${server.port || 16261}`;
-  
+
   // Galería de imágenes (Soporte Cloudflare R2 y Fallbacks)
   const images = (server.gallery_images && server.gallery_images.length > 0)
     ? server.gallery_images
@@ -57,6 +70,7 @@ export default function ServerDetailModal({
   return (
     <div className="server-modal-backdrop" onClick={onClose}>
       <div
+        {...modalContainerProps}
         className="server-modal-card"
         onClick={(e) => e.stopPropagation()}
         style={{ borderColor: themeColor }}
@@ -67,11 +81,11 @@ export default function ServerDetailModal({
         <div className="pz-corner-tick bl" />
         <div className="pz-corner-tick br" />
 
-        {/* BARRA SUPERIOR RETRO CRT (_ [] X) */}
+        {/* BARRA SUPERIOR RETRO CRT */}
         <div className="pz-dossier-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ color: themeColor, fontSize: 13, fontWeight: 900 }}>●</span>
-            <span style={{ fontFamily: 'monospace', fontSize: 11, fontWeight: 800, color: '#f1f5f9', letterSpacing: '0.08em' }}>
+            <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 800, color: '#f1f5f9', letterSpacing: '0.08em' }}>
               KNOX DEFENSE SYSTEM // DOSSIER DE FRECUENCIA #{server.id}
             </span>
           </div>
@@ -84,18 +98,20 @@ export default function ServerDetailModal({
             <button
               onClick={onClose}
               className="server-modal-close-btn"
-              title="Cerrar Terminal"
+              title="Cerrar Terminal [ESC]"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              ✕
+              <CloseCrossIcon size={14} />
             </button>
           </div>
         </div>
 
         {/* VITRINA DE IMÁGENES / GALERÍA CLOUDFLARE R2 */}
         <div className="pz-gallery-showcase">
-          {/* Badge Cloudflare R2 */}
-          <div className="pz-r2-badge">
-            <span>☁️ R2 CLOUD MEDIA READY</span>
+          {/* Badge Almacenamiento Verificado */}
+          <div className="pz-r2-badge" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <CloudCheckIcon size={14} color="#06b6d4" />
+            <span>ALMACENAMIENTO MULTIMEDIA CLOUD VERIFICADO</span>
           </div>
 
           {/* Imagen Principal */}
@@ -138,11 +154,13 @@ export default function ServerDetailModal({
                   <span className="server-badge-mode" style={{ borderColor: themeColor, color: themeColor }}>
                     {server.mode}
                   </span>
-                  <span className="server-badge-region">
-                    🌍 {server.region || 'Global'}
+                  <span className="server-badge-region" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <RadarServerIcon size={12} color="#94a3b8" />
+                    <span>{server.region || 'Global'}</span>
                   </span>
-                  <span className="server-badge-loot">
-                    📦 Botín {server.loot_tier || 'Normal'}
+                  <span className="server-badge-loot" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <BackpackIcon size={12} color="#94a3b8" />
+                    <span>Botín {server.loot_tier || 'Normal'}</span>
                   </span>
                 </div>
                 <h1 style={{ fontSize: 24, fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'monospace', letterSpacing: '-0.02em', textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
@@ -152,7 +170,7 @@ export default function ServerDetailModal({
 
               {/* Onda de Audio Telemetría */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.7)', padding: '6px 12px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.1)' }}>
-                <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#94a3b8' }}>
+                <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#94a3b8' }}>
                   SIGNAL
                 </span>
                 <div className="pz-audio-bar-row" style={{ color: themeColor }}>
@@ -168,8 +186,8 @@ export default function ServerDetailModal({
         {/* TIRA DE MINIATURAS (CAROUSEL / SELECTOR R2) */}
         {images.length > 1 && (
           <div className="pz-gallery-strip">
-            <span style={{ fontSize: 10, fontFamily: 'monospace', color: '#64748b', textTransform: 'uppercase', marginRight: 4, flexShrink: 0 }}>
-              CAPTŪRAS [{images.length}]:
+            <span style={{ fontSize: 12, fontFamily: 'monospace', color: '#64748b', textTransform: 'uppercase', marginRight: 4, flexShrink: 0 }}>
+              CAPTURAS [{images.length}]:
             </span>
             {images.map((img, idx) => (
               <div
@@ -199,7 +217,7 @@ export default function ServerDetailModal({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div className="server-status-dot" style={{ background: themeColor, boxShadow: `0 0 8px ${themeColor}` }} />
-                    <span style={{ fontSize: 11, fontWeight: 900, color: themeColor, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'monospace' }}>
+                    <span style={{ fontSize: 12, fontWeight: 900, color: themeColor, textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'monospace' }}>
                       TRANSMISIÓN ONLINE B42
                     </span>
                   </div>
@@ -227,17 +245,28 @@ export default function ServerDetailModal({
 
               {/* Botón de Copiar IP con Frecuencia */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div className="server-ip-pill">
+                <div className="server-ip-pill" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <RadioAntennaIcon size={14} color="#38bdf8" />
                   <span style={{ fontSize: 12, fontWeight: 900, fontFamily: 'monospace', color: '#38bdf8' }}>
-                    📻 FREQ: {fullAddress}
+                    FREQ: {fullAddress}
                   </span>
                 </div>
                 <button
                   onClick={handleCopy}
                   className="btn-tactical"
-                  style={{ padding: '8px 16px', fontSize: 11, borderRadius: 3 }}
+                  style={{ padding: '8px 16px', fontSize: 12, borderRadius: 3, display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 >
-                  {copied ? '✅ FRECUENCIA COPIADA' : '📋 COPIAR IP'}
+                  {copied ? (
+                    <>
+                      <CheckIcon size={14} color="#10b981" />
+                      <span>FRECUENCIA COPIADA</span>
+                    </>
+                  ) : (
+                    <>
+                      <RadioAntennaIcon size={14} />
+                      <span>COPIAR IP</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -245,7 +274,7 @@ export default function ServerDetailModal({
 
           {/* DESCRIPCIÓN Y LORE DE COMUNIDAD */}
           <div style={{ background: 'rgba(0,0,0,0.4)', padding: 16, borderRadius: 4, border: '1px solid rgba(255,255,255,0.06)' }}>
-            <span style={{ fontSize: 11, fontWeight: 900, textTransform: 'uppercase', color: themeColor, letterSpacing: '0.08em', display: 'block', marginBottom: 8, fontFamily: 'monospace' }}>
+            <span style={{ fontSize: 12, fontWeight: 900, textTransform: 'uppercase', color: themeColor, letterSpacing: '0.08em', display: 'block', marginBottom: 8, fontFamily: 'monospace' }}>
               DIRECTIVA Y PROPÓSITO DEL REFUGIO
             </span>
             <p style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.6, margin: 0, fontFamily: 'sans-serif' }}>
@@ -256,7 +285,7 @@ export default function ServerDetailModal({
           {/* ETIQUETAS Y MODS */}
           {server.tags && server.tags.length > 0 && (
             <div>
-              <span style={{ fontSize: 10, fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.08em', display: 'block', marginBottom: 8, fontFamily: 'monospace' }}>
+              <span style={{ fontSize: 12, fontWeight: 900, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.08em', display: 'block', marginBottom: 8, fontFamily: 'monospace' }}>
                 PARCHES Y MODS ACTIVOS EN FRECUENCIA
               </span>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -273,8 +302,8 @@ export default function ServerDetailModal({
           {server.rules && server.rules.length > 0 && (
             <div style={{ background: 'rgba(0, 0, 0, 0.65)', borderRadius: 4, padding: 16, border: '1px solid rgba(245, 158, 11, 0.25)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <span style={{ color: '#f59e0b', fontSize: 12 }}>⚠️</span>
-                <span style={{ fontSize: 11, fontWeight: 900, textTransform: 'uppercase', color: '#f59e0b', letterSpacing: '0.08em', fontFamily: 'monospace' }}>
+                <HazardIcon size={15} color="#f59e0b" />
+                <span style={{ fontSize: 12, fontWeight: 900, textTransform: 'uppercase', color: '#f59e0b', letterSpacing: '0.08em', fontFamily: 'monospace' }}>
                   CÓDIGO DE PROTOCOLO Y SUPERVIVENCIA
                 </span>
               </div>
@@ -294,9 +323,9 @@ export default function ServerDetailModal({
               <button
                 onClick={() => onVote(server.id)}
                 className="server-vote-btn"
-                style={{ padding: '9px 18px', fontSize: 13 }}
+                style={{ padding: '9px 18px', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
-                <span>⭐</span>
+                <VoteIcon size={15} color="#f59e0b" />
                 <span>Otorgar Reputación Knox ({server.votes || 0})</span>
               </button>
 
@@ -313,10 +342,14 @@ export default function ServerDetailModal({
                       padding: '9px 16px',
                       fontSize: 12,
                       borderRadius: 3,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
                     }}
                     title="Editar Frecuencia Militar"
                   >
-                    ✏️ Modificar
+                    <WrenchIcon size={14} />
+                    <span>Modificar</span>
                   </button>
                   <button
                     onClick={() => onDelete(server.id)}
@@ -330,10 +363,14 @@ export default function ServerDetailModal({
                       cursor: 'pointer',
                       fontWeight: 800,
                       fontFamily: 'monospace',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
                     }}
                     title="Eliminar este servidor"
                   >
-                    🗑️ Eliminar
+                    <CloseCrossIcon size={14} />
+                    <span>Eliminar</span>
                   </button>
                 </div>
               )}
@@ -345,9 +382,10 @@ export default function ServerDetailModal({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn-tactical"
-                style={{ background: 'linear-gradient(135deg, #5865F2, #4752C4)', color: '#ffffff', textDecoration: 'none', padding: '9px 18px', borderRadius: 3, fontSize: 12 }}
+                style={{ background: 'linear-gradient(135deg, #5865F2, #4752C4)', color: '#ffffff', textDecoration: 'none', padding: '9px 18px', borderRadius: 3, fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
-                <span>💬 Sintonizar Radio Discord →</span>
+                <RadioAntennaIcon size={14} />
+                <span>Sintonizar Radio Discord →</span>
               </a>
             )}
           </div>

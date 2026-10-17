@@ -1,6 +1,18 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useTacticalModal } from '../hooks/useTacticalModal';
+import {
+  CloseCrossIcon,
+  CloudCheckIcon,
+  RadarServerIcon,
+  HazardIcon,
+  CheckIcon,
+  ShieldAdminIcon,
+  CrosshairIcon,
+  RadioAntennaIcon,
+  SignalPulseIcon,
+} from './icons/KnoxIcons';
 
 const PRESET_NAMES = [
   'Refugio Militar Knox B42',
@@ -32,6 +44,7 @@ const PRESET_BANNERS = [
 ];
 
 export default function AddServerModal({ onClose, onSubmit, editingServer = null }) {
+  const { modalContainerProps } = useTacticalModal(true, onClose);
   const isEditMode = Boolean(editingServer);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -203,6 +216,7 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
   return (
     <div className="server-modal-backdrop" onClick={onClose}>
       <div
+        {...modalContainerProps}
         className="server-modal-card corner-reticle"
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: 720, width: '95vw', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
@@ -228,9 +242,10 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
           </div>
           <button
             onClick={onClose}
-            style={{ fontSize: 18, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: 6 }}
+            style={{ color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: 6, display: 'flex', alignItems: 'center' }}
+            title="Cerrar [ESC]"
           >
-            ✕
+            <CloseCrossIcon size={16} />
           </button>
         </div>
 
@@ -241,7 +256,7 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
               onClick={() => setCurrentStep(1)}
               className={`pz-step-item ${currentStep === 1 ? 'active' : currentStep > 1 ? 'done' : ''}`}
             >
-              <div className="pz-step-circle">{currentStep > 1 ? '✓' : '1'}</div>
+              <div className="pz-step-circle">{currentStep > 1 ? <CheckIcon size={12} color="currentColor" /> : '1'}</div>
               <span>1. Frecuencia</span>
             </button>
             <div className={`pz-step-connector ${currentStep > 1 ? 'done' : ''}`} />
@@ -249,7 +264,7 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
               onClick={() => validateStep1() && setCurrentStep(2)}
               className={`pz-step-item ${currentStep === 2 ? 'active' : currentStep > 2 ? 'done' : ''}`}
             >
-              <div className="pz-step-circle">{currentStep > 2 ? '✓' : '2'}</div>
+              <div className="pz-step-circle">{currentStep > 2 ? <CheckIcon size={12} color="currentColor" /> : '2'}</div>
               <span>2. Supervivencia</span>
             </button>
             <div className={`pz-step-connector ${currentStep > 2 ? 'done' : ''}`} />
@@ -281,7 +296,7 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
               flexShrink: 0,
             }}
           >
-            <span>⚠️</span>
+            <HazardIcon size={14} color="#f87171" />
             <span>{errorMsg}</span>
           </div>
         )}
@@ -302,7 +317,7 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
                     onClick={handleSuggestName}
                     style={{ fontSize: 11, color: '#38bdf8', fontFamily: 'monospace', fontWeight: 700 }}
                   >
-                    💡 Sugerir nombre
+                    Sugerir nombre
                   </button>
                 </div>
                 <input
@@ -346,10 +361,10 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
                 <label className="form-label">Región Geográfica</label>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[
-                    { id: 'LATAM', label: '🌎 LATAM' },
-                    { id: 'España', label: '🇪🇸 España' },
-                    { id: 'NA', label: '🇺🇸 Norteamérica' },
-                    { id: 'GLOBAL', label: '🌐 Global' },
+                    { id: 'LATAM', label: 'LATAM' },
+                    { id: 'España', label: 'España' },
+                    { id: 'NA', label: 'Norteamérica' },
+                    { id: 'GLOBAL', label: 'Global' },
                   ].map((r) => (
                     <button
                       key={r.id}
@@ -374,10 +389,10 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
                 <label className="form-label">Modo de Supervivencia</label>
                 <div className="pz-mode-grid">
                   {[
-                    { id: 'PvE', icon: '🛡️', title: 'PvE', desc: 'Cooperativo pacífico, sin fuego amigo.' },
-                    { id: 'PvP', icon: '⚔️', title: 'PvP', desc: 'Guerras de clanes y hostilidad abierta.' },
-                    { id: 'Hardcore', icon: '💀', title: 'Hardcore', desc: '100% Sprinters, botín escaso y permadeath.' },
-                    { id: 'Roleplay', icon: '🎭', title: 'Roleplay', desc: 'Interpretación seria, oficios y economía.' },
+                    { id: 'PvE', iconComponent: <ShieldAdminIcon size={20} color="#10b981" />, title: 'PvE', desc: 'Cooperativo pacífico, sin fuego amigo.' },
+                    { id: 'PvP', iconComponent: <CrosshairIcon size={20} color="#ef4444" />, title: 'PvP', desc: 'Guerras de clanes y hostilidad abierta.' },
+                    { id: 'Hardcore', iconComponent: <HazardIcon size={20} color="#f59e0b" />, title: 'Hardcore', desc: '100% Sprinters, botín escaso y permadeath.' },
+                    { id: 'Roleplay', iconComponent: <RadioAntennaIcon size={20} color="#38bdf8" />, title: 'Roleplay', desc: 'Interpretación seria, oficios y economía.' },
                   ].map((m) => {
                     const isSelected = formData.mode === m.id;
                     return (
@@ -386,7 +401,9 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
                         onClick={() => setFormData((p) => ({ ...p, mode: m.id }))}
                         className={`pz-mode-card ${isSelected ? 'selected' : ''}`}
                       >
-                        <span style={{ fontSize: 22 }}>{m.icon}</span>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+                          {m.iconComponent}
+                        </div>
                         <strong style={{ fontSize: 13, color: isSelected ? '#10b981' : '#ffffff' }}>
                           {m.title}
                         </strong>
@@ -449,7 +466,7 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
                         onClick={() => toggleTag(tag)}
                         className={`pz-tag-chip ${isActive ? 'active' : ''}`}
                       >
-                        {isActive ? `✓ ${tag}` : `+ ${tag}`}
+                        {isActive ? `[x] ${tag}` : `+ ${tag}`}
                       </button>
                     );
                   })}
@@ -489,7 +506,7 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
                 >
                   {isUploadingBanner ? (
                     <span style={{ color: '#10b981', fontFamily: 'monospace', fontSize: 13, fontWeight: 800 }}>
-                      ⏳ SUBIENDO IMAGEN A SERVIDOR...
+                      SUBIENDO IMAGEN A SERVIDOR...
                     </span>
                   ) : formData.banner_url ? (
                     <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -499,8 +516,9 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
                         style={{ width: 100, height: 60, objectFit: 'cover', borderRadius: 4, border: '1px solid rgba(16, 185, 129, 0.4)' }}
                       />
                       <div style={{ textAlign: 'left', flex: 1, minWidth: 0 }}>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: '#34d399', display: 'block' }}>
-                          ✓ Imagen cargada con éxito
+                        <span style={{ fontSize: 12, fontWeight: 800, color: '#34d399', display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <CloudCheckIcon size={14} color="#34d399" />
+                          <span>Imagen cargada con éxito</span>
                         </span>
                         <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace', wordBreak: 'break-all' }}>
                           {formData.banner_url}
@@ -520,7 +538,9 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
                     </div>
                   ) : (
                     <div>
-                      <span style={{ fontSize: 26, display: 'block', marginBottom: 4 }}>📷</span>
+                      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+                        <RadarServerIcon size={24} color="#64748b" />
+                      </div>
                       <strong style={{ fontSize: 13, color: '#f8fafc' }}>
                         Suelta tu imagen de portada aquí o haz clic para explorar
                       </strong>
@@ -656,8 +676,9 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
               {/* Live Card Preview */}
               <div className="pz-live-preview-box">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                  <span style={{ fontSize: 10, fontWeight: 900, color: '#10b981', fontFamily: 'monospace', textTransform: 'uppercase' }}>
-                    📡 PREVISUALIZACIÓN EN VIVO DEL RANKING
+                  <span style={{ fontSize: 10, fontWeight: 900, color: '#10b981', fontFamily: 'monospace', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <SignalPulseIcon size={12} color="#10b981" />
+                    <span>PREVISUALIZACIÓN EN VIVO DEL RANKING</span>
                   </span>
                   <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>
                     0 VOTOS
@@ -728,9 +749,10 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
               onClick={handleSubmit}
               disabled={isSubmitting || isUploadingBanner || isUploadingGallery}
               className="pz-btn-primary"
-              style={{ minWidth: 160 }}
+              style={{ minWidth: 160, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
-              {isSubmitting ? 'Transmitiendo...' : isEditMode ? '💾 Guardar Cambios' : '🚀 Publicar en el Ranking'}
+              <CloudCheckIcon size={16} />
+              <span>{isSubmitting ? 'Transmitiendo...' : isEditMode ? 'Guardar Cambios' : 'Publicar en el Ranking'}</span>
             </button>
           )}
         </div>

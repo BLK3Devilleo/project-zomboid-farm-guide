@@ -2,11 +2,48 @@
 
 import React, { useState } from 'react';
 import { metaEventsDatabase } from '../data/metaEventsDatabase';
+import { useTacticalModal } from '../hooks/useTacticalModal';
+import {
+  HazardIcon,
+  RadioAntennaIcon,
+  GunshotIcon,
+  HelicopterIcon,
+  SirenIcon,
+  DogBarkIcon,
+  SignalPulseIcon,
+  SearchIcon,
+  WrenchIcon,
+  CheckIcon,
+  CloseCrossIcon,
+  BackpackIcon,
+} from './icons/KnoxIcons';
+
+function EventTacticalIcon({ event, size = 26 }) {
+  const color = event.threatColor || '#10b981';
+  switch (event.id) {
+    case 'distant-gunshots':
+      return <GunshotIcon size={size} color={color} />;
+    case 'helicopter-pass':
+      return <HelicopterIcon size={size} color={color} />;
+    case 'house-alarm':
+    case 'car-alarm':
+      return <SirenIcon size={size} color={color} />;
+    case 'distant-dogs':
+      return <DogBarkIcon size={size} color={color} />;
+    default:
+      if (event.category === 'broadcast') {
+        return <RadioAntennaIcon size={size} color={color} />;
+      }
+      return <HazardIcon size={size} color={color} />;
+  }
+}
 
 export default function MetaEventsView() {
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [activeEvent, setActiveEvent] = useState(null);
   const [activeTab, setActiveTab] = useState('dos'); // 'dos' | 'donts' | 'gear'
+
+  const { modalContainerProps } = useTacticalModal(Boolean(activeEvent), () => setActiveEvent(null));
 
   const categories = [
     { id: 'ALL', label: 'Todos los Eventos' },
@@ -23,7 +60,7 @@ export default function MetaEventsView() {
 
   return (
     <div className="hud-container" style={{ paddingBottom: 60 }}>
-      {/* 1. HERO MISSION PANEL: QUÉ SON Y PARA QUÉ SIRVEN */}
+      {/* 1. HERO MISSION PANEL */}
       <div className="pz-mission-panel">
         <div className="pz-mission-bar">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -44,8 +81,9 @@ export default function MetaEventsView() {
               </span>
             </div>
 
-            <h1 style={{ fontSize: 30, fontWeight: 900, color: '#ffffff', margin: '0 0 10px', fontFamily: 'monospace', letterSpacing: '-0.02em' }}>
-              📡 RADAR DE META-EVENTOS
+            <h1 style={{ fontSize: 30, fontWeight: 900, color: '#ffffff', margin: '0 0 10px', fontFamily: 'monospace', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <HazardIcon size={28} color="#f59e0b" />
+              <span>RADAR DE META-EVENTOS</span>
             </h1>
 
             <p style={{ fontSize: 15, color: '#cbd5e1', margin: '0 0 14px', lineHeight: 1.6, maxWidth: 720 }}>
@@ -53,14 +91,14 @@ export default function MetaEventsView() {
             </p>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 4 }}>
-                <span style={{ fontSize: 14 }}>⚠️</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 4 }}>
+                <HazardIcon size={15} color="#ef4444" />
                 <span style={{ fontSize: 13, color: '#fca5a5', fontWeight: 700 }}>
                   Regla de Oro: Nunca persigas el sonido de un disparo
                 </span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: 4 }}>
-                <span style={{ fontSize: 14 }}>📻</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 12px', background: 'rgba(6, 182, 212, 0.12)', border: '1px solid rgba(6, 182, 212, 0.3)', borderRadius: 4 }}>
+                <RadioAntennaIcon size={15} color="#06b6d4" />
                 <span style={{ fontSize: 13, color: '#67e8f9', fontWeight: 700 }}>
                   Frecuencia AEBS: Alerta temprana de helicóptero a las 09:00 AM
                 </span>
@@ -131,7 +169,20 @@ export default function MetaEventsView() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 28 }}>{event.icon}</span>
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 4,
+                      background: 'rgba(0,0,0,0.4)',
+                      border: `1px solid ${event.threatColor}40`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <EventTacticalIcon event={event} size={22} />
+                  </div>
                   <div>
                     <h3 style={{ fontSize: 17, fontWeight: 900, color: '#ffffff', margin: 0, fontFamily: 'monospace' }}>
                       {event.name}
@@ -169,28 +220,31 @@ export default function MetaEventsView() {
             <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
                 <span style={{ color: '#94a3b8', fontFamily: 'monospace' }}>Alcance Acústico:</span>
-                <span style={{ color: event.noiseRadius > 0 ? '#f59e0b' : '#38bdf8', fontWeight: 800, fontFamily: 'monospace' }}>
-                  {event.noiseRadius > 0 ? `🔊 ${event.noiseRadius} ${event.noiseRadiusUnit}` : '🔇 Silencioso / Pasivo'}
+                <span style={{ color: event.noiseRadius > 0 ? '#f59e0b' : '#38bdf8', fontWeight: 800, fontFamily: 'monospace', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <RadioAntennaIcon size={12} color={event.noiseRadius > 0 ? '#f59e0b' : '#38bdf8'} />
+                  <span>{event.noiseRadius > 0 ? `${event.noiseRadius} ${event.noiseRadiusUnit}` : 'Silencioso / Pasivo'}</span>
                 </span>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12 }}>
                 <span style={{ color: '#94a3b8', fontFamily: 'monospace' }}>Ventana / Frecuencia:</span>
-                <span style={{ color: '#f1f5f9', fontWeight: 600 }}>
-                  ⏱️ {event.timeWindow}
+                <span style={{ color: '#f1f5f9', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  <SignalPulseIcon size={12} color="#94a3b8" />
+                  <span>{event.timeWindow}</span>
                 </span>
               </div>
 
               <button
                 type="button"
                 className="pz-btn-secondary"
-                style={{ width: '100%', marginTop: 6, minHeight: 40, justifyContent: 'center' }}
+                style={{ width: '100%', marginTop: 6, minHeight: 40, justifyContent: 'center', display: 'inline-flex', alignItems: 'center', gap: 8 }}
                 onClick={(e) => {
                   e.stopPropagation();
                   setActiveEvent(event);
                 }}
               >
-                <span>🔍 Abrir Ficha y Consejos Tácticos</span>
+                <SearchIcon size={14} />
+                <span>Abrir Ficha y Consejos Tácticos</span>
               </button>
             </div>
           </div>
@@ -201,6 +255,7 @@ export default function MetaEventsView() {
       {activeEvent && (
         <div className="server-modal-backdrop" onClick={() => setActiveEvent(null)}>
           <div
+            {...modalContainerProps}
             className="server-modal-card"
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: 760, borderColor: activeEvent.threatColor }}
@@ -228,9 +283,10 @@ export default function MetaEventsView() {
                 <button
                   onClick={() => setActiveEvent(null)}
                   className="server-modal-close-btn"
-                  title="Cerrar Dossier"
+                  title="Cerrar Dossier [ESC]"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  ✕
+                  <CloseCrossIcon size={14} />
                 </button>
               </div>
             </div>
@@ -249,11 +305,10 @@ export default function MetaEventsView() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 34,
                     flexShrink: 0,
                   }}
                 >
-                  {activeEvent.icon}
+                  <EventTacticalIcon event={activeEvent} size={32} />
                 </div>
 
                 <div style={{ flex: 1 }}>
@@ -307,37 +362,41 @@ export default function MetaEventsView() {
 
               {/* Explicación Mecánica Profunda */}
               <div style={{ padding: '16px', background: 'rgba(15, 23, 42, 0.65)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: 4 }}>
-                <h4 style={{ fontSize: 13, fontWeight: 900, color: '#10b981', margin: '0 0 8px', textTransform: 'uppercase', fontFamily: 'monospace', letterSpacing: '0.06em' }}>
-                  ⚙️ Mecánica Interna del Motor del Juego
+                <h4 style={{ fontSize: 13, fontWeight: 900, color: '#10b981', margin: '0 0 8px', textTransform: 'uppercase', fontFamily: 'monospace', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <WrenchIcon size={14} color="#10b981" />
+                  <span>Mecánica Interna del Motor del Juego</span>
                 </h4>
                 <p style={{ fontSize: 14, color: '#e2e8f0', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-line' }}>
                   {activeEvent.mechanics}
                 </p>
               </div>
 
-              {/* Pestañas de Protocolo Táctico: QUÉ HACER / QUÉ NO HACER / EQUIPO */}
+              {/* Pestañas de Protocolo Táctico */}
               <div>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 14, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: 8 }}>
                   <button
                     onClick={() => setActiveTab('dos')}
                     className={`pz-switch-tab ${activeTab === 'dos' ? 'active' : ''}`}
-                    style={{ fontSize: 13, padding: '8px 16px', color: activeTab === 'dos' ? '#10b981' : '#94a3b8' }}
+                    style={{ fontSize: 13, padding: '8px 16px', color: activeTab === 'dos' ? '#10b981' : '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                   >
-                    ✅ Protocolo de Supervivencia (Qué Hacer)
+                    <CheckIcon size={14} color={activeTab === 'dos' ? '#10b981' : '#94a3b8'} />
+                    <span>Protocolo (Qué Hacer)</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('donts')}
                     className={`pz-switch-tab ${activeTab === 'donts' ? 'active' : ''}`}
-                    style={{ fontSize: 13, padding: '8px 16px', color: activeTab === 'donts' ? '#ef4444' : '#94a3b8' }}
+                    style={{ fontSize: 13, padding: '8px 16px', color: activeTab === 'donts' ? '#ef4444' : '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                   >
-                    ❌ Errores Fatales (Qué NO Hacer)
+                    <CloseCrossIcon size={14} color={activeTab === 'donts' ? '#ef4444' : '#94a3b8'} />
+                    <span>Errores Fatales (Qué NO Hacer)</span>
                   </button>
                   <button
                     onClick={() => setActiveTab('gear')}
                     className={`pz-switch-tab ${activeTab === 'gear' ? 'active' : ''}`}
-                    style={{ fontSize: 13, padding: '8px 16px', color: activeTab === 'gear' ? '#38bdf8' : '#94a3b8' }}
+                    style={{ fontSize: 13, padding: '8px 16px', color: activeTab === 'gear' ? '#38bdf8' : '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                   >
-                    🎒 Equipo Clave
+                    <BackpackIcon size={14} color={activeTab === 'gear' ? '#38bdf8' : '#94a3b8'} />
+                    <span>Equipo Clave</span>
                   </button>
                 </div>
 
@@ -357,7 +416,7 @@ export default function MetaEventsView() {
                           borderRadius: 4,
                         }}
                       >
-                        <span style={{ color: '#10b981', fontWeight: 900, fontSize: 16 }}>✓</span>
+                        <CheckIcon size={16} color="#10b981" />
                         <span style={{ fontSize: 14, color: '#f1f5f9', lineHeight: 1.5 }}>
                           {item}
                         </span>
@@ -382,7 +441,7 @@ export default function MetaEventsView() {
                           borderRadius: 4,
                         }}
                       >
-                        <span style={{ color: '#ef4444', fontWeight: 900, fontSize: 16 }}>✕</span>
+                        <CloseCrossIcon size={16} color="#ef4444" />
                         <span style={{ fontSize: 14, color: '#fca5a5', lineHeight: 1.5 }}>
                           {item}
                         </span>
@@ -404,8 +463,9 @@ export default function MetaEventsView() {
                           borderRadius: 4,
                         }}
                       >
-                        <span style={{ fontSize: 14, fontWeight: 900, color: '#38bdf8', display: 'block', marginBottom: 4, fontFamily: 'monospace' }}>
-                          📦 {g.name}
+                        <span style={{ fontSize: 14, fontWeight: 900, color: '#38bdf8', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontFamily: 'monospace' }}>
+                          <BackpackIcon size={13} color="#38bdf8" />
+                          <span>{g.name}</span>
                         </span>
                         <span style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.4 }}>
                           {g.desc}
@@ -419,7 +479,7 @@ export default function MetaEventsView() {
               {/* Directiva Build 42 */}
               {activeEvent.build42Notes && (
                 <div style={{ padding: '14px 16px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.35)', borderRadius: 4, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <span style={{ fontSize: 20 }}>⚠️</span>
+                  <HazardIcon size={20} color="#f59e0b" />
                   <div>
                     <span style={{ fontSize: 11, fontWeight: 900, color: '#f59e0b', textTransform: 'uppercase', fontFamily: 'monospace', display: 'block', marginBottom: 2 }}>
                       INNOVACIÓN BUILD 42 // FÍSICA Y ACÚSTICA
@@ -431,7 +491,7 @@ export default function MetaEventsView() {
                 </div>
               )}
 
-              {/* Botón de cierre ergonómico */}
+              {/* Botón de cierre */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 16 }}>
                 <button
                   type="button"
@@ -439,7 +499,7 @@ export default function MetaEventsView() {
                   className="pz-btn-primary"
                   style={{ minWidth: 160, justifyContent: 'center' }}
                 >
-                  <span>Entendido // Cerrar Dossier</span>
+                  <span>Entendido // Cerrar Dossier [ESC]</span>
                 </button>
               </div>
             </div>

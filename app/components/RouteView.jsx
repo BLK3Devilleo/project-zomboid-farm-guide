@@ -4,6 +4,16 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import HoloCard from './HoloCard';
 import AnimatedList from './AnimatedList';
+import {
+  HazardIcon,
+  MedicalCrossIcon,
+  CrosshairIcon,
+  WrenchIcon,
+  BackpackIcon,
+  RadarServerIcon,
+  CloudCheckIcon,
+  RankChevronIcon,
+} from './icons/KnoxIcons';
 
 export default function RouteView({
   route,
@@ -155,27 +165,27 @@ export default function RouteView({
         {/* BARRA DE TELEMETRÍA TÁCTICA KNOX (STITCH HUD) */}
         <div className="knox-telemetry-grid">
           <div className="knox-telemetry-cell">
-            <span className="knox-telemetry-label">⏱️ Tiempo Vivo</span>
+            <span className="knox-telemetry-label">Tiempo Vivo</span>
             <span className="knox-telemetry-value">T+18 Días</span>
             <span className="knox-telemetry-sub" style={{ color: '#10b981' }}>SECTOR KNOX B42</span>
           </div>
           <div className="knox-telemetry-cell">
-            <span className="knox-telemetry-label">💀 Hostiles</span>
+            <span className="knox-telemetry-label">Hostiles</span>
             <span className="knox-telemetry-value">148 Bajas</span>
             <span className="knox-telemetry-sub" style={{ color: '#ef4444' }}>PERÍMETRO EN ALERTA</span>
           </div>
           <div className="knox-telemetry-cell">
-            <span className="knox-telemetry-label">🩸 Infección</span>
+            <span className="knox-telemetry-label">Infección</span>
             <span className="knox-telemetry-value" style={{ color: '#10b981' }}>0.00%</span>
             <span className="knox-telemetry-sub" style={{ color: '#10b981' }}>INMUNIDAD ASIGNADA</span>
           </div>
           <div className="knox-telemetry-cell">
-            <span className="knox-telemetry-label">🧠 Cordura</span>
+            <span className="knox-telemetry-label">Cordura</span>
             <span className="knox-telemetry-value" style={{ color: '#f59e0b' }}>92% Estable</span>
             <span className="knox-telemetry-sub" style={{ color: '#38bdf8' }}>RADIO 91.5 MHz</span>
           </div>
           <div className="knox-telemetry-cell">
-            <span className="knox-telemetry-label">⚙️ Mecánica</span>
+            <span className="knox-telemetry-label">Mecánica</span>
             <span className="knox-telemetry-value" style={{ color: '#38bdf8' }}>Fase {currentLevel.levelNumber}</span>
             <span className="knox-telemetry-sub" style={{ color: '#a78bfa' }}>{currentLevel.title.split(':')[0]}</span>
           </div>
@@ -255,7 +265,7 @@ export default function RouteView({
                       fontFamily: 'monospace',
                     }}
                   >
-                    {isDone ? '✓' : lvl.levelNumber}
+                    {isDone ? <CloudCheckIcon size={12} color="#04120c" /> : lvl.levelNumber}
                   </span>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                     <span style={{ fontSize: 12, fontWeight: 800, color: isSelected ? '#ffffff' : '#cbd5e1' }}>
@@ -294,7 +304,7 @@ export default function RouteView({
           <div className="phase-gear-box">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 16 }}>🎒</span>
+                <BackpackIcon size={16} color="#38bdf8" />
                 <span style={{ fontSize: 12, fontWeight: 900, textTransform: 'uppercase', color: '#38bdf8', letterSpacing: '0.06em' }}>
                   Fase 1: ¿Qué equipar de inmediato?
                 </span>
@@ -339,8 +349,8 @@ export default function RouteView({
                         {item.desc}
                       </div>
                     </div>
-                    <span style={{ fontSize: 14, fontWeight: 900, color: '#10b981' }}>
-                      {isEq ? '✅' : '➕'}
+                    <span style={{ fontSize: 14, fontWeight: 900, color: '#10b981', display: 'inline-flex', alignItems: 'center' }}>
+                      {isEq ? <CloudCheckIcon size={16} color="#10b981" /> : '+'}
                     </span>
                   </div>
                 );
@@ -353,7 +363,7 @@ export default function RouteView({
         {currentLevel.lootTarget && (
           <div className="phase-loot-box">
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 16 }}>📍</span>
+              <RadarServerIcon size={16} color="#f59e0b" />
               <span style={{ fontSize: 12, fontWeight: 900, textTransform: 'uppercase', color: '#f59e0b', letterSpacing: '0.06em' }}>
                 Fase 2: ¿Dónde recolectar los materiales?
               </span>
@@ -386,8 +396,8 @@ export default function RouteView({
               </div>
             </div>
 
-            <div className="loot-tip-box">
-              <span>💡</span>
+            <div className="loot-tip-box" style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+              <HazardIcon size={14} color="#f59e0b" style={{ flexShrink: 0, marginTop: 2 }} />
               <span>
                 <strong>Consejo Táctico:</strong> {currentLevel.lootTarget.tip}
               </span>
@@ -399,7 +409,7 @@ export default function RouteView({
         <div className="phase-tasks-box">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 16 }}>⚡</span>
+              <CrosshairIcon size={16} color="#10b981" />
               <span style={{ fontSize: 12, fontWeight: 900, textTransform: 'uppercase', color: '#10b981', letterSpacing: '0.06em' }}>
                 Fase 3: Misiones de Supervivencia (+XP)
               </span>
@@ -419,8 +429,12 @@ export default function RouteView({
                   className={`task-card ${isChecked ? 'checked' : ''} ${isSelected ? 'selected' : ''}`}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-                    <span style={{ fontSize: 18, userSelect: 'none' }}>
-                      {isChecked ? '✅' : '⬜'}
+                    <span style={{ userSelect: 'none', display: 'inline-flex', alignItems: 'center' }}>
+                      {isChecked ? (
+                        <CloudCheckIcon size={16} color="#10b981" />
+                      ) : (
+                        <span style={{ width: 14, height: 14, border: '1.5px solid #64748b', display: 'inline-block', borderRadius: 2 }} />
+                      )}
                     </span>
                     <span
                       style={{
@@ -468,7 +482,7 @@ export default function RouteView({
               gap: 12,
             }}
           >
-            <span style={{ fontSize: 20 }}>⚠️</span>
+            <HazardIcon size={20} color="#f59e0b" style={{ flexShrink: 0, marginTop: 2 }} />
             <div style={{ flex: 1 }}>
               <strong style={{ fontSize: 11, fontFamily: 'monospace', textTransform: 'uppercase', color: '#f59e0b', letterSpacing: '0.06em', display: 'block', marginBottom: 2 }}>
                 DIRECTIVA TÁCTICA BUILD 42
@@ -493,8 +507,9 @@ export default function RouteView({
               edgeSparkle={1}
             />
             <div style={{ flex: 1 }}>
-              <span style={{ fontSize: 12, fontWeight: 900, textTransform: 'uppercase', color: '#34d399', letterSpacing: '0.06em', display: 'block', marginBottom: 4 }}>
-                🏆 ¡Fase {currentLevel.levelNumber} Completada con Éxito!
+              <span style={{ fontSize: 12, fontWeight: 900, textTransform: 'uppercase', color: '#34d399', letterSpacing: '0.06em', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                <RankChevronIcon size={14} color="#34d399" />
+                <span>¡Fase {currentLevel.levelNumber} Completada con Éxito!</span>
               </span>
               <p style={{ fontSize: 12, color: '#d1fae5', margin: 0, lineHeight: 1.4 }}>
                 {currentLevel.unlockReward}
@@ -514,7 +529,7 @@ export default function RouteView({
             }}
           >
             <strong style={{ color: '#34d399', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>
-              🔓 Recompensa al Completar:
+              Recompensa al Completar:
             </strong>
             {currentLevel.unlockReward}
           </div>
@@ -526,8 +541,9 @@ export default function RouteView({
             <button
               onClick={() => onOpenLootCategory(currentLevel.recommendedLootCategory)}
               className="btn-secondary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
             >
-              <span>🗺️</span>
+              <RadarServerIcon size={14} color="currentColor" />
               <span>Ver Ficha de Saqueo en Radar →</span>
             </button>
           </div>

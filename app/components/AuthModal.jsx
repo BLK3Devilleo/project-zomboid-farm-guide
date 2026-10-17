@@ -3,8 +3,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { loginWithGoogleCredential } from '../lib/authClient';
+import { useTacticalModal } from '../hooks/useTacticalModal';
+import {
+  HazardIcon,
+  ShieldAdminIcon,
+  RefreshIcon,
+  CloseCrossIcon,
+} from './icons/KnoxIcons';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
+  const { modalContainerProps } = useTacticalModal(isOpen, onClose);
   const googleBtnRef = useRef(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -59,10 +67,28 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   return (
     <div className="server-modal-backdrop" onClick={onClose}>
       <div
+        {...modalContainerProps}
         className="server-modal-content"
-        style={{ maxWidth: 440, padding: 28, textAlign: 'center' }}
+        style={{ maxWidth: 440, padding: 28, textAlign: 'center', position: 'relative' }}
         onClick={(e) => e.stopPropagation()}
       >
+        <button
+          onClick={onClose}
+          style={{
+            position: 'absolute',
+            top: 14,
+            right: 14,
+            background: 'none',
+            border: 'none',
+            color: '#94a3b8',
+            cursor: 'pointer',
+            padding: 4,
+          }}
+          title="Cerrar [ESC]"
+        >
+          <CloseCrossIcon size={16} />
+        </button>
+
         {/* ICONO / LOGO */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
           <div
@@ -105,7 +131,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           Identificación de Superviviente
         </h2>
         <p style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.5, margin: '0 0 24px 0' }}>
-          Inicia sesión con tu cuenta de Google para enlistar y administrar tus servidores en el ranking oficial de Project Zomboid.
+          Inicia sesión con tu cuenta de Google para sincronizar tu progreso y nivel en la nube y administrar tus servidores.
         </p>
 
         {errorMessage && (
@@ -119,9 +145,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               fontSize: 12,
               marginBottom: 18,
               textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
             }}
           >
-            ⚠️ {errorMessage}
+            <HazardIcon size={14} color="#f87171" />
+            <span>{errorMessage}</span>
           </div>
         )}
 
@@ -136,16 +166,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           }}
         >
           {loading ? (
-            <div style={{ color: '#10b981', fontWeight: 800, fontSize: 13, fontFamily: 'monospace' }}>
-              ⚙️ Verificando credenciales militares...
+            <div style={{ color: '#10b981', fontWeight: 800, fontSize: 13, fontFamily: 'monospace', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <RefreshIcon size={14} className="animate-spin" />
+              <span>Verificando credenciales militares...</span>
             </div>
           ) : (
             <div ref={googleBtnRef}></div>
           )}
         </div>
 
-        <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4, marginBottom: 20 }}>
-          🔒 Protección por Cloudflare D1 y Zod. Tu sesión es cifrada y segura.
+        <div style={{ fontSize: 11, color: '#64748b', lineHeight: 1.4, marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <ShieldAdminIcon size={13} color="#64748b" />
+          <span>Protección por Cloudflare D1 y Zod. Sesión cifrada y segura.</span>
         </div>
 
         <button
@@ -159,7 +191,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             fontWeight: 700,
           }}
         >
-          Cancelar y continuar como invitado
+          Cancelar y continuar como invitado [ESC]
         </button>
       </div>
     </div>

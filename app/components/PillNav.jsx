@@ -5,6 +5,23 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'motion/react';
 import { routesDatabase } from '../data/routesDatabase';
 import { ROLE_LABELS } from '../lib/authClient';
+import {
+  RouteIcon,
+  RadarServerIcon,
+  BackpackIcon,
+  HazardIcon,
+  RadioAntennaIcon,
+  ShieldAdminIcon,
+  TerminalLogsIcon,
+  KeyAccessIcon,
+  RankChevronIcon,
+  CrosshairIcon,
+  WrenchIcon,
+  UserIcon,
+  LogoutIcon,
+  CloseCrossIcon,
+  ChatIcon,
+} from './icons/KnoxIcons';
 
 export default function PillNav({
   activeView,
@@ -17,6 +34,7 @@ export default function PillNav({
   onOpenLoginModal = () => {},
   onOpenProfileModal = () => {},
   onOpenLogsModal = () => {},
+  onOpenAdminModal = () => {},
   onLogout = () => {},
 }) {
   const [routesMenuOpen, setRoutesMenuOpen] = useState(false);
@@ -48,23 +66,25 @@ export default function PillNav({
       : 'Novato';
 
   const navItems = [
-    { id: 'route', label: 'Mecánica Activa', icon: '⚡' },
-    { id: 'events', label: 'Meta-Eventos', icon: '📡' },
-    { id: 'servers', label: 'Servidores', icon: '🌐' },
-    { id: 'loot', label: 'Radar de Loot', icon: '📦' },
-    { id: 'radio', label: 'Radio 91.5', icon: '📻' },
-    { id: 'onboarding', label: 'Asistente', icon: '🧭' },
+    { id: 'servers', label: 'Servidores', icon: <RadarServerIcon size={16} /> },
+    { id: 'guide', label: 'Guía de Juego', icon: <RouteIcon size={16} /> },
+    { id: 'forum', label: 'Foro', icon: <ChatIcon size={16} /> },
+    { id: 'loot', label: 'Loot Points', icon: <BackpackIcon size={16} /> },
+    { id: 'radio', label: 'Radio (Chat)', icon: <RadioAntennaIcon size={16} /> },
+    { id: 'missions', label: 'Misiones', icon: <CrosshairIcon size={16} /> },
   ];
 
   const currentRoleMeta = currentUser
     ? ROLE_LABELS[currentUser.role] || ROLE_LABELS.usuario
     : null;
 
+  const isStaff = Boolean(
+    currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || currentUser.role === 'moderador')
+  );
+
   const isAdmin = Boolean(
     currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin')
   );
-
-  const currentActiveRoute = routesDatabase.find((r) => r.id === activeRouteId) || routesDatabase[0];
 
   return (
     <>
@@ -114,52 +134,31 @@ export default function PillNav({
                   </button>
                 );
               })}
-
-              {/* SELECTOR DESPLEGABLE DE MECÁNICAS (DESKTOP) */}
-              <div style={{ position: 'relative' }}>
-                <button
-                  onClick={() => setRoutesMenuOpen(!routesMenuOpen)}
-                  className={`pill-tab-item pill-routes-trigger ${routesMenuOpen ? 'open' : ''}`}
-                  title="Cambiar Mecánica de Supervivencia"
-                >
-                  <span>⚙️</span>
-                  <span className="pill-tab-label">Mecánicas</span>
-                  <span style={{ fontSize: 9, opacity: 0.7 }}>{routesMenuOpen ? '▲' : '▼'}</span>
-                </button>
-
-                {routesMenuOpen && (
-                  <div className="pill-dropdown-menu">
-                    <div style={{ padding: '8px 12px', fontSize: 10, fontWeight: 900, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'monospace' }}>
-                      Mecánicas de Supervivencia B42
-                    </div>
-                    {routesDatabase.map((r) => {
-                      const isCurrent = activeRouteId === r.id;
-                      return (
-                        <button
-                          key={r.id}
-                          onClick={() => {
-                            onSelectRoute(r.id);
-                            setRoutesMenuOpen(false);
-                          }}
-                          className={`pill-dropdown-item ${isCurrent ? 'active' : ''}`}
-                        >
-                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {r.title}
-                          </span>
-                          <span style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace', marginLeft: 8 }}>
-                            {r.levels.length} Nvs
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
-          {/* LADO DERECHO: ACCESO / USUARIO & XP & BOTÓN HAMBURGUESA MÓVIL */}
+          {/* LADO DERECHO: ACCESO / USUARIO & XP & BOTONES STAFF */}
           <div className="pill-nav-right-strip">
+            {/* BOTÓN PANEL DE ADMINISTRACIÓN (SOLO MODERADOR, ADMIN O SUPER_ADMIN) */}
+            {isStaff && (
+              <button
+                onClick={onOpenAdminModal}
+                className="pill-tab-item desktop-only"
+                style={{
+                  padding: '5px 9px',
+                  gap: 5,
+                  border: '1px solid rgba(6, 182, 212, 0.4)',
+                  background: 'rgba(6, 182, 212, 0.12)',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                }}
+                title="Abrir Panel de Administración y Control RBAC"
+              >
+                <ShieldAdminIcon size={13} color="#06b6d4" />
+                <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 900, color: '#06b6d4' }}>ADMIN</span>
+              </button>
+            )}
+
             {/* BOTÓN TERMINAL LOGS SSE (SOLO VISIBLE PARA ADMIN O SUPER_ADMIN) */}
             {isAdmin && (
               <button
@@ -175,7 +174,7 @@ export default function PillNav({
                 }}
                 title="Abrir Terminal de Telemetría y Logs SSE en Vivo (Administrador)"
               >
-                <span style={{ fontSize: 11 }}>🛰️</span>
+                <TerminalLogsIcon size={13} color="#34d399" />
                 <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 900, color: '#34d399' }}>LOGS</span>
               </button>
             )}
@@ -243,16 +242,33 @@ export default function PillNav({
                         ROL: {currentRoleMeta?.label?.toUpperCase()}
                       </div>
                     </div>
+
                     <button
                       onClick={() => {
                         setUserMenuOpen(false);
                         onOpenProfileModal();
                       }}
                       className="pill-dropdown-item"
-                      style={{ color: '#10b981', fontWeight: 800 }}
+                      style={{ color: '#10b981', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}
                     >
-                      <span>🪪 Ficha de Superviviente</span>
+                      <UserIcon size={14} color="#10b981" />
+                      <span>Ficha de Superviviente</span>
                     </button>
+
+                    {isStaff && (
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          onOpenAdminModal();
+                        }}
+                        className="pill-dropdown-item"
+                        style={{ color: '#06b6d4', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}
+                      >
+                        <ShieldAdminIcon size={14} color="#06b6d4" />
+                        <span>Panel de Administración</span>
+                      </button>
+                    )}
+
                     {isAdmin && (
                       <button
                         onClick={() => {
@@ -260,20 +276,23 @@ export default function PillNav({
                           onOpenLogsModal();
                         }}
                         className="pill-dropdown-item"
-                        style={{ color: '#38bdf8', fontWeight: 800 }}
+                        style={{ color: '#38bdf8', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}
                       >
-                        <span>🛰️ Terminal SSE Logs</span>
+                        <TerminalLogsIcon size={14} color="#38bdf8" />
+                        <span>Terminal SSE Logs</span>
                       </button>
                     )}
+
                     <button
                       onClick={() => {
                         setUserMenuOpen(false);
                         onLogout();
                       }}
                       className="pill-dropdown-item"
-                      style={{ color: '#ef4444', fontWeight: 700 }}
+                      style={{ color: '#ef4444', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}
                     >
-                      <span>🚪 Cerrar Sesión</span>
+                      <LogoutIcon size={14} color="#ef4444" />
+                      <span>Cerrar Sesión</span>
                     </button>
                   </div>
                 )}
@@ -284,13 +303,14 @@ export default function PillNav({
                 className="pill-login-btn desktop-only"
                 title="Iniciar sesión para guardar progreso"
               >
-                <span>🔑</span>
+                <KeyAccessIcon size={14} />
                 <span>Acceder</span>
               </button>
             )}
 
             {/* BADGE DE XP */}
             <div className="pill-xp-chip" title={`Nivel ${playerLevel}: ${rankTitle} (${globalXp} XP acumulados)`}>
+              <RankChevronIcon size={14} color="#10b981" style={{ marginRight: 2 }} />
               <span className="pill-xp-level">{playerLevel}</span>
               <div className="pill-xp-details desktop-only">
                 <span className="pill-xp-rank">{rankTitle}</span>
@@ -357,8 +377,9 @@ export default function PillNav({
                   onClick={() => setMobileMenuOpen(false)}
                   className="pill-mobile-close-btn"
                   aria-label="Cerrar Menú"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
-                  ✕
+                  <CloseCrossIcon size={16} />
                 </button>
               </div>
 
@@ -366,7 +387,7 @@ export default function PillNav({
               <div className="pill-mobile-user-card">
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' }}></span>
+                    <RankChevronIcon size={14} color="#10b981" />
                     <span style={{ fontSize: 11, fontWeight: 900, fontFamily: 'monospace', color: '#34d399' }}>
                       NIVEL {playerLevel} // {rankTitle.toUpperCase()}
                     </span>
@@ -402,69 +423,48 @@ export default function PillNav({
                       }}
                       className={`pill-mobile-nav-item ${isActive ? 'active' : ''}`}
                     >
-                      <span className="pill-mobile-nav-icon">{item.icon}</span>
+                      <span className="pill-mobile-nav-icon" style={{ display: 'flex', alignItems: 'center' }}>
+                        {item.icon}
+                      </span>
                       <span className="pill-mobile-nav-label">{item.label}</span>
                       {isActive && <span className="pill-mobile-active-pip">●</span>}
                     </button>
                   );
                 })}
 
-                {/* Acordeón de Mecánicas de Supervivencia en Móvil */}
-                <div style={{ marginTop: 8 }}>
-                  <button
-                    onClick={() => setMobileRoutesAccordion(!mobileRoutesAccordion)}
-                    className="pill-mobile-routes-accordion-btn"
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span>⚙️</span>
-                      <span>Mecánicas ({routesDatabase.length})</span>
-                    </div>
-                    <span>{mobileRoutesAccordion ? '▲' : '▼'}</span>
-                  </button>
-
-                  {mobileRoutesAccordion && (
-                    <div className="pill-mobile-routes-sublist">
-                      {routesDatabase.map((r) => {
-                        const isCurrent = activeRouteId === r.id;
-                        return (
-                          <button
-                            key={r.id}
-                            onClick={() => {
-                              onSelectRoute(r.id);
-                              onSelectView('route');
-                              setMobileMenuOpen(false);
-                            }}
-                            className={`pill-mobile-routes-subitem ${isCurrent ? 'active' : ''}`}
-                          >
-                            <span>{isCurrent ? '▸' : '•'}</span>
-                            <span style={{ flex: 1, textAlign: 'left' }}>{r.title}</span>
-                            <span style={{ fontSize: 9, opacity: 0.6 }}>{r.levels.length} nvs</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                {/* Accesos de Perfil / Sistema */}
-                {isAdmin && (
+                {/* Accesos de Administración y Perfil en Móvil */}
+                {isStaff && (
                   <>
                     <span className="pill-mobile-nav-section-title" style={{ marginTop: 16 }}>
-                      SISTEMA & TELEMETRÍA (ADMIN)
+                      CENTRO DE CONTROL & STAFF
                     </span>
 
                     <button
                       onClick={() => {
                         setMobileMenuOpen(false);
-                        onOpenLogsModal();
+                        onOpenAdminModal();
                       }}
                       className="pill-mobile-nav-item"
-                      style={{ color: '#38bdf8' }}
+                      style={{ color: '#06b6d4' }}
                     >
-                      <span className="pill-mobile-nav-icon">🛰️</span>
-                      <span className="pill-mobile-nav-label">Terminal SSE Logs en Vivo</span>
+                      <span className="pill-mobile-nav-icon"><ShieldAdminIcon size={16} color="#06b6d4" /></span>
+                      <span className="pill-mobile-nav-label">Panel de Administración</span>
                     </button>
                   </>
+                )}
+
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenLogsModal();
+                    }}
+                    className="pill-mobile-nav-item"
+                    style={{ color: '#38bdf8' }}
+                  >
+                    <span className="pill-mobile-nav-icon"><TerminalLogsIcon size={16} color="#38bdf8" /></span>
+                    <span className="pill-mobile-nav-label">Terminal SSE Logs en Vivo</span>
+                  </button>
                 )}
 
                 {currentUser ? (
@@ -477,7 +477,7 @@ export default function PillNav({
                       className="pill-mobile-nav-item"
                       style={{ color: '#10b981' }}
                     >
-                      <span className="pill-mobile-nav-icon">🪪</span>
+                      <span className="pill-mobile-nav-icon"><UserIcon size={16} color="#10b981" /></span>
                       <span className="pill-mobile-nav-label">Ficha de Superviviente</span>
                     </button>
                     <button
@@ -488,7 +488,7 @@ export default function PillNav({
                       className="pill-mobile-nav-item"
                       style={{ color: '#ef4444' }}
                     >
-                      <span className="pill-mobile-nav-icon">🚪</span>
+                      <span className="pill-mobile-nav-icon"><LogoutIcon size={16} color="#ef4444" /></span>
                       <span className="pill-mobile-nav-label">Cerrar Sesión</span>
                     </button>
                   </>
@@ -501,7 +501,7 @@ export default function PillNav({
                     className="pill-mobile-nav-item"
                     style={{ color: '#fbbf24' }}
                   >
-                    <span className="pill-mobile-nav-icon">🔑</span>
+                    <span className="pill-mobile-nav-icon"><KeyAccessIcon size={16} color="#fbbf24" /></span>
                     <span className="pill-mobile-nav-label">Acceder / Iniciar Sesión</span>
                   </button>
                 )}

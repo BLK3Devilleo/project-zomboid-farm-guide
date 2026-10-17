@@ -3,8 +3,8 @@ import ClarityAnalytics from './components/ClarityAnalytics';
 import './globals.css';
 
 export const metadata = {
-  title: 'Guía de granja y Hub de Servidores · Project Zomboid B42',
-  description: 'Directorio táctico de servidores dedicados y tutorial de supervivencia para Project Zomboid.',
+  title: 'KnoxOS HUD · Guía de Supervivencia y Servidores Project Zomboid B42',
+  description: 'HUD táctico diegético de 1993 para Project Zomboid Build 42: guía de mecánicas, radar de botín, sistema de alerta de meta-eventos, directorio comunitario de servidores y radio en tiempo real.',
 };
 
 export default function RootLayout({ children }) {
@@ -31,20 +31,6 @@ export default function RootLayout({ children }) {
             gtag('config', 'G-KRWBJ9ER2C');
           `}
         </Script>
-
-        {/* Microsoft Clarity Tag */}
-        <script
-          type="text/javascript"
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(c,l,a,r,i,t,y){
-                  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-              })(window, document, "clarity", "script", "yuppdlr6rl");
-            `,
-          }}
-        />
       </head>
       <body>
         <ClarityAnalytics />

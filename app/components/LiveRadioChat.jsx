@@ -1,8 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import { ROLE_LABELS } from '../lib/authClient';
+import {
+  RadioAntennaIcon,
+  MicTransceiverIcon,
+  RadarServerIcon,
+  KeyAccessIcon,
+  HazardIcon,
+  SignalPulseIcon,
+} from './icons/KnoxIcons';
 
 export default function LiveRadioChat({
   currentUser = null,
@@ -86,7 +93,7 @@ export default function LiveRadioChat({
       setInputText('');
       setSelectedServerRef('');
     } catch (err) {
-      setChatFeedback(`⚠️ ${err.message}`);
+      setChatFeedback(err.message);
     } finally {
       setSending(false);
     }
@@ -121,7 +128,7 @@ export default function LiveRadioChat({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 18 }}>📻</span>
+          <RadioAntennaIcon size={20} color="#10b981" />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span
@@ -135,8 +142,9 @@ export default function LiveRadioChat({
               >
                 FRECUENCIA 91.5 MHz · RADIO COMUNITARIA
               </span>
-              <span style={{ fontSize: 10, color: '#38bdf8', fontWeight: 800 }}>
-                ● EN VIVO
+              <span style={{ fontSize: 10, color: '#38bdf8', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <SignalPulseIcon size={12} color="#38bdf8" />
+                EN VIVO
               </span>
             </div>
             <span style={{ fontSize: 11, color: '#94a3b8' }}>
@@ -149,16 +157,19 @@ export default function LiveRadioChat({
           <button
             onClick={onOpenLoginModal}
             className="btn-tactical"
-            style={{ padding: '6px 14px', fontSize: 11, borderRadius: 20 }}
+            style={{ padding: '6px 14px', fontSize: 11, borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            🔑 Conectar Radio
+            <KeyAccessIcon size={13} />
+            <span>Conectar Radio</span>
           </button>
         )}
       </div>
 
-      {/* ÁREA DE MENSAJES (CANAL DE RADIO) */}
+      {/* ÁREA DE MENSAJES (CANAL DE RADIO) CON ARIA-LIVE */}
       <div
         ref={chatScrollRef}
+        role="log"
+        aria-live="polite"
         style={{
           flex: 1,
           overflowY: 'auto',
@@ -169,8 +180,9 @@ export default function LiveRadioChat({
         }}
       >
         {loading ? (
-          <div style={{ textAlign: 'center', color: '#10b981', fontFamily: 'monospace', fontSize: 12, padding: 30 }}>
-            📡 SINTONIZANDO SEÑAL DE KNOX COUNTY...
+          <div style={{ textAlign: 'center', color: '#10b981', fontFamily: 'monospace', fontSize: 12, padding: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            <RadarServerIcon size={16} color="#10b981" />
+            <span>SINTONIZANDO SEÑAL DE KNOX COUNTY...</span>
           </div>
         ) : messages.length === 0 ? (
           <div style={{ textAlign: 'center', color: '#64748b', fontSize: 13, padding: 30 }}>
@@ -262,7 +274,8 @@ export default function LiveRadioChat({
                         gap: 4,
                       }}
                     >
-                      🌐 Servidor: {msg.server_ref_id}
+                      <RadarServerIcon size={12} color="#38bdf8" />
+                      <span>Servidor: {msg.server_ref_id}</span>
                     </div>
                   )}
                 </div>
@@ -280,9 +293,13 @@ export default function LiveRadioChat({
             color: '#f87171',
             background: 'rgba(239, 68, 68, 0.1)',
             borderTop: '1px solid rgba(239, 68, 68, 0.2)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
           }}
         >
-          {chatFeedback}
+          <HazardIcon size={13} color="#f87171" />
+          <span>{chatFeedback}</span>
         </div>
       )}
 
@@ -305,8 +322,8 @@ export default function LiveRadioChat({
             onChange={(e) => setInputText(e.target.value)}
             placeholder={
               currentUser
-                ? '📻 Transmitir mensaje en la frecuencia de radio (máx 280 caracteres)...'
-                : '🔒 Inicia sesión con Google para transmitir por radio...'
+                ? 'Transmitir mensaje en la frecuencia de radio (máx 280 caracteres)...'
+                : 'Inicia sesión con Google para transmitir por radio...'
             }
             disabled={!currentUser || sending}
             className="form-input"
@@ -318,9 +335,10 @@ export default function LiveRadioChat({
             type="submit"
             disabled={!currentUser || sending || !inputText.trim()}
             className="btn-tactical"
-            style={{ padding: '8px 18px', fontSize: 12, borderRadius: 8, flexShrink: 0 }}
+            style={{ padding: '8px 18px', fontSize: 12, borderRadius: 8, flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}
           >
-            {sending ? '...' : '📡 Transmitir'}
+            <MicTransceiverIcon size={14} />
+            <span>{sending ? '...' : 'Transmitir'}</span>
           </button>
         </div>
 
