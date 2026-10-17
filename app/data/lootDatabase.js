@@ -1,283 +1,179 @@
-// Base de datos táctica de Loot, Alijos y Puntos de Interés de Knox-OS (Build 42)
-// Estructura enriquecida con telemetría de sonar, coordenadas relativas, tiers de rareza y mecánicas de incursión.
+// Base de datos de Tipologías de Zonas, Puntos de Interés (POIs) y Probabilidad Heurística (KnoxOS HUD Build 42)
+// Cero emojis - No promete loot 100% garantizado en coordenadas fijas falsas; modela la arquitectura de spawn de Project Zomboid.
 
-export const lootDatabase = [
+export const MAP_REGIONS = [
+  { id: 'ALL', name: 'Todo Knox (Universal)' },
+  { id: 'Rosewood', name: 'Rosewood' },
+  { id: 'West Point', name: 'West Point' },
+  { id: 'Muldraugh', name: 'Muldraugh' },
+  { id: 'Riverside', name: 'Riverside' },
+  { id: 'Louisville', name: 'Louisville' },
+];
+
+export const lootZoneTypes = [
   {
-    id: 'card-armory',
-    tier: 'militar',
-    tierLabel: 'TIER: MILITAR // PROTOTIPO',
-    tierColor: '#f59e0b',
-    glowColor: '#ffb95f',
+    id: 'poi-armory',
     category: 'Militar',
-    icon: 'shield',
-    title: 'Armería Policial & West Point Gun Shop',
-    sector: 'SECTOR 03: WEST POINT',
-    freq: '142.80',
-    distanceMeters: 320,
-    distanceDisplay: '320m Noroeste • Interior Fortificado',
-    radarPos: { top: '22%', left: '26%' },
-    radarLabel: 'ARMERÍA // 320m',
-    hazardLevel: 'PELIGRO EXTREMO // 140+ ZEDS',
-    hazardNote: 'VENTILACIÓN SELLADA',
-    respawnTimer: '48h 00m',
-    isCritical: true,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCYU8nYm1zwP_W3DIOz7R5ZcrRr8iQLHGR-BTaxQZ_JIZmZpRfO-SyI3x-7pyJ4_l1frh8TSYcfTYokwJZOiLsr9pVi8X-5kU7dv1RFm9gDJM9TlXs3hlPtRIMtSJjz5R8nNBefxmAVLVTyGBMJb6iCD937tQ4EnZQW5Cv7XWesBSBBLPVEzIYPHoZ0RwocqI-jFG23n-9xrMk92abcSkHX4j1-bakg9HKeg1bRw6jCcLtpHwSPSFhF',
-    imageTag: 'VERJAS DE ACERO REFORZADAS',
-    scanItems: [
-      'Fusil M16A1',
-      'Munición 5.56mm (x8 Cajas)',
-      'Chaleco Antibalas Grado III',
-      'Escopeta Remington 870',
-      'Cajas de Cartuchos 12G'
+    title: 'Comisarías, Armerías & Puestos Militares',
+    zoneBadge: 'PRIORIDAD BALÍSTICA // ALTO CALIBRE',
+    threatLevel: 'Extrema',
+    threatColor: '#ef4444',
+    alarmRisk: 'Muy Alto (45%)',
+    cities: ['Rosewood', 'West Point', 'Muldraugh', 'Riverside', 'Louisville'],
+    knownLocations: [
+      { city: 'Rosewood', location: 'Estación de Policía (calle principal sur, armería fortificada detrás de las celdas)' },
+      { city: 'West Point', location: 'West Point Gun Shop (noreste, ventanas con rejas de acero)' },
+      { city: 'Muldraugh', location: 'Comisaría de Policía de Muldraugh (borde norte sobre la autopista Dixie)' },
+      { city: 'Riverside', location: 'Estación de Policía de Riverside (área municipal junto al ayuntamiento)' },
+      { city: 'Louisville', location: 'Punto de Control Militar Knox Checkpoint & Cuartel General de Policía' },
     ],
-    riskLevel: 'Extremo',
-    whenToGo: 'Con vehículo rápido, hacha pesada o maza para rejas y munición suficiente',
-    whatToLookFor: [
-      'Armamento militar y policial de alto calibre (M16, Escopetas, Rifles)',
-      'Cajas selladas de munición 5.56, 9mm y 12G',
-      'Accesorios de armas (miras telescópicas, silenciadores, correas)',
-      'Chalecos antibalas de grado militar y fundas de cinto'
+    targetContainers: [
+      { container: 'Taquillas de Armas (Gun Lockers)', probability: 'Alta (60-80%)', lootTypes: 'M16, Rifles de caza, Escopetas Remington, Fundas' },
+      { container: 'Cajas de Munición Metálicas', probability: 'Muy Alta (75-90%)', lootTypes: 'Cajas selladas 9mm, 5.56mm, 12G, .308' },
+      { container: 'Maleteros de Coches Policiales', probability: 'Media (40-55%)', lootTypes: 'Escopeta policial, chaleco antibalas, linterna táctica' },
+      { container: 'Escritorios de Alguacil / Armeros', probability: 'Media (35-50%)', lootTypes: 'Pistolas M9, cargadores adicionales, gas pimienta' },
     ],
-    whereToFind: [
-      'West Point Gun Shop (avenida noreste junto a la armería)',
-      'Estación de Policía de Rosewood (armería trasera fortificada)',
-      'Puesto militar de control Knox Checkpoint',
-      'Comisaría de Muldraugh'
+    tacticalBreach: [
+      'Las rejas de acero de las tiendas de armas y comisarías no ceden con hachas convencionales; se requiere maza de demolición (sledgehammer) o forzar acceso por el tejado.',
+      'Los disparos atraerán la masa infectada de todo el distrito urbano. Asegura primero una ruta de retirada perimetral.',
+      'Muchos coches policiales en el aparcamiento tienen llaves en la guantera o en el suelo cercano.',
     ],
-    recommendedGear: [
-      'Maza de demolición (Sledgehammer) para abrir rejas metálicas',
-      'Botas tácticas y ropa con máxima resistencia a mordeduras',
-      'Silbato o bomba sonora lejana antes de aproximarse',
-      'Bolsas de lona de alta capacidad'
-    ],
-    tacticalTips: [
-      'Las ventanas y puertas tienen rejas de acero irrompibles con hacha normal; necesitas almádena o forzar el tejado.',
-      'Disparar un arma aquí atraerá a los zeds de todo West Point. Si no tienes silenciador, mantén el combate cuerpo a cuerpo.',
-      'Asegura un perímetro de escape despejado hacia el bosque antes de forzar el acceso.'
-    ],
-    relatedRoutes: ['survival-basics', 'first-vehicle']
+    disclaimer: 'La cantidad real de munición y armas generadas depende del multiplicador de rareza Sandbox del servidor (Normal / Raro / Extremadamente Raro).',
   },
   {
-    id: 'card-hardware',
-    tier: 'epico',
-    tierLabel: 'TIER: ÉPICO // ARTESANÍA B42',
-    tierColor: '#a855f7',
-    glowColor: '#c084fc',
+    id: 'poi-hardware',
     category: 'Herramientas',
-    icon: 'construction',
-    title: 'Almacén de Herramientas & Ferretería B42',
-    sector: 'SECTOR 03: WEST POINT',
-    freq: '142.80',
-    distanceMeters: 680,
-    distanceDisplay: '680m Este • Área Comercial Sur',
-    radarPos: { top: '32%', left: '78%' },
-    radarLabel: 'FERRETERÍA // 680m',
-    hazardLevel: 'PELIGRO MEDIO // 25 ZEDS',
-    hazardNote: 'MECÁNICAS FORJA B42',
-    respawnTimer: '14h 22m',
-    isCritical: false,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB352qz6TJ52NMN4VJGS5AHm3yEoMyt1XGQllGwwiwtfoPtZ2X4-6qEUByV9uGCVwmkoQOb9PTK5neDm41QG6KfrKpQnaMtGMYNcDSVNa5RHh2M19O4DXsH0bh-8FLPIkwSf-wKP-ar6xLjl08ULdZpoYLIPpkVDfKrdVE20YpaqK9LzU3RWhAjTR6ZAIJ-a4WQ3ypr3dzj9w7jLY-2MY6pxZlNKClEn_YPqERVn7blgxaqJfjGxcUa',
-    imageTag: 'MECÁNICAS FORJA B42 DETECTADAS',
-    scanItems: [
-      'Yunque de Herrería Medieval B42',
-      'Maza de 5kg (Demolición)',
-      'Alambre reforzado x12',
-      'Cajas de Clavos (x5)',
-      'Tenazas de Herrero'
+    title: 'Almacenes Industriales, Forja & Ferreterías',
+    zoneBadge: 'HERRAMIENTAS PESADAS // FORJA B42',
+    threatLevel: 'Media - Alta',
+    threatColor: '#f59e0b',
+    alarmRisk: 'Moderado (20%)',
+    cities: ['Rosewood', 'West Point', 'Muldraugh', 'Riverside', 'Louisville'],
+    knownLocations: [
+      { city: 'Muldraugh', location: 'Gran almacén industrial de dos plantas (norte de la autopista principal)' },
+      { city: 'West Point', location: 'Ferretería central de West Point (área comercial)' },
+      { city: 'Riverside', location: 'Ferretería principal junto a la farmacia y complejo de naves al oeste' },
+      { city: 'Rosewood', location: 'Área industrial y depósitos de madera al suroeste' },
+      { city: 'Louisville', location: 'Complejo de destilerías y fábricas de ensamblaje en el muelle fluvial' },
     ],
-    riskLevel: 'Medio - Alto',
-    whenToGo: 'Semana 1 para asegurar madera, agricultura y herrería B42',
-    whatToLookFor: [
-      'Yunque de piedra/hierro y tenazas de forja B42',
-      'Sierra de mano y cajas de clavos (Nails)',
-      'Hacha de tala y pala de jardinería',
-      'Llave de tubo de fontanero (Pipe Wrench)',
-      'Maza pesada (Sledgehammer) y palanca (Crowbar)'
+    targetContainers: [
+      { container: 'Cajas de Madera Industriales', probability: 'Muy Alta (80%)', lootTypes: 'Maza de 5kg (Sledgehammer), hachas de tala, palancas, picos' },
+      { container: 'Estanterías Metálicas de Taller', probability: 'Alta (70%)', lootTypes: 'Cajas de clavos, alambre reforzado, sierras, soldador, máscaras' },
+      { container: 'Puestos de Trabajo de Herrería B42', probability: 'Media-Alta (50-65%)', lootTypes: 'Yunque de hierro/piedra, tenazas de forja, carbón mineral' },
+      { container: 'Cobertizos Traseros Residenciales', probability: 'Media (40%)', lootTypes: 'Generadores eléctricos, bidones de combustible vacíos' },
     ],
-    whereToFind: [
-      'Ferreterías (Hardware Stores) en West Point y Riverside',
-      'Gran almacén de herramientas al norte de Muldraugh',
-      'Cajas de herramientas en garajes residenciales',
-      'Zombis obreros vistiendo chaleco reflectante'
+    tacticalBreach: [
+      'Los almacenes de dos pisos suelen tener ventanas altas accesibles levantando escaleras de madera de carpintería.',
+      'Cuidado con zeds atrapados detrás de las cajas de madera apiladas; se activan por sonido sin tener línea de visión previa.',
     ],
-    recommendedGear: [
-      'Mochila grande para tolerar peso de herramientas metálicas',
-      'Arma resistente (ej. bate de béisbol o palanca)',
-      'Botas reforzadas de protección',
-      'Vehículo con maletero espacioso'
-    ],
-    tacticalTips: [
-      'Las herramientas de metal pesan mucho; traslada tu botín por tandas o acércalo en el maletero de un coche.',
-      'Los almacenes suelen tener cajas apiladas; sube con cautela por si hay zombis atrapados arriba.',
-      'En la B42 el yunque y las tenazas permiten reparar y forjar armas medievales y armaduras de placas.'
-    ],
-    relatedRoutes: ['farming-b42', 'first-vehicle']
+    disclaimer: 'Las piezas de forja pesada y yunques introducidos en la Build 42 tienen mayor frecuencia de spawn en naves con chimeneas o talleres mecánicos.',
   },
   {
-    id: 'card-clinic',
-    tier: 'medico',
-    tierLabel: 'TIER: RARO // SUMINISTROS MÉDICOS',
-    tierColor: '#00a6e0',
-    glowColor: '#7bd0ff',
-    category: 'Médico',
-    icon: 'local_hospital',
-    title: 'Clínica & Farmacia Cortman',
-    sector: 'SECTOR 03: WEST POINT',
-    freq: '142.80',
-    distanceMeters: 1100,
-    distanceDisplay: '1.1km Sur • Zona Residencial',
-    radarPos: { top: '78%', left: '42%' },
-    radarLabel: 'FARMACIA // 1.1km',
-    hazardLevel: 'PELIGRO BAJO // ZONA SEMI-DESPEJADA',
-    hazardNote: 'RIESGO INFECCIÓN: 0%',
-    respawnTimer: '72h 10m',
-    isCritical: false,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCYU8nYm1zwP_W3DIOz7R5ZcrRr8iQLHGR-BTaxQZ_JIZmZpRfO-SyI3x-7pyJ4_l1frh8TSYcfTYokwJZOiLsr9pVi8X-5kU7dv1RFm9gDJM9TlXs3hlPtRIMtSJjz5R8nNBefxmAVLVTyGBMJb6iCD937tQ4EnZQW5Cv7XWesBSBBLPVEzIYPHoZ0RwocqI-jFG23n-9xrMk92abcSkHX4j1-bakg9HKeg1bRw6jCcLtpHwSPSFhF',
-    imageTag: 'FARMACIA CON SUMINISTROS SELLADOS',
-    scanItems: [
-      'Antibióticos (x3 Blíster)',
-      'Suturas Quirúrgicas',
-      'Desinfectante Médico',
-      'Kit de Trauma y Torniquetes',
-      'Betabloqueantes y Analgésicos'
+    id: 'poi-medical',
+    category: 'Médica',
+    title: 'Hospitales, Clínicas & Farmacias Pharmahug',
+    zoneBadge: 'TRAUMA & SUTURA // DESINFECCIÓN',
+    threatLevel: 'Baja - Media',
+    threatColor: '#10b981',
+    alarmRisk: 'Bajo (10%)',
+    cities: ['Rosewood', 'West Point', 'Muldraugh', 'Riverside', 'Louisville'],
+    knownLocations: [
+      { city: 'West Point', location: 'Farmacia Pharmahug (avenida comercial céntrica)' },
+      { city: 'Muldraugh', location: 'Clínica Médica de Cortman (cerca del centro)' },
+      { city: 'Riverside', location: 'Farmacia central junto a la librería de Riverside' },
+      { city: 'Rosewood', location: 'Farmacia del área de comercios central' },
+      { city: 'Louisville', location: 'Hospital General San Peregrino y clínicas especializadas' },
     ],
-    riskLevel: 'Bajo - Medio',
-    whenToGo: 'Primera semana o ante heridas graves (fracturas / mordeduras / laceraciones)',
-    whatToLookFor: [
-      'Vendas esterilizadas y apósitos adhesivos',
-      'Analgésicos (Painkillers) y Betabloqueantes (contra pánico)',
-      'Antibióticos (infecciones) y Desinfectante',
-      'Aguja e hilo de sutura médica (Suture needle)',
-      'Férulas para fracturas y pinzas médicas'
+    targetContainers: [
+      { container: 'Botiquines de Pared de Primeros Auxilios', probability: 'Muy Alta (90%)', lootTypes: 'Vendas estériles, apósitos adhesivos, suturas con aguja' },
+      { container: 'Armarios Farmacéuticos Sellados', probability: 'Alta (75%)', lootTypes: 'Antibióticos, analgésicos, desinfectantes, férulas médicas' },
+      { container: 'Ambulancias de Emergencia', probability: 'Alta (70%)', lootTypes: 'Bolsas médicas de mano, kits de suero, pinzas quirúrgicas' },
     ],
-    whereToFind: [
-      'Hospital General de Cortman (Muldraugh)',
-      'Clínicas médicas en avenidas principales de Rosewood y West Point',
-      'Farmacias (Pharmacies) en centros urbanos',
-      'Botiquines colgados en baños de casas residenciales'
+    tacticalBreach: [
+      'Las farmacias Pharmahug suelen tener ventanales amplios de cristal rompible. Inspecciona el interior desde fuera antes de entrar.',
+      'Lleva siempre varias sábanas limpias o vendajes desinfectados antes de incursiones de saqueo médico.',
     ],
-    recommendedGear: [
-      'Mochila con al menos 15 de capacidad',
-      'Arma cuerpo a cuerpo ligera para pasillos estrechos',
-      'Vendas de reserva ya equipadas',
-      'Botella de agua y comida ligera'
-    ],
-    tacticalTips: [
-      'Entra siempre por puertas traseras o ventanas laterales, nunca por la puerta de cristal principal.',
-      'Los hospitales suelen tener salas ciegas sin salida; revisa las esquinas antes de entrar a farmear.',
-      'Si solo necesitas vendas urgentes, rasga ropa limpia de armarios antes de arriesgarte en un hospital.'
-    ],
-    relatedRoutes: ['survival-basics']
+    disclaimer: 'Los antibióticos curan infecciones de heridas de piel, no revierten la zombificación por transmisión del Virus Knox.',
   },
   {
-    id: 'card-groceries',
-    tier: 'alimentos',
-    tierLabel: 'TIER: VITAL // PROVISIONES DE COMIDA',
-    tierColor: '#f97316',
-    glowColor: '#fed7aa',
+    id: 'poi-groceries',
     category: 'Alimentos',
-    icon: 'restaurant',
-    title: 'Supermercado Spiffo & Almacén de Comida',
-    sector: 'SECTOR 03: WEST POINT',
-    freq: '142.80',
-    distanceMeters: 450,
-    distanceDisplay: '450m Suroeste • Bulevar Central',
-    radarPos: { top: '65%', left: '20%' },
-    radarLabel: 'SPIFFO FOOD // 450m',
-    hazardLevel: 'PELIGRO MEDIO-ALTO // 45 ZEDS',
-    hazardNote: 'GENERADOR APAGADO',
-    respawnTimer: '24h 00m',
-    isCritical: false,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCYU8nYm1zwP_W3DIOz7R5ZcrRr8iQLHGR-BTaxQZ_JIZmZpRfO-SyI3x-7pyJ4_l1frh8TSYcfTYokwJZOiLsr9pVi8X-5kU7dv1RFm9gDJM9TlXs3hlPtRIMtSJjz5R8nNBefxmAVLVTyGBMJb6iCD937tQ4EnZQW5Cv7XWesBSBBLPVEzIYPHoZ0RwocqI-jFG23n-9xrMk92abcSkHX4j1-bakg9HKeg1bRw6jCcLtpHwSPSFhF',
-    imageTag: 'FRIGORÍFICOS CON ALIMENTOS FRESCOS',
-    scanItems: [
-      'Carne y Verduras Frescas',
-      'Comida enlatada (Atún, Judías x12)',
-      'Abrelatas de bolsillo',
-      'Semillas de Patata y Repollo',
-      'Frascos de Conserva y Vinagre'
+    title: 'Supermercados Gigamart & Almacenes Frigoríficos',
+    zoneBadge: 'ALIMENTOS NO PERECEDEROS // AGUA',
+    threatLevel: 'Media',
+    threatColor: '#38bdf8',
+    alarmRisk: 'Muy Alto (40%)',
+    cities: ['Rosewood', 'West Point', 'Muldraugh', 'Riverside', 'Louisville'],
+    knownLocations: [
+      { city: 'West Point', location: 'Supermercado Gigamart (bloque central norte)' },
+      { city: 'Riverside', location: 'Gigamart de Riverside con panadería y almacén frigorífico trasero' },
+      { city: 'Muldraugh', location: 'Supermercado central y frutería sobre la autopista' },
+      { city: 'Rosewood', location: 'Tienda de comestibles frente al restaurante Spiffo' },
+      { city: 'Louisville', location: 'Grandes hipermercados de varios niveles y naves de abastecimiento' },
     ],
-    riskLevel: 'Medio',
-    whenToGo: 'Días 1 a 5 para comida fresca; cualquier momento para enlatados',
-    whatToLookFor: [
-      'Carnes y verduras frescas (antes de que la energía eléctrica caiga)',
-      'Comida enlatada (Atún, Judías, Sopa, Carne en conserva)',
-      'Abrelatas manual (imprescindible en la mochila)',
-      'Frascos de cristal para conservas, vinagre y azúcar',
-      'Paquetes sellados de semillas de cultivo'
+    targetContainers: [
+      { container: 'Estanterías de Conservas', probability: 'Muy Alta (85%)', lootTypes: 'Latas de atún, frijoles, sopa, avena, carne enlatada' },
+      { container: 'Neveras y Congeladores Industriales', probability: 'Crítica antes del corte', lootTypes: 'Carne fresca, lácteos, verduras (perecederos)' },
+      { container: 'Almacén Trasero de Carga', probability: 'Alta (65%)', lootTypes: 'Sacos de patatas, cajas de refrescos, botellas de agua mineral' },
     ],
-    whereToFind: [
-      'Supermercados Gigis y Spiffo Markets en avenidas principales',
-      'Tiendas de ultramarinos de barrio',
-      'Neveras y despensas de cocinas residenciales',
-      'Almacenes de importación de alimentos en muelles'
+    tacticalBreach: [
+      'Los Gigamarts son los edificios con mayor tasa de alarmas de robo. Prepárate para evacuar en 30 segundos si la sirena comienza.',
+      'Prioriza siempre las latas de conserva con abrelatas en mano durante la primera semana.',
     ],
-    recommendedGear: [
-      'Bolsas de plástico o mochilas para reparto rápido',
-      'Abrelatas ya equipado',
-      'Cuchillo de cocina para preparar ensaladas o guisos en ruta'
-    ],
-    tacticalTips: [
-      'Durante los primeros días come toda la comida fresca posible para subir peso; guarda las latas para el invierno.',
-      'Los frigoríficos de los supermercados pitan y atraen zombis si la alarma está conectada; comprueba el perímetro.',
-      'La comida podrida no se tira: guárdala para la compostera y conviértela en abono fértil para tu huerto.'
-    ],
-    relatedRoutes: ['survival-basics', 'farming-b42']
+    disclaimer: 'Tras el corte del suministro eléctrico mundial, los congeladores sin generador verán todos los alimentos frescos podridos en 48-72h.',
   },
   {
-    id: 'card-gasstation',
-    tier: 'herramientas',
-    tierLabel: 'TIER: LOGÍSTICA // COMBUSTIBLE & TALLER',
-    tierColor: '#10b981',
-    glowColor: '#4edea3',
-    category: 'Vehículos',
-    icon: 'local_gas_station',
-    title: 'Gasolinera Fossoil & Taller Mecánico',
-    sector: 'SECTOR 03: WEST POINT',
-    freq: '142.80',
-    distanceMeters: 1400,
-    distanceDisplay: '1.4km Noroeste • Carretera Interestatal',
-    radarPos: { top: '15%', left: '48%' },
-    radarLabel: 'FOSSOIL GAS // 1.4km',
-    hazardLevel: 'PELIGRO ELEVADO // ALARMA VEHICULAR',
-    hazardNote: 'SURTIDORES CON RESERVA',
-    respawnTimer: '96h 00m',
-    isCritical: false,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuB352qz6TJ52NMN4VJGS5AHm3yEoMyt1XGQllGwwiwtfoPtZ2X4-6qEUByV9uGCVwmkoQOb9PTK5neDm41QG6KfrKpQnaMtGMYNcDSVNa5RHh2M19O4DXsH0bh-8FLPIkwSf-wKP-ar6xLjl08ULdZpoYLIPpkVDfKrdVE20YpaqK9LzU3RWhAjTR6ZAIJ-a4WQ3ypr3dzj9w7jLY-2MY6pxZlNKClEn_YPqERVn7blgxaqJfjGxcUa',
-    imageTag: 'SURTIDORES MANUALES OPERATIVOS',
-    scanItems: [
-      'Latas de Gasolina (Gas Cans x4)',
-      'Bomba de aire para neumáticos',
-      'Gato hidráulico (Jack)',
-      'Batería pesada cargada',
-      'Llave inglesa de mecánico'
+    id: 'poi-garages',
+    category: 'Automotriz',
+    title: 'Estaciones de Servicio Fossoil, Gas-2-Go & Talleres',
+    zoneBadge: 'COMBUSTIBLE // BATERÍAS & RUEDAS',
+    threatLevel: 'Media - Alta',
+    threatColor: '#f59e0b',
+    alarmRisk: 'Moderado (25%)',
+    cities: ['Rosewood', 'West Point', 'Muldraugh', 'Riverside', 'Louisville'],
+    knownLocations: [
+      { city: 'Rosewood', location: 'Gasolinera Fossoil en la salida norte hacia Muldraugh' },
+      { city: 'West Point', location: 'Estación de servicio Gas-2-Go al noreste' },
+      { city: 'Muldraugh', location: 'Gasolinera central y taller mecánico sur' },
+      { city: 'Riverside', location: 'Gasolinera en la entrada este del pueblo' },
+      { city: 'Louisville', location: 'Múltiples estaciones de autopista con 8 a 16 surtidores' },
     ],
-    riskLevel: 'Medio',
-    whenToGo: 'Días 1 a 4 (imprescindible antes del corte de luz general)',
-    whatToLookFor: [
-      'Latas de gasolina vacías o llenas (Gas Cans)',
-      'Bomba de aire manual para neumáticos (Tire Pump)',
-      'Gato hidráulico (Jack) y Llave de cruceta (Lug Wrench)',
-      'Baterías de coche con carga y cargadores de batería',
-      'Piezas de repuesto (frenos, amortiguadores, neumáticos pesados)'
+    targetContainers: [
+      { container: 'Surtidores de Combustible (Bombas)', probability: 'Sujeto a energía eléctrica', lootTypes: 'Gasolina infinita mientras haya luz o generador' },
+      { container: 'Estantes de Taller Mecánico', probability: 'Alta (75%)', lootTypes: 'Gatos hidráulicos, llaves de cruceta, bombas de inflar neumáticos' },
+      { container: 'Capós de Vehículos en Aparcamiento', probability: 'Media (50%)', lootTypes: 'Baterías de coche estándar y pesadas, bujías, frenos' },
     ],
-    whereToFind: [
-      'Gasolineras de autopista (Fossoil / Gas-2-Go)',
-      'Talleres mecánicos y desguaces automotrices',
-      'Cobertizos traseros y garajes de casas suburbanas',
-      'Guanteras y maleteros de vehículos abandonados en calles'
+    tacticalBreach: [
+      'Si el corte de energía ya ocurrió, deberás conectar un generador con combustible junto a los surtidores para poder extraer gasolina.',
+      'Ten siempre al menos 2 bidones de plástico de 5L en el maletero de tu coche.',
     ],
-    recommendedGear: [
-      'Destornillador en la riñonera',
-      'Lata de combustible vacía',
-      'Arma a dos manos para despejar la playa de surtidores',
-      'Cuerda de remolque si planeas mover otro auto'
+    disclaimer: 'La gasolina de los vehículos estacionados puede extraerse manualmente con un bidón vacío y una manguera de sifón.',
+  },
+  {
+    id: 'poi-residential',
+    category: 'Residencial',
+    title: 'Urbanizaciones Cerradas & Mansiones Ricas',
+    zoneBadge: 'BIBLIOTECAS // ARMAS OCULTAS',
+    threatLevel: 'Baja',
+    threatColor: '#10b981',
+    alarmRisk: 'Alto (35%)',
+    cities: ['Rosewood', 'West Point', 'Muldraugh', 'Riverside', 'Louisville'],
+    knownLocations: [
+      { city: 'Rosewood', location: 'Barrio residencial cerrado de clase alta (este de Rosewood)' },
+      { city: 'West Point', location: 'Mansiones junto al lago en el extremo norte' },
+      { city: 'Muldraugh', location: 'Casas residenciales con vallas altas en el bosque este' },
+      { city: 'Riverside', location: 'Complejo residencial amurallado con garajes dobles' },
+      { city: 'Louisville', location: 'Mansiones fortificadas con verjas de hierro a orillas del río' },
     ],
-    tacticalTips: [
-      'Apunta la ubicación de las gasolineras en tu mapa; cuando la luz se corte necesitarás un generador para hacer funcionar las bombas.',
-      'Al saquear coches en parkings, no fuerces las ventanillas si están cerradas a menos que tengas cinta o repuesto.',
-      'Revisa el suelo alrededor de los coches: las llaves suelen caer al pavimento tras abatir al dueño zombi.'
+    targetContainers: [
+      { container: 'Estanterías de Biblioteca y Despachos', probability: 'Muy Alta (90%)', lootTypes: 'Manuales de generador, carpintería vol 1-5, mecánica, cocina' },
+      { container: 'Armarios de Dormitorio Principal', probability: 'Media (40%)', lootTypes: 'Escopetas cortas, revólveres Magnum .44, joyas' },
+      { container: 'Garajes Privados', probability: 'Alta (70%)', lootTypes: 'Baterías, cajas de clavos, generadores portátiles, sierras' },
     ],
-    relatedRoutes: ['first-vehicle']
-  }
+    tacticalBreach: [
+      'Las urbanizaciones cerradas con rejas altas son excelentes candidatas para bases seguras de larga duración.',
+      'Revisa siempre los buzones de correo frente a cada casa: suelen contener revistas de recetas y mapas locales.',
+    ],
+    disclaimer: 'Las casas ricas suelen tener alarmas domiciliarias activas; abre ventanas con sigilo antes de franquear la puerta principal.',
+  },
 ];

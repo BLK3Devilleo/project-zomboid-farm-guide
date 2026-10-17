@@ -1,0 +1,73 @@
+// Base de datos de Cartel de Anuncios y Eventos Comunitarios de Servidores (KnoxOS HUD Build 42)
+// Cero emojis - Metadatos tácticos de radio y transmisiones mundiales.
+
+export const serverEvents = [
+  {
+    id: 'evt-blackout',
+    title: 'COLAPSO DE LA RED ELÉCTRICA Y AGUA DE KNOX',
+    type: 'CORTE DE SERVICIOS',
+    urgency: 'CRÍTICA',
+    tag: 'GLOBAL',
+    status: 'INMINENTE',
+    dateDisplay: 'Día 14 a 30 de la Infección',
+    frequency: '107.4 MHz (Automated Emergency Broadcast)',
+    hostServer: 'Todos los Servidores Dedicados',
+    description: 'La planta eléctrica y las estaciones de bombeo de Kentucky suspenderán operaciones permanentemente. Todos los grifos dejarán de fluir y los refrigeradores cesarán su enfriamiento. Asegura colectores de lluvia y alimentos en conserva de inmediato.',
+    directives: [
+      'Llenar todas las ollas, cacerolas y botellas vacías antes del corte definitivo.',
+      'Localizar generador y manual "Cómo Usar Generadores" en cobertizos.',
+      'Asegurar combustible en estaciones de servicio antes de que las bombas pierdan energía.',
+    ],
+  },
+  {
+    id: 'evt-chopper',
+    title: 'PASO DEL HELICÓPTERO MILITAR DE RECONOCIMIENTO',
+    type: 'META-EVENTO ACÚSTICO',
+    urgency: 'PELIGRO MÁXIMO',
+    tag: 'HORDA EN MOVIMIENTO',
+    status: 'PROGRAMADO',
+    dateDisplay: 'Día 6 a 9 • Horario Diurno (09:00 - 17:00)',
+    frequency: '91.5 MHz Knox Community',
+    hostServer: 'Servidores Vanilla & Hardcore',
+    description: 'Un helicóptero no tripulado o de patrulla militar sobrevolará el sector siguiendo la posición del superviviente si este se encuentra en exteriores, desplazando masas de 300+ zombies directamente sobre su ubicación.',
+    directives: [
+      'Si estás en tu base principal: Quédate dentro, en una habitación sin ventanas o con sábanas cerradas y lee en silencio.',
+      'Si estás fuera: Súbete a un vehículo rápido y conduce lejos de tu refugio hasta que el rotor se aleje.',
+      'NUNCA corras a pie hacia tu base mientras el helicóptero esté sobrevolando.',
+    ],
+  },
+  {
+    id: 'evt-purge',
+    title: 'NOCHE DE PURGA: SPRINTERS AL 100% (HORDA NOCTURNA)',
+    type: 'EVENTO COMUNITARIO',
+    urgency: 'EXTREMA',
+    tag: 'EVENTO SEMANAL',
+    status: 'ACTIVO ESTE FIN DE SEMANA',
+    dateDisplay: 'Cada Viernes 22:00 UTC • Duración 4h',
+    frequency: '142.80 MHz Frecuencia de Refugio',
+    hostServer: 'Kentucky Reborn & Louisville Last Stand',
+    description: 'Evento coordinado por administradores de servidores dedicados: al ponerse el sol, todos los infectados aumentan velocidad a velocistas (sprinters), su percepción auditiva se maximiza y atacan estructuras fortificadas en enjambres coordinados.',
+    directives: [
+      'Reforzar barricadas en todas las entradas con mínimo 4 tablones y placas de metal.',
+      'Preparar cócteles molotov y escopetas con munición pesada en puestos elevados.',
+      'Mantener silenciadores en caso de patrullas de rescate de supervivientes.',
+    ],
+  },
+  {
+    id: 'evt-airdrop',
+    title: 'LANZAMIENTO DE SUMINISTROS (AIRDROP MILITAR B42)',
+    type: 'SUMINISTROS TÁCTICOS',
+    urgency: 'OPORTUNIDAD',
+    tag: 'ZONA DE COMBATE',
+    status: 'TRANSMISIÓN EN VIVO',
+    dateDisplay: 'Sábado 18:00 UTC',
+    frequency: '124.00 MHz Banda Militar',
+    hostServer: 'Zona Cero PvP & Refugio Knox',
+    description: 'Lanzamiento aéreo de tres cajas con armamento de alta cadencia, cajas de munición militar, medicina de trauma y herramientas de forja pesada B42 en la periferia de West Point y Louisville.',
+    directives: [
+      'La zona de impacto emitirá bengalas de humo rojo visibles a 1.5 km.',
+      'Zona de PvP abierta y presencia masiva de hostiles atraídos por el impacto.',
+      'Recomendada aproximación en binomios o vehículos con blindaje frontal.',
+    ],
+  },
+];
