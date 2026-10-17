@@ -66,12 +66,12 @@ export default function PillNav({
       : 'Novato';
 
   const navItems = [
-    { id: 'servers', label: 'Servidores', icon: <RadarServerIcon size={16} /> },
-    { id: 'guide', label: 'Guía de Juego', icon: <RouteIcon size={16} /> },
-    { id: 'forum', label: 'Foro', icon: <ChatIcon size={16} /> },
-    { id: 'loot', label: 'Loot Points', icon: <BackpackIcon size={16} /> },
-    { id: 'radio', label: 'Radio (Chat)', icon: <RadioAntennaIcon size={16} /> },
-    { id: 'missions', label: 'Misiones', icon: <CrosshairIcon size={16} /> },
+    { id: 'servers', label: 'Servidores', icon: <RadarServerIcon size={14} /> },
+    { id: 'guide', label: 'Guía de Juego', icon: <RouteIcon size={14} /> },
+    { id: 'forum', label: 'Foro', icon: <ChatIcon size={14} /> },
+    { id: 'loot', label: 'Loot Points', icon: <BackpackIcon size={14} /> },
+    { id: 'radio', label: 'Radio (Chat)', icon: <RadioAntennaIcon size={14} /> },
+    { id: 'missions', label: 'Misiones', icon: <CrosshairIcon size={14} /> },
   ];
 
   const currentRoleMeta = currentUser
