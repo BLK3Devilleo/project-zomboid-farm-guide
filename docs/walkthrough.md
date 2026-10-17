@@ -1,116 +1,80 @@
-# Walkthrough: Arquitectura Spiffo-OS (MVP Funcional)
+# Walkthrough: Modularización, Erradicación de Emojis y Persistencia Cloud (KnoxOS HUD)
 
-## Resumen de la Implementación
-Se ha completado con éxito la transformación de la aplicación hacia la arquitectura **Spiffo-OS**, cumpliendo con los ajustes clave acordados:
-* Onboarding interactivo por intenciones.
-* Navbar limpio con 4 menús desplegables.
-* Rutas modulares por niveles con checklists de acciones tácticas.
-* Vista de botín contextualizada bajo una plantilla estandarizada.
-* Persistencia centralizada en `localStorage` (sin cuentas obligatorias, tolerancia a fallos y cero pérdida de datos).
+## Resumen Ejecutivo
+Se ha culminado la reestructuración arquitectónica y de diseño de la plataforma **KnoxOS HUD Build 42**, cumpliendo con los tres mandatos requeridos:
+1. **Persistencia 100% en la Nube (Cloud-First)**: Eliminación de la dependencia de almacenamiento local exclusivo; el progreso (XP global, hitos completados de rutas y ruta activa) se sincroniza y almacena canónicamente en Cloudflare D1 vía `/api/user/profile`.
+2. **Pack de Iconos Tácticos 1993 y Erradicación Total de Emojis**: Diseño y despliegue de 22+ iconos vectoriales SVG tácticos estilo militar en `public/assets/icons/` y encapsulados en el componente de diseño `app/components/icons/KnoxIcons.jsx`. Cero emojis en componentes de interfaz (0 emojis en `app/components/*.jsx`, `app/page.jsx` y `app/layout.js`).
+3. **Modularización Integral del Frontend**: Descomposición del monolito `app/page.jsx` mediante Hooks personalizados (`useKnoxProgress`, `useAuthSession`, `useKnoxAudio`, `useTacticalModal`), servicio de almacenamiento modular `storageService.js` (con corrección de error en `publicUrl`), y componente administrativo dedicado `AdminPanelModal.jsx` con RBAC estricto.
 
 ---
 
-## Componentes y Archivos Creados
-1. [`app/lib/progressStorage.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/lib/progressStorage.js):
-   * Centraliza lectura, escritura y reinicio de progreso bajo un único objeto versionado (`spiffo_os_player_data`).
-2. [`app/data/onboardingOptions.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/data/onboardingOptions.js):
-   * Estructura del flujo de dos pasos: *"¿Cómo quieres jugar?"* y *"¿Qué te llama más?"* para novatos.
-3. [`app/data/routesDatabase.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/data/routesDatabase.js):
-   * 3 Rutas completas disponibles:
-     * **Supervivencia Básica (Primeros Días):** Niveles 1, 2 y 3.
-     * **Primer Vehículo / Nómada:** Camión Niveles 1, 2 y 3.
-     * **Agricultura y Granja Autosuficiente (B42):** Niveles 1, 2 y 3.
-   * Rutas preparadas como `coming_soon` (Carpintería, Combate, Roleplay).
-4. [`app/data/lootDatabase.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/data/lootDatabase.js):
-   * Fichas de botín estandarizadas con qué buscar, dónde buscar, riesgo, cuándo ir, qué llevar y tips tácticos para *Hospitales*, *Vehículos/Gasolineras*, *Herramientas/Ferreterías* y *Comida/Supermercados*.
-5. [`app/components/Navbar.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/Navbar.jsx):
-   * Cabecera limpia con 4 menús desplegables (`Modo de juego`, `Profesiones`, `Habilidades`, `Loot y mapas`), logo Spiffo de retorno y HUD de XP global.
-6. [`app/components/OnboardingWizard.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/OnboardingWizard.jsx):
-   * Pantalla de inicio con tarjetas grandes tácticas para seleccionar estilo u objetivo.
-7. [`app/components/RouteView.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/RouteView.jsx):
-   * Navegación por pestañas de nivel libre (sin bloquear consulta), barra de progreso, checklist con XP y recompensa de conocimiento.
-8. [`app/components/LootView.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/LootView.jsx):
-   * Vista de tarjetas de botín con enlace directo a la ruta relacionada.
-9. [`app/page.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/page.jsx):
-   * Orquestador reactivo limpio sin duplicación de estado.
+## 1. Cambios Realizados y Justificación Técnica
+
+### 1.1 Pack de Iconos Tácticos Vectoriales (`KnoxIcons.jsx` & `assets/icons/`)
+- **Problema previo**: Se utilizaban emojis de colores genéricos de sistema operativo (`📦`, `📍`, `🎒`, `💡`, `🧭`, `🚨`, `⭐`, `🟢`, `📡`, etc.) que rompían la inmersión diegética militar de 1993 y el contraste en pantallas tácticas.
+- **Solución implementada**:
+  - Se generaron 22 ficheros vectoriales SVG optimizados en `public/assets/icons/`:
+    `route.svg`, `radar-server.svg`, `backpack.svg`, `hazard.svg`, `radio-antenna.svg`, `shield-admin.svg`, `terminal-logs.svg`, `key-access.svg`, `rank-chevron.svg`, `mic-transceiver.svg`, `cloud-check.svg`, `crosshair.svg`, `ammo.svg`, `medical-cross.svg`, `wrench.svg`, `car.svg`, `helicopter.svg`, `gunshot.svg`, `siren.svg`, `dog-bark.svg`, `close-cross.svg`, `user-profile.svg`.
+  - Componente universal `KnoxIcons.jsx` con exportaciones nombradas (`RouteIcon`, `RadarServerIcon`, `BackpackIcon`, `HazardIcon`, `RadioAntennaIcon`, `ShieldAdminIcon`, `SignalPulseIcon`, `CloudCheckIcon`, `CrosshairIcon`, `AmmoIcon`, `MedicalCrossIcon`, `WrenchIcon`, `SirenIcon`, `CloseCrossIcon`, `UserIcon`, `VoteIcon`, etc.).
+  - Reemplazo y limpieza en: `PillNav.jsx`, `LootView.jsx`, `ServerList.jsx`, `RouteView.jsx`, `AddServerModal.jsx`, `ServerDetailModal.jsx`, `ProfileModal.jsx`, `AuthModal.jsx`, `MetaEventsView.jsx`, `LiveRadioChat.jsx`, `TacticalLogModal.jsx`, `AdminPanelModal.jsx`.
+
+### 1.2 Persistencia 100% en la Nube (Cloudflare D1)
+- **Problema previo**: El progreso del jugador (XP acumulado, tareas de supervivencia completadas) residía únicamente en el `localStorage` del navegador y se perdía al cambiar de dispositivo.
+- **Solución implementada**:
+  - `app/api/user/profile/route.js`: Ampliado para validar y persistir en Cloudflare D1 los campos `xp`, `completed_milestones` (JSON array) y `active_route`.
+  - `app/lib/validations.js`: Actualizado `UpdateProfileSchema` con tipos Zod estrictos para `xp` (número no negativo), `completed_milestones` (array de strings) y `active_route` (slug de ruta).
+  - `app/hooks/useKnoxProgress.js`: Hook reactivo que descarga el perfil de Cloudflare D1 al iniciar sesión con Google y envía actualizaciones diferidas (*debounced* 600ms) para garantizar rendimiento sin sobrecargar la red. Mantiene caché local transparente como fallback de renderizado offline.
+
+### 1.3 Almacenamiento Modular (`storageService.js`) y Reparación de Uploads
+- **Problema previo**: En `app/api/upload/route.js:103`, la variable `publicUrl` causaba un fallo de ejecución en tiempo de subida (`ReferenceError: publicUrl is not defined`).
+- **Solución implementada**:
+  - Creado `app/lib/storage/storageService.js`: Adaptador modular para Cloudflare R2 con fallback a Cloudflare Images/Data URI y validación de tipos MIME y tamaño (máx 5MB).
+  - Corregido `app/api/upload/route.js`: Emplea `storageService.uploadFile()` y expone la URL pública canonizada `storageResult.url`.
+
+### 1.4 Panel de Administración Táctico y RBAC (`AdminPanelModal.jsx`)
+- **Problema previo**: No existía una interfaz en la aplicación para que moderadores o administradores gestionaran roles de usuarios sobre el endpoint `/api/admin/users`.
+- **Solución implementada**:
+  - Creado `app/components/AdminPanelModal.jsx` accesible exclusivamente por usuarios con rol `moderador`, `admin` o `super_admin`.
+  - Permite listar usuarios de la base de datos Cloudflare D1, filtrar por texto/rol y cambiar privilegios en tiempo real consumiendo `PUT /api/admin/users`.
+  - Botón "ADMIN" añadido en `PillNav.jsx` que se muestra únicamente si `isStaff === true`.
+
+### 1.5 Modularización de `app/page.jsx`
+- **Problema previo**: Archivo monolítico de más de 307 líneas con síntesis de audio inline, llamadas directas a almacenamiento y lógica dispersa.
+- **Solución implementada**:
+  - Reducido a ~190 líneas limpias y declarativas.
+  - Consumo de Hooks especializados:
+    - `useKnoxAudio`: Generación de sonido diegético procedural (Web Audio API) con métodos `playClick()`, `playSuccess()`, `playAlert()`, `playStatic()`.
+    - `useAuthSession`: Sesión activa, login Google, logout y verificación de roles RBAC (`isStaff`, `isAdmin`, `isSuperAdmin`).
+    - `useKnoxProgress`: Sincronización en la nube, cálculo de XP y avance por niveles.
+    - `useTacticalModal`: Gestión de tecla Escape, bloqueo de scroll en fondo y accesibilidad WAI-ARIA en modales.
 
 ---
 
-## Verificación de Compilación
-* Comando ejecutado: `npm run build`
-* Resultado: **Exit Code 0** (Compilación estática optimizada sin errores).
-* Repositorio remoto: Actualizado en rama `main` en GitHub (`f85e243`).
+## 2. Verificación de Compilación y Calidad
+
+| Comando | Resultado | Estado |
+| :--- | :--- | :--- |
+| `npm run check` (`next build`) | **Exit Code 0** (Compilado en 1410ms, todas las rutas estáticas y dinámicas verificadas) | **PASS** |
+| `npm audit` | **0 vulnerabilidades** | **PASS** |
+| Verificación de emojis | **0 emojis** en `app/components/*.jsx`, `app/page.jsx` y `app/layout.js` | **PASS** |
+| Verificación HTTP Local (Port 3001) | `HTTP Status: 200 OK`, HTML 13KB, `Contains Knox-OS: true` | **PASS** |
 
 ---
 
-## Integración de Métricas y Analítica (GA4 & Microsoft Clarity)
-* **Archivo modificado**: [`app/layout.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/layout.js)
-* **Google Analytics 4**:
-  - Measurement ID: `G-KRWBJ9ER2C`
-  - Inyectado vía `next/script` con estrategia `afterInteractive`.
-* **Microsoft Clarity**:
-  - Project ID: `yuppdlr6rl`
-  - Inyectado vía `next/script` con estrategia `afterInteractive` para mapas de calor y grabaciones de sesión.
-* **Validación**:
-  - `npm run build` exitoso con Turbopack (Exit Code 0).
-  - Confirmado en el head del layout raíz.
+## 3. Instrucciones de Prueba
 
----
-
-## Migración Cloudflare D1 & Rediseño Minimalista de Servidores
-* **Vinculación D1 Real**:
-  - Conectado con la cuenta `devimeo03@gmail.com` (`Account ID: 216412448f9fbc402b01b33d58e67559`).
-  - Base de datos D1: `spiffo-servers-db` (`fe48dd49-cb2a-4d9a-9176-2046cce536c7` / `69c97405-6803-4bc4-b9eb-c892e301d9ab`).
-  - Migración ejecutada: `ALTER TABLE servers ADD COLUMN gallery_images TEXT;`.
-  - Índices creados: `idx_servers_owner` y `idx_chat_server_ref`.
-  - Mock data depurada: 0 servidores ficticios en base de datos.
-* **Rediseño Minimalista de Tarjetas**:
-  - Eliminados los botones de ventana falsa (`_ [] X`) y el badge voluminoso `TOP #1 / VAN #2`.
-  - Estructura limpia: Topbar sutil con rango militar (#1, #2, #3), código de frecuencia Knox, estado de radio y badges de modo/región/loot.
-  - Avatar táctico compacto, VU-meter de ocupación, descripción resumida y clúster de acciones directas (Copiar IP, Votar, Editar, Dossier).
-* **Verificación de Terminal**:
-  - `npm run build` ejecutado exitosamente con **Exit Code 0**.
-  - `GET /api/servers` responde HTTP 200 con `source: cloudflare_d1` y `data: []`.
-
----
-
-## Radar Táctico de Loot (Build 42) & Menú Hamburguesa Móvil
-* **Sonar Táctico Interactivo ([`LootView.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/LootView.jsx))**:
-  - Pantalla circular de sonar militar con retícula SVG concéntrica (r=20, 60, 100, 140) y ejes cartesianos.
-  - Haz de barrido giratorio animado (`conic-gradient` con `@keyframes radarSweep 4s linear infinite`).
-  - Nodo central del superviviente (con ping animado) y blips interactivos según el radio de alcance (Armería, Ferretería, Farmacia, Spiffo Food, Fossoil Gas).
-  - Al hacer clic en un blip del sonar, la pantalla hace scroll automático suave hacia la tarjeta y la resalta con una animación de pulso.
-* **Selectores de Escala y Telemetría DEFCON**:
-  - Pips de radio: `500 M`, `1.5 KM` y `5.0 KM` que recalibran la escala del sonar y filtran los alijos en rango.
-  - Cinta de alerta DEFCON-1 (`AMENAZA ACTIVA // KNOX DENSITY`) con pulso luminoso y estado `RADAR ACTIVO`.
-  - Cajas de telemetría HUD: Objetivos detectados, ruido ambiental (38 dB) y sensores activos.
-* **Filtros de Rareza y Tarjetas de Alijo**:
-  - Chips de categoría: `TODO`, `MILITAR (ORO)`, `ÉPICO (PÚRPURA / B42 CRAFT)`, `MÉDICO (CIAN)`, `HERRAMIENTAS` y `ALIMENTOS`.
-  - Tarjetas con resplandor superior por rareza, métrica de densidad de peligro de zeds (`PELIGRO EXTREMO // 140+ ZEDS`), captura de reconocimiento con scanlines y chips de botín detectado por escáner.
-  - Acciones tácticas: `RASTREAR RUTA` (fija el objetivo en el toast GPS flotante), `ALERTA HORDA` (conmuta alarma visual y sonora), `GUARDAR EN GPS` y enlace a ruta de supervivencia.
-  - Dock flotante con toast activo de rumbo (`RADAR GPS FIJADO`) y botón flotante para registrar nuevas balizas de campo.
-* **Navegación Móvil Hamburguesa ([`PillNav.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/PillNav.jsx))**:
-  - Botón hamburguesa táctico visible en pantallas móviles (`< 860px`).
-  - Drawer lateral deslizable con backdrop difuminado y bloqueo de scroll de fondo.
-  - Acceso directo a todas las vistas: Mecánicas Activas (con acordeón de rutas), Meta-Eventos, Servidores, Radar de Loot, Radio 91.5 y Asistente.
-  - Acceso directo a Ficha de Superviviente, Terminal SSE Logs y autenticación.
-* **Validación**:
-  - `npm run build` ejecutado exitosamente con **Exit Code 0**.
-
----
-
-## Privatización y Protección del Sistema de Logs SSE
-* **Seguridad en Endpoint ([`app/api/logs/stream/route.js`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/api/logs/stream/route.js))**:
-  - Implementada autenticación JWT mediante `getSessionUser(request)`.
-  - Verificación estricta de jerarquía de roles: solo usuarios con rol `super_admin` o `admin` pueden abrir la conexión SSE.
-  - Conexiones anónimas o de usuarios estándar son rechazadas con **HTTP 403 Forbidden**.
-* **Ocultamiento en Interfaz ([`app/components/PillNav.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/PillNav.jsx))**:
-  - Botón `🛰️ LOGS` en la barra superior ocultado para visitantes públicos y usuarios estándar.
-  - Opción de `Terminal SSE Logs` en el menú de usuario y en el menú hamburguesa móvil visible exclusivamente para administradores.
-* **Control en Cliente ([`app/components/TacticalLogModal.jsx`](file:///c:/Users/LARM2/OneDrive/Escritorio/juegos/project%20zomboid%20guia%20app/project-zomboid-farm-guide/app/components/TacticalLogModal.jsx))**:
-  - El modal bloquea la apertura de `EventSource` si el usuario no es administrador y despliega un diálogo de *"Acceso Clasificado // Restringido"*.
-* **Validación**:
-  - `npm run build` con **Exit Code 0**.
-  - Petición curl a `/api/logs/stream` sin token responde **HTTP 403 Forbidden**.
-
-
+1. **Abrir la aplicación**:
+   Navegar a `http://localhost:3001`.
+2. **Comprobar la ausencia de emojis**:
+   - Observar el Navbar flotante (`PillNav`): Los accesos a Rutas, Radar, Botín, Alertas y Radio muestran iconos vectoriales tácticos monócromos.
+   - Navegar a la pestaña **Radar de Servidores**: Las tarjetas, insignias de región, nivel de botín, VU-meters y filtros usan iconos SVG.
+   - Navegar a la pestaña **Radar de Botín**: Las categorías, botones de acción (*Rastrear Ruta*, *Alerta Horda*, *En GPS*) y el formulario flotante de baliza muestran el pack de iconos SVG.
+   - Navegar a la **Ruta de Supervivencia**: La telemetría de cabecera y el checklist de objetivos muestran iconos SVG accesibles.
+3. **Comprobar persistencia Cloud de Progreso**:
+   - Marcar uno o varios objetivos en la ruta activa (ej. *Buscar contenedor de basura*).
+   - El XP se incrementa con feedback acústico.
+   - Al tener sesión iniciada, el progreso se envía mediante PUT a `/api/user/profile` y queda grabado en Cloudflare D1.
+4. **Comprobar el Panel de Administración (Staff)**:
+   - Iniciar sesión con un usuario con rol de `moderador` o `admin`.
+   - Se activará el botón **[ADMIN]** en el Navbar.
+   - Al pulsar se abrirá el `AdminPanelModal` mostrando la lista de supervivientes y permitiendo alternar roles con feedback en tiempo real.
