@@ -69,8 +69,34 @@ Se erradicó el menú desplegable huérfano de "Mecánicas Activas" y se separar
 
 ---
 
-### 6. Verificación de Terminal y Compilación
-- **Compilación de Producción (`next build`)**: Exit Code 0 (Turbopack, sin errores de compilación ni dependencias faltantes).
+### 6. Carrusel Táctico de Eventos y Anuncios por Owners (`ServerEventsCarousel.jsx`)
+- **Desplazamiento Horizontal con Flechas**:
+  - Reemplazo del grid vertical estático por un slider horizontal con controles `<` y `>` (`ChevronLeftIcon` y `ChevronRightIcon`).
+  - Detección reactiva de posición del scroll para habilitar/deshabilitar los botones de navegación.
+  - Tarjetas ergonómicas con borde superior codificado por urgencia/tipo (verde para Loot, rojo para Crítica, azul para Suministros, ámbar para Comunitarios).
+- **Publicación por Propietarios de Servidores (`PublishEventModal.jsx`)**:
+  - Solo los usuarios autenticados con al menos un servidor registrado pueden emitir anuncios.
+  - **Límite de Cuota**: Máximo 2 eventos activos por propietario de servidor para prevenir spam en el tablón militar.
+  - Selector de servidor propio, tipo de actividad (Loot x2, Purga, Torneo PvP, Airdrop, Rol), fecha/hora y directivas.
+  - Opción de eliminar sus propios eventos en cualquier momento para liberar cuota.
+- **Acciones Rápidas en Tarjeta**:
+  - Pill con el nombre del servidor anfitrión.
+  - Botón táctico "COPIAR IP" con retroalimentación inmediata para conexión directa al servidor.
+
+---
+
+### 7. Modularización Completa al 100%
+- **Extracción de `MissionsView.jsx`**:
+  - La vista de misiones y cálculo de nivel se extrajo de `page.jsx` a un módulo independiente en `app/components/MissionsView.jsx`.
+  - `page.jsx` redujo su tamaño a 256 líneas, funcionando estrictamente como un orquestador limpio.
+- **Purga de Archivos Huérfanos**:
+  - Eliminados definitivamente los archivos sin importadores: `TipsCommunityView.jsx`, `tipsDatabase.js`, `RouteView.jsx` y `MetaEventsView.jsx`.
+
+---
+
+### 8. Verificación de Terminal y Compilación
+- **Compilación de Producción (`next build`)**: Exit Code 0 (Turbopack generado en 5.4s, 10/10 rutas estáticas optimizadas).
 - **TypeScript & Linting**: 0 errores.
 - **Auditoría de Emojis**: 0 emojis detectados en `./app`.
-- **Servidor de Desarrollo**: Operativo en `http://localhost:3001` (HTTP 200 OK, respuesta verificada).
+- **Servidor de Desarrollo**: Operativo en `http://localhost:3001` (HTTP 200 OK verificado).
+

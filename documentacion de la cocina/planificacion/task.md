@@ -1,27 +1,32 @@
 # TASK CHECKLIST - CHEF MASTER v4.0
 
-## Estado General: COMPLETADO (Fase 4: Separación Foro & Guías + Caso Real Facebook + Misiones de XP)
+## Estado General: COMPLETADO (Fase 5: Carrusel de Eventos por Owners & Modularización 100%)
 
-### TAREAS FASE 4 (Separación Estricta de Foro y Guías de Juego):
-- [x] T4.1 `[DATA-ARCHITECT]`: 
-  - Base de datos independiente para Foro Comunitario en `app/data/forumThreadsDatabase.js`.
-  - Integrado caso insignia real de Facebook (`post-fb-combat`: *Me acorralan dos zeds y al girar me muerden...*) con 6 comentarios tácticos detallados y réplicas anidadas (Dago Hinojos sobre señuelo vehicular con claxon; Madian Peña y Gabriel Cuello sobre empujar con `[Espacio]`, derribar y pisar cabezas; Benjamin Quiroz sobre estamina y fatiga; Miguel Arce sobre paciencia y no jugar como L4D).
-  - Base de datos independiente para Guías de Juego en `app/data/gameGuidesDatabase.js` con manuales estructurados (*Supervivencia: Primeros Días*, *Mecánica: Puentear Coches*, *Carpintería: Primeras Paredes*, *Fontanería de Tejado*, *Generadores Eléctricos*), requisitos en chips tácticos y misiones interactivas (+20 a +60 XP).
-- [x] T4.2 `[UI-ENGINEER]`:
-  - Componente independiente `app/components/CommunityForumView.jsx`: Foros estilo Reddit/Discourse con buscador, filtro por etiquetas, selector de densidad (Cards vs Compact), drawer/vista completa de hilos y debate con réplicas recursivas.
-  - Componente independiente `app/components/GameGuideView.jsx`: Guías de Juego unificadas con selector de manuales, requisitos en chips tácticos, pasos detallados, advertencias de supervivencia y checklist de misiones interactivas con ganancia de XP en tiempo real conectadas al sistema militar de `useKnoxProgress`.
-- [x] T4.3 `[NAVBAR-ORCHESTRATOR]`:
-  - `app/components/PillNav.jsx` actualizado con 6 secciones limpias sin solapamiento:
-    1. `servers` (Servidores)
-    2. `guide` (Guía de Juego)
-    3. `forum` (Foro)
-    4. `loot` (Loot Points)
-    5. `radio` (Radio Chat)
-    6. `missions` (Misiones)
-  - `app/page.jsx` orquestado limpiamente renderizando `GameGuideView` bajo la vista `guide` y `CommunityForumView` bajo la vista `forum`.
-- [x] T4.4 `[STYLE-SYSTEM]`:
-  - Adición de estilos en `app/globals.css` para chips tácticos (`.pz-gear-chip`), cajas de takeaway (`.pz-takeaway-box`), conectores de hilos (`.pz-threadline`), botones de réplica y tablas compactas.
-- [x] T4.5 `[QA-TERMINAL]`:
-  - Compilación de producción con `next build` -> **Exit Code 0** (Turbo engine, compilado exitosamente sin errores).
-  - Escaneo de emojis en `./app` -> **0 emojis detectados** (cumplimiento 100% Zero Emojis con `KnoxIcons.jsx` y `ChatIcon`).
+### TAREAS FASE 5 (Carrusel Táctico de Servidores & Eventos Comunitarios):
+- [x] T5.1 `[DATA-ARCHITECT]`: 
+  - Extensión de `app/data/eventsDatabase.js` incorporando eventos de servidores reales de la comunidad, incluyendo el evento insignia de **Knox Doble PvP/PvE** (*MEGA EVENTO: LOOT X2 Y SUMINISTROS EN ROSEWOOD, Martes 17:00 UTC*), Noche de Purga y Airdrops militares.
+  - Creación del cliente de eventos `app/lib/eventsClient.js` con soporte para:
+    - Validación de propietario de servidor registrado.
+    - Control de cuota estricta: **Máximo 2 eventos activos por dueño**.
+    - Retiro/eliminación de eventos propios y de moderación admin.
+- [x] T5.2 `[UI-CAROUSEL-ENGINEER]`:
+  - Componente de carrusel deslizable horizontal `app/components/ServerEventsCarousel.jsx`:
+    - Botones de navegación tácticos con flechas `<` y `>` (`ChevronLeftIcon` y `ChevronRightIcon`).
+    - Scroll suave horizontal con detección reactiva de bordes para habilitar/deshabilitar controles.
+    - Tarjetas de eventos con badge de urgencia/tipo, pill del servidor anfitrión, botón de copia rápida de IP con un clic y acción de borrado para el owner.
+- [x] T5.3 `[MODAL-ENGINEER]`:
+  - Componente modal diegético `app/components/PublishEventModal.jsx`:
+    - Selector desplegable de servidores pertenecientes al usuario autenticado.
+    - Configuración de tipo de evento (Loot Especial, Noche de Purga, Torneo PvP, Airdrop Militar, etc.).
+    - Contador de cuota en vivo (`CUOTA: X / 2 ACTIVOS`) y bloqueo de emisión si se supera el límite.
+- [x] T5.4 `[MODULARIZATION-ARCHITECT]`:
+  - Extracción completa del bloque de misiones a su propio módulo independiente `app/components/MissionsView.jsx`.
+  - Reducción de `app/page.jsx` de 326 a 256 líneas, logrando una arquitectura 100% desacoplada donde cada una de las 6 secciones principales (`servers`, `guide`, `forum`, `loot`, `radio`, `missions`) es un componente independiente.
+  - Purga de los 4 archivos huérfanos legacy (`TipsCommunityView.jsx`, `tipsDatabase.js`, `RouteView.jsx`, `MetaEventsView.jsx`).
+- [x] T5.5 `[STYLE-SYSTEM]`:
+  - Incorporación en `app/globals.css` de clases para `.pz-carousel-wrapper`, `.pz-carousel-track`, `.pz-carousel-card`, `.pz-carousel-nav-btn` y `.pz-server-host-pill`.
+  - Vectores SVG `ChevronLeftIcon` y `ChevronRightIcon` integrados en `app/components/icons/KnoxIcons.jsx`.
+- [x] T5.6 `[QA-TERMINAL]`:
+  - Compilación de producción con `next build` -> **Exit Code 0** (5.4s en Turbopack, 10/10 páginas estáticas).
+  - Escaneo de emojis en `./app` -> **0 emojis detectados** (cumplimiento 100% Zero Emojis con `KnoxIcons.jsx`).
   - Servidor de desarrollo respondiendo en `http://localhost:3001` con **HTTP 200 OK**.
