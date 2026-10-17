@@ -333,6 +333,20 @@ export function KnoxIcon({ name, size = 18, color = 'currentColor', strokeWidth 
         </svg>
       );
 
+    case 'chevron-left':
+      return (
+        <svg {...iconProps}>
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      );
+
+    case 'chevron-right':
+      return (
+        <svg {...iconProps}>
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      );
+
     default:
       return (
         <svg {...iconProps}>
@@ -376,5 +390,7 @@ export const RefreshIcon = (props) => <KnoxIcon name="refresh" {...props} />;
 export const VoteIcon = (props) => <KnoxIcon name="vote" {...props} />;
 export const ChatIcon = (props) => <KnoxIcon name="chat" {...props} />;
 export const UserProfileIcon = (props) => <KnoxIcon name="user" {...props} />;
+export const ChevronLeftIcon = (props) => <KnoxIcon name="chevron-left" {...props} />;
+export const ChevronRightIcon = (props) => <KnoxIcon name="chevron-right" {...props} />;
 
 export default KnoxIcon;

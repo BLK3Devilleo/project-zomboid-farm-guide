@@ -5,7 +5,9 @@ import Image from 'next/image';
 import { fetchServersList, createServerEntry, updateServerEntry, deleteServerEntry, upvoteServerEntry } from '../lib/supabaseClient';
 import ServerDetailModal from './ServerDetailModal';
 import AddServerModal from './AddServerModal';
-import { serverEvents } from '../data/eventsDatabase';
+import ServerEventsCarousel from './ServerEventsCarousel';
+import PublishEventModal from './PublishEventModal';
+import { fetchServerEvents, createServerEvent, deleteServerEvent, countOwnerActiveEvents } from '../lib/eventsClient';
 import {
   SignalPulseIcon,
   UserProfileIcon,
@@ -35,8 +37,15 @@ export default function ServerList({
   const [activeModalServer, setActiveModalServer] = useState(null);
   const [showEventsBoard, setShowEventsBoard] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showPublishEventModal, setShowPublishEventModal] = useState(false);
+  const [eventsList, setEventsList] = useState([]);
   const [editingServer, setEditingServer] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
+
+  // Cargar eventos del tablón al iniciar
+  useEffect(() => {
+    setEventsList(fetchServerEvents());
+  }, []);
 
   // Apertura externa para edición (desde ProfileModal)
   useEffect(() => {
@@ -150,6 +159,54 @@ export default function ServerList({
   // Contadores globales
   const totalPlayers = servers.reduce((acc, s) => acc + (s.players_online || 0), 0);
 
+  // Servidores que le pertenecen al usuario actual (o todos si es admin)
+  const userServers = useMemo(() => {
+    if (!currentUser) return [];
+    return servers.filter(
+      (s) =>
+        (s.owner_id && s.owner_id === currentUser.id) ||
+        (s.owner_email && s.owner_email === currentUser.email) ||
+        currentUser.role === 'admin'
+    );
+  }, [servers, currentUser]);
+
+  const userActiveEventsCount = useMemo(() => {
+    return countOwnerActiveEvents(eventsList, currentUser);
+  }, [eventsList, currentUser]);
+
+  const handleOpenPublishModal = () => {
+    if (!currentUser) {
+      showToast('Debes iniciar sesión con Google para anunciar un evento de tu servidor.');
+      onOpenLoginModal();
+      return;
+    }
+    if (userServers.length === 0) {
+      showToast('No tienes servidores registrados. Registra tu servidor primero usando "Transmitir Mi Servidor".');
+      return;
+    }
+    setShowPublishEventModal(true);
+  };
+
+  const handleCreateEvent = (eventData) => {
+    try {
+      const res = createServerEvent(eventData, currentUser, userServers);
+      setEventsList(res.allEvents);
+      showToast('¡Anuncio de evento emitido con éxito en el tablón militar!');
+    } catch (err) {
+      showToast(err.message || 'Error al publicar el evento.');
+    }
+  };
+
+  const handleDeleteEvent = (eventId) => {
+    try {
+      const res = deleteServerEvent(eventId, currentUser);
+      setEventsList(res.allEvents);
+      showToast('Anuncio retirado del tablón militar.');
+    } catch (err) {
+      showToast(err.message || 'Error al eliminar el evento.');
+    }
+  };
+
   return (
     <div className="hud-container">
       {/* TOAST DE FEEDBACK */}
@@ -243,7 +300,7 @@ export default function ServerList({
         </div>
       </div>
 
-      {/* CARTEL DE ANUNCIOS DE EVENTOS Y DIRECTIVAS GLOBALES */}
+      {/* CARTEL DE ANUNCIOS DE EVENTOS Y DIRECTIVAS GLOBALES (CARRUSEL SLIDER) */}
       <div className="pz-mission-panel" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div className="pz-mission-bar">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -260,50 +317,13 @@ export default function ServerList({
         </div>
 
         {showEventsBoard && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-            {serverEvents.map((evt) => (
-              <div
-                key={evt.id}
-                style={{
-                  background: 'rgba(15, 23, 42, 0.65)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: 6,
-                  padding: '14px 16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 8,
-                  position: 'relative',
-                  borderTop: evt.urgency === 'CRÍTICA' || evt.urgency === 'PELIGRO MÁXIMO' ? '3px solid #ef4444' : '3px solid #38bdf8',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 3, background: 'rgba(239, 68, 68, 0.15)', color: evt.urgency === 'CRÍTICA' ? '#fca5a5' : '#38bdf8', fontFamily: 'monospace', fontWeight: 800 }}>
-                    {evt.type}
-                  </span>
-                  <span style={{ fontSize: 10, color: '#10b981', fontFamily: 'monospace' }}>
-                    {evt.status}
-                  </span>
-                </div>
-
-                <strong style={{ fontSize: 13, color: '#ffffff', fontFamily: 'monospace', lineHeight: 1.3 }}>
-                  {evt.title}
-                </strong>
-
-                <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.4 }}>
-                  {evt.description}
-                </p>
-
-                <div style={{ marginTop: 'auto', paddingTop: 8, borderTop: '1px solid rgba(255, 255, 255, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 10, color: '#64748b', fontFamily: 'monospace' }}>
-                    {evt.frequency}
-                  </span>
-                  <span style={{ fontSize: 10, color: '#f59e0b', fontFamily: 'monospace', fontWeight: 700 }}>
-                    {evt.dateDisplay}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+          <ServerEventsCarousel
+            events={eventsList}
+            currentUser={currentUser}
+            onOpenPublishModal={handleOpenPublishModal}
+            onDeleteEvent={handleDeleteEvent}
+            showToast={showToast}
+          />
         )}
       </div>
 
@@ -642,6 +662,16 @@ export default function ServerList({
           onSubmit={handleSaveServer}
         />
       )}
+
+      {/* MODAL DE PUBLICAR ANUNCIO DE EVENTO DE MI SERVIDOR */}
+      <PublishEventModal
+        isOpen={showPublishEventModal}
+        onClose={() => setShowPublishEventModal(false)}
+        currentUser={currentUser}
+        userServers={userServers}
+        userActiveEventsCount={userActiveEventsCount}
+        onSubmitEvent={handleCreateEvent}
+      />
     </div>
   );
 }
