@@ -3396,4 +3396,352 @@ button {
   border-radius: 8px;
 }
 
+/* ==========================================================================
+   ESTÁNDARES EDITORIALES Y DE DENSIDAD KNOXOS (FORO Y TIPS)
+   Inspirado en estándares de Discourse, Reddit, DEV.to y Linear
+   ========================================================================== */
+
+/* 1. Grid Responsivo de 2 Columnas (Measure acotado a 65 caracteres) */
+.pz-forum-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 18px;
+}
+
+@media (max-width: 820px) {
+  .pz-forum-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 2. Tarjeta Editorial (Card View) */
+.pz-forum-card {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.pz-forum-card:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.08);
+  transform: translateY(-2px);
+}
+
+/* 3. Eyebrow Simplificado (Regla de 2 metadatos) */
+.pz-card-eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+
+.pz-tag-badge {
+  font-size: 11px;
+  font-family: var(--pz-font-mono, monospace);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pz-tag-badge.tactica {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.pz-tag-badge.fallo {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.pz-tag-badge.medico {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.pz-tag-badge.agricultura {
+  background: rgba(234, 179, 8, 0.15);
+  color: #fde047;
+  border: 1px solid rgba(234, 179, 8, 0.35);
+}
+
+/* 4. Caja Destacada de Takeaway / Consejo Clave */
+.pz-takeaway-box {
+  background: rgba(56, 189, 248, 0.04);
+  border-left: 3px solid #38bdf8;
+  border-radius: 0 6px 6px 0;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pz-takeaway-box.warning {
+  background: rgba(239, 68, 68, 0.05);
+  border-left-color: #ef4444;
+}
+
+.pz-takeaway-box.success {
+  background: rgba(16, 185, 129, 0.05);
+  border-left-color: #10b981;
+}
+
+.pz-takeaway-label {
+  font-size: 10px;
+  font-family: var(--pz-font-mono, monospace);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #38bdf8;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pz-takeaway-label.warning {
+  color: #fca5a5;
+}
+
+.pz-takeaway-text {
+  font-size: 13px;
+  color: #e2e8f0;
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* 5. Vista Compacta (List View de 1 línea por reporte - Estilo Reddit / Linear) */
+.pz-compact-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.pz-compact-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+
+.pz-compact-row:last-child {
+  border-bottom: none;
+}
+
+.pz-compact-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* 6. Selector de Densidad (Toggle Cards vs Compact) */
+.pz-density-toggle {
+  display: inline-flex;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 3px;
+  gap: 4px;
+}
+
+.pz-density-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: var(--pz-font-mono, monospace);
+  font-weight: 700;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pz-density-btn.active {
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+/* 7. Chips de Requisitos para Guías Sueltas */
+.pz-gear-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pz-gear-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.4;
+}
+
+.pz-gear-chip strong {
+  color: #38bdf8;
+  font-family: var(--pz-font-mono, monospace);
+}
+
+/* ==========================================================================
+   SISTEMA DE HILOS Y COMENTARIOS ANIDADOS (REDDIT-STYLE THREADS)
+   ========================================================================== */
+
+.pz-thread-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pz-threadline-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Línea conectora vertical de Reddit */
+.pz-threadline {
+  position: absolute;
+  left: 12px;
+  top: 36px;
+  bottom: 8px;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 1px;
+  transition: background 0.18s ease;
+  cursor: pointer;
+}
+
+.pz-threadline:hover {
+  background: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
+}
+
+.pz-comment-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 24px;
+  margin-top: 12px;
+}
+
+.pz-comment-card {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.pz-comment-card:hover {
+  border-color: rgba(56, 189, 248, 0.25);
+  background: rgba(15, 23, 42, 0.65);
+}
+
+.pz-comment-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pz-comment-author-badge {
+  font-size: 10px;
+  font-family: var(--pz-font-mono, monospace);
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.pz-comment-body {
+  font-size: 13px;
+  color: #cbd5e1;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 65ch;
+}
+
+.pz-comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+.pz-comment-act-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 11px;
+  font-family: var(--pz-font-mono, monospace);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.pz-comment-act-btn:hover {
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.1);
+}
+
+.pz-comment-act-btn.voted {
+  color: #eab308;
+  background: rgba(234, 179, 8, 0.12);
+}
+
+.pz-reply-inline-box {
+  background: rgba(4, 8, 16, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+
+
 
