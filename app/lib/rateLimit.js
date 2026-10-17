@@ -1,64 +1,89 @@
 /**
- * Rate Limiter en memoria con algoritmo Sliding Window Counter
- * Protege contra spam, fuerza bruta y saturación de peticiones.
+ * Rate Limiter Modular KnoxOS (Sliding Window Counter)
+ * Arquitectura desacoplada mediante adaptador de almacén (Store Adapter).
+ * Protege contra saturación, fuerza bruta y peticiones maliciosas.
  */
 
-// Almacén en memoria por prefijo de ruta/clave
-const rateLimitMap = new Map();
+export class MemoryRateLimitStore {
+  constructor(cleanupIntervalMs = 5 * 60 * 1000) {
+    this.map = new Map();
 
-// Limpieza periódica automática cada 5 minutos para evitar fugas de memoria
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, record] of rateLimitMap.entries()) {
-      if (record.resetAt < now) {
-        rateLimitMap.delete(key);
-      }
+    if (typeof setInterval !== 'undefined') {
+      this.timer = setInterval(() => this.cleanup(), cleanupIntervalMs);
+      if (this.timer.unref) this.timer.unref();
     }
-  }, 5 * 60 * 1000);
-}
-
-/**
- * Verifica si una clave supera el límite de peticiones.
- * @param {string} key Identificador único (ej: IP o ID de usuario + acción)
- * @param {number} limit Máximo de peticiones permitidas en la ventana
- * @param {number} windowMs Duración de la ventana en milisegundos
- * @returns {{ allowed: boolean, remaining: number, resetInSeconds: number }}
- */
-export function checkRateLimit(key, limit = 60, windowMs = 60 * 1000) {
-  const now = Date.now();
-  const record = rateLimitMap.get(key);
-
-  if (!record || record.resetAt < now) {
-    // Nueva ventana
-    rateLimitMap.set(key, {
-      count: 1,
-      resetAt: now + windowMs,
-    });
-    return {
-      allowed: true,
-      remaining: limit - 1,
-      resetInSeconds: Math.ceil(windowMs / 1000),
-    };
   }
 
-  // Ventana activa
-  if (record.count >= limit) {
+  cleanup() {
+    const now = Date.now();
+    for (const [key, record] of this.map.entries()) {
+      if (record.resetAt < now) {
+        this.map.delete(key);
+      }
+    }
+  }
+
+  get(key) {
+    return this.map.get(key);
+  }
+
+  set(key, record) {
+    this.map.set(key, record);
+  }
+
+  delete(key) {
+    this.map.delete(key);
+  }
+}
+
+export class RateLimiter {
+  constructor(store = new MemoryRateLimitStore()) {
+    this.store = store;
+  }
+
+  check(key, limit = 60, windowMs = 60 * 1000) {
+    const now = Date.now();
+    const record = this.store.get(key);
+
+    if (!record || record.resetAt < now) {
+      this.store.set(key, {
+        count: 1,
+        resetAt: now + windowMs,
+      });
+      return {
+        allowed: true,
+        remaining: limit - 1,
+        resetInSeconds: Math.ceil(windowMs / 1000),
+      };
+    }
+
+    if (record.count >= limit) {
+      const resetInSeconds = Math.max(1, Math.ceil((record.resetAt - now) / 1000));
+      return {
+        allowed: false,
+        remaining: 0,
+        resetInSeconds,
+      };
+    }
+
+    record.count += 1;
     const resetInSeconds = Math.max(1, Math.ceil((record.resetAt - now) / 1000));
     return {
-      allowed: false,
-      remaining: 0,
+      allowed: true,
+      remaining: limit - record.count,
       resetInSeconds,
     };
   }
+}
 
-  record.count += 1;
-  const resetInSeconds = Math.max(1, Math.ceil((record.resetAt - now) / 1000));
-  return {
-    allowed: true,
-    remaining: limit - record.count,
-    resetInSeconds,
-  };
+// Instancia singleton por defecto
+export const defaultRateLimiter = new RateLimiter();
+
+/**
+ * Función estándar de verificación de rate limit compatible con todo el proyecto.
+ */
+export function checkRateLimit(key, limit = 60, windowMs = 60 * 1000) {
+  return defaultRateLimiter.check(key, limit, windowMs);
 }
 
 /**

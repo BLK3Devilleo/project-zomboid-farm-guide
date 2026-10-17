@@ -1,10 +1,10 @@
 // Cliente de Autenticación para el Frontend
 
 export const ROLE_LABELS = {
-  super_admin: { label: 'Super Admin', badge: '👑 SUPER ADMIN', color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.4)' },
-  admin: { label: 'Admin', badge: '🛡️ ADMIN', color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.4)' },
-  moderador: { label: 'Moderador', badge: '⚔️ MODERADOR', color: '#a855f7', glow: 'rgba(168, 85, 247, 0.4)' },
-  usuario: { label: 'Superviviente', badge: '🎒 SUPERVIVIENTE', color: '#10b981', glow: 'rgba(16, 185, 129, 0.4)' },
+  super_admin: { label: 'Super Admin', badge: '[SUPER ADMIN]', color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.4)' },
+  admin: { label: 'Admin', badge: '[ADMIN]', color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.4)' },
+  moderador: { label: 'Moderador', badge: '[MODERADOR]', color: '#a855f7', glow: 'rgba(168, 85, 247, 0.4)' },
+  usuario: { label: 'Superviviente', badge: '[SUPERVIVIENTE]', color: '#10b981', glow: 'rgba(16, 185, 129, 0.4)' },
 };
 
 /**

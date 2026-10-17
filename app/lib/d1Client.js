@@ -2,8 +2,24 @@ import { broadcastLog } from './sseLogger';
 
 
 /**
+ * Sanitiza cadenas de texto o estructuras de error para neutralizar la fuga
+ * de PII (correos), tokens de autenticación (Cloudflare/Bearer), contraseñas o datos sensibles.
+ */
+function sanitizeTelemetry(input) {
+  if (!input) return '';
+  const text = typeof input === 'string' ? input : JSON.stringify(input);
+  return text
+    .replace(/[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+/g, '[EMAIL_REDACTED]')
+    .replace(/cfoat_[a-zA-Z0-9_.-]+/gi, '[CLOUDFLARE_TOKEN_REDACTED]')
+    .replace(/Bearer\s+[a-zA-Z0-9_.-]+/gi, 'Bearer [REDACTED]')
+    .replace(/(password|secret|token|api_key|authorization)\s*[:=]\s*["'][^"']+["']/gi, '$1="[REDACTED]"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Ejecuta una consulta SQL parametrizada hacia Cloudflare D1 mediante la API REST.
- * Previene 100% inyecciones SQL mediante binding seguro de parámetros y transmite telemetría SSE.
+ * Previene 100% inyecciones SQL mediante binding seguro de parámetros y transmite telemetría SSE sanitizada.
  * 
  * @param {string} sql Consulta SQL con marcadores de posición (?)
  * @param {Array<any>} params Parámetros vinculados
@@ -26,8 +42,8 @@ export async function queryD1(sql, params = []) {
     throw new Error(errMsg);
   }
 
-  const cleanSql = sql.replace(/\s+/g, ' ').trim();
-  broadcastLog('d1', `⚡ D1 Exec: ${cleanSql.substring(0, 100)}`, { paramsCount: params.length });
+  const cleanSql = sanitizeTelemetry(sql);
+  broadcastLog('d1', `[D1-SQL] Exec: ${cleanSql.substring(0, 100)}`, { paramsCount: Array.isArray(params) ? params.length : 0 });
 
   const endpoint = `https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`;
   const response = await fetch(endpoint, {
@@ -42,18 +58,26 @@ export async function queryD1(sql, params = []) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    broadcastLog('error', `D1 HTTP Error ${response.status}: ${errorText}`, { sql: cleanSql });
-    throw new Error(`D1 HTTP Error ${response.status}: ${errorText}`);
+    const sanitizedError = sanitizeTelemetry(errorText);
+    broadcastLog('error', `D1 HTTP Error ${response.status}: ${sanitizedError}`, { sql: cleanSql });
+    throw new Error(`D1 HTTP Error ${response.status}: ${sanitizedError}`);
   }
 
   const data = await response.json();
   if (!data.success) {
-    const errMessage = data.errors?.[0]?.message || 'D1 query failed';
-    broadcastLog('error', `D1 SQL Error: ${errMessage}`, { errors: data.errors, sql: cleanSql });
+    const rawErrMsg = data.errors?.[0]?.message || 'D1 query failed';
+    const errMessage = sanitizeTelemetry(rawErrMsg);
+    const sanitizedErrors = Array.isArray(data.errors)
+      ? data.errors.map((e) => ({
+          code: e?.code,
+          message: sanitizeTelemetry(e?.message),
+        }))
+      : [];
+    broadcastLog('error', `D1 SQL Error: ${errMessage}`, { errors: sanitizedErrors, sql: cleanSql });
     throw new Error(errMessage);
   }
 
   const results = data.result?.[0]?.results || [];
-  broadcastLog('info', `✓ D1 OK: ${results.length} filas retornadas.`);
+  broadcastLog('info', `[D1-OK] ${results.length} filas retornadas.`);
   return results;
 }

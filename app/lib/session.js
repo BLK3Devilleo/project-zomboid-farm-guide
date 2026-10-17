@@ -1,7 +1,20 @@
 import { SignJWT, jwtVerify } from 'jose';
 
-const JWT_SECRET_STRING = process.env.AUTH_JWT_SECRET || 'spiffo-apocalypse-security-key-2026-super-secret-salt';
-const secretKey = new TextEncoder().encode(JWT_SECRET_STRING);
+/**
+ * Obtiene la clave secreta para la firma y verificación de tokens JWT.
+ * Falla de forma inmediata y fatal si AUTH_JWT_SECRET no está configurado en las variables de entorno,
+ * impidiendo el uso de secretos inseguros o hardcodeados en el repositorio.
+ */
+function getSecretKey() {
+  const secret = process.env.AUTH_JWT_SECRET;
+  if (!secret || typeof secret !== 'string' || secret.trim() === '') {
+    throw new Error(
+      'FATAL SEC_ERROR: process.env.AUTH_JWT_SECRET no está definido o es inválido. ' +
+      'Se prohíbe el uso de claves de respaldo estáticas por seguridad criptográfica.'
+    );
+  }
+  return new TextEncoder().encode(secret.trim());
+}
 
 export const COOKIE_SESSION_NAME = 'spiffo_session_token';
 
@@ -9,6 +22,7 @@ export const COOKIE_SESSION_NAME = 'spiffo_session_token';
  * Crea un token de sesión firmado para el usuario.
  */
 export async function createSessionToken(userPayload) {
+  const secretKey = getSecretKey();
   return await new SignJWT({
     id: userPayload.id,
     email: userPayload.email,
@@ -28,9 +42,13 @@ export async function createSessionToken(userPayload) {
 export async function verifySessionToken(token) {
   try {
     if (!token) return null;
+    const secretKey = getSecretKey();
     const { payload } = await jwtVerify(token, secretKey);
     return payload;
   } catch (err) {
+    if (err?.message?.startsWith('FATAL SEC_ERROR')) {
+      throw err;
+    }
     return null;
   }
 }

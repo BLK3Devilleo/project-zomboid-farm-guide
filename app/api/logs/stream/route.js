@@ -5,13 +5,27 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET(request) {
-  // Verificación RLS: Solo Super Admin y Admin tienen acceso a la terminal SSE
+  // 1. Verificación de autenticación (401 si no hay sesión activa)
   const sessionUser = await getSessionUser(request);
-  if (!sessionUser || !hasRequiredRole(sessionUser.role, 'admin')) {
+  if (!sessionUser) {
     return new Response(
       JSON.stringify({
         success: false,
-        error: 'Acceso no autorizado a la terminal de telemetría de superadministrador.',
+        error: 'Acceso no autorizado a telemetría. Sesión requerida.',
+      }),
+      {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    );
+  }
+
+  // 2. Verificación de autorización RLS: Requiere rol admin o super_admin (403 si carece de privilegios)
+  if (!hasRequiredRole(sessionUser.role, 'admin')) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: 'Acceso denegado. Se requieren privilegios de administrador para la telemetría.',
       }),
       {
         status: 403,
@@ -22,8 +36,11 @@ export async function GET(request) {
 
   const encoder = new TextEncoder();
 
-  // Emite evento de conexión de cliente al stream
-  broadcastLog('info', `🛰️ Terminal de telemetría SSE conectada por ${sessionUser.name || sessionUser.email}.`);
+  // Emite evento de conexión de cliente al stream (anonimizado para evitar fuga de PII)
+  const operatorLabel = sessionUser.name
+    ? sessionUser.name
+    : `Operador [ID: ${sessionUser.id ? String(sessionUser.id).substring(0, 8) : 'anon'}]`;
+  broadcastLog('info', `[SYS] Terminal de telemetría SSE conectada por ${operatorLabel}.`);
 
   const stream = new ReadableStream({
     start(controller) {

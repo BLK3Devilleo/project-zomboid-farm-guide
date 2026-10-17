@@ -146,6 +146,9 @@ export const UpdateProfileSchema = z.object({
     .string()
     .trim()
     .default('spiffo_combat.png'),
+  xp: z.coerce.number().int().min(0).max(1000000).optional(),
+  completed_milestones: z.array(z.string().trim().max(100)).optional(),
+  active_route: z.string().trim().max(100).optional(),
 });
 
 // Esquema para mensajes del chat de radio en vivo
