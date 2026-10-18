@@ -97,3 +97,43 @@ Se ha culminado la reestructuración arquitectónica y de diseño de la platafor
 3. **Resiliencia en Frontend**:
    - Añadido `onError` y mapa de estado `failedImages` en `ServerDetailModal.jsx` para sustituir automáticamente imágenes 404 antiguas por el fallback táctico oficial de Spiffo sin romper la interfaz.
 
+---
+
+## 5. Auditoría de Persistencia D1, Erradicación de LocalStorage y Bucles de Telemetría (Loops)
+
+### 5.1 Causa Raíz Diagnosticada de la Pérdida del Servidor Registrado
+- **Colisión de Variables en Dokploy**: El commit `5691350` introdujo expansiones explícitas `${CLOUDFLARE_...}` dentro del bloque `environment:` de `docker-compose.yml`. En Dokploy, al no existir un archivo `.env` en la raíz del runner, Docker Compose evaluó dichas expresiones como cadenas vacías `""`, sobreescribiendo y anulando las variables inyectadas por el panel.
+- **Sobreescritura Silenciosa en Cliente**: Al fallar la autenticación de Cloudflare D1 en el contenedor, `/api/servers` devolvía `{ success: true, source: 'fallback', data: [] }`. En el cliente, `supabaseClient.js` trataba el array vacío como válido y sobreescribía la clave local de caché (`spiffo_servers_directory_v2`), haciendo desaparecer el servidor de la pantalla.
+
+### 5.2 Erradicación Total de `localStorage` y Migración Relacional D1
+1. **Docker Compose Desacoplado**: Se eliminaron los `${...}` vacíos de `docker-compose.yml`. Dokploy ahora inyecta las variables de entorno de Cloudflare de forma limpia y directa al contenedor de Next.js.
+2. **Cero LocalStorage en Servidores y Eventos**:
+   - `app/lib/supabaseClient.js`: Se purgó por completo el uso de `localStorage` (`spiffo_servers_directory_v2`). Todas las lecturas y mutaciones (`fetchServersList`, `createServerEntry`, `upvoteServerEntry`, `updateServerEntry`, `deleteServerEntry`) consumen directamente Cloudflare D1.
+   - `app/api/servers/route.js`: Ya no enmascara fallos devolviendo `[]` cuando D1 es inaccesible; ahora responde con HTTP 500 informando el error de enlace para activar los bucles de reintento.
+3. **Modelo Relacional para Eventos de Servidores (`server_events`)**:
+   - Creado `app/api/events/route.js` con migración D1 automática:
+     ```sql
+     CREATE TABLE IF NOT EXISTS server_events (
+       id TEXT PRIMARY KEY,
+       server_id TEXT NOT NULL,
+       creator_id TEXT NOT NULL,
+       title TEXT NOT NULL,
+       description TEXT NOT NULL,
+       event_date TEXT NOT NULL,
+       event_type TEXT DEFAULT 'pvp',
+       status TEXT DEFAULT 'active',
+       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+       FOREIGN KEY (server_id) REFERENCES servers(id) ON DELETE CASCADE
+     );
+     ```
+   - Control de cuotas de negocio: Máximo 2 eventos activos simultáneos por anfitrión.
+   - `app/lib/eventsClient.js` purgado al 100% de `localStorage`.
+4. **Foro Comunitario Persistente (`forum_threads`)**:
+   - Creado `app/api/forum/route.js` con tabla D1 para almacenar hilos tácticos, autor, takeaways, etiquetas y árbol de comentarios con soporte para votos en tiempo real.
+   - Conectado `app/components/CommunityForumView.jsx` con persistencia en D1.
+
+### 5.3 Bucles Tácticos Implementados (Loops)
+- **Loop A (Sincronización Periódica de Telemetría)**: Bucle de sondeo automático cada 45 segundos en `ServerList.jsx` que revalida silenciosamente el radar de servidores y recuentos de jugadores en vivo sin recargar la página.
+- **Loop B (Reintento con Backoff Exponencial)**: Ante un fallo de enlace o timeout de D1, el sistema entra en modo de recuperación militar diegética con 3 reintentos automáticos espaciados (2s, 4s, 8s), mostrando un banner CRT de advertencia (`ALERTA RADAR // INTERFERENCIA DE ENLACE CON CLOUDFLARE D1`) y un botón de reintento manual.
+- **Loop C (Mutaciones Optimistas con Reversión)**: Los votos en servidores y foros actualizan la UI de inmediato y se revierten automáticamente con aviso al operador si la API de Cloudflare D1 rechaza la solicitud.
+
