@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { initialForumThreads } from '../data/forumThreadsDatabase';
 import CommentThreadItem from './CommentThreadItem';
 import {
   RadioAntennaIcon,
@@ -13,7 +12,7 @@ import {
 } from './icons/KnoxIcons';
 
 export default function CommunityForumView({ currentUser = null, onOpenLoginModal = () => {} }) {
-  const [threads, setThreads] = useState(initialForumThreads);
+  const [threads, setThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(null);
   const [userThreadVotes, setUserThreadVotes] = useState({});
   const [userCommentVotes, setUserCommentVotes] = useState({});
@@ -704,8 +703,26 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
             </span>
           </div>
 
-          {/* RENDERIZADO SEGÚN MODO DE VISTA */}
-          {viewMode === 'cards' ? (
+          {/* RENDERIZADO SEGÚN MODO DE VISTA O ESTADO VACÍO */}
+          {filteredThreads.length === 0 ? (
+            <div className="pz-mission-panel" style={{ padding: '42px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+              <RadioAntennaIcon size={34} color="#38bdf8" />
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+                Sin reportes de campo en esta frecuencia
+              </h3>
+              <p style={{ fontSize: 13, color: '#94a3b8', maxWidth: 460, margin: 0, lineHeight: 1.5 }}>
+                Aún no hay hilos publicados por la comunidad de supervivientes. Sé el primero en compartir tácticas o registrar una alerta de campo.
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsPostingOpen(true)}
+                className="pz-btn-primary"
+                style={{ fontSize: 12, padding: '8px 18px', marginTop: 6 }}
+              >
+                <span>+ Abrir Nuevo Hilo Táctico</span>
+              </button>
+            </div>
+          ) : viewMode === 'cards' ? (
             /* 1. VISTA DE TARJETAS (2 COLUMNAS ERGONÓMICAS) */
             <div className="pz-forum-grid">
               {filteredThreads.map((thread) => {

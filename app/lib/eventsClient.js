@@ -1,5 +1,3 @@
-import { initialServerEvents } from '../data/eventsDatabase';
-
 export const MAX_EVENTS_PER_OWNER = 2;
 
 /**
@@ -17,7 +15,7 @@ export async function fetchServerEvents() {
     console.warn('Fallo consultando /api/events en D1:', err.message);
   }
 
-  return initialServerEvents;
+  return [];
 }
 
 /**

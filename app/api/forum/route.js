@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { queryD1 } from '../../lib/d1Client';
 import { getSessionUser } from '../../lib/session';
-import { initialForumThreads } from '../../data/forumThreadsDatabase';
 import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +37,7 @@ export async function GET(request) {
   try {
     await ensureForumTables();
     const rows = await queryD1('SELECT * FROM forum_threads ORDER BY created_at DESC');
-    if (Array.isArray(rows) && rows.length > 0) {
+    if (Array.isArray(rows)) {
       const parsed = rows.map((th) => ({
         id: th.id,
         title: th.title,
@@ -63,10 +62,10 @@ export async function GET(request) {
       return NextResponse.json({ success: true, source: 'cloudflare_d1', data: parsed });
     }
   } catch (error) {
-    console.warn('Error leyendo hilos de D1, recurriendo a iniciales:', error.message);
+    console.warn('Error leyendo hilos de D1:', error.message);
   }
 
-  return NextResponse.json({ success: true, source: 'initial_forum', data: initialForumThreads });
+  return NextResponse.json({ success: true, source: 'cloudflare_d1', data: [] });
 }
 
 // POST: Publicar un nuevo hilo táctico

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { initialServers } from '../../data/serversDatabase';
 import { queryD1 } from '../../lib/d1Client';
 import { CreateServerSchema, VoteServerSchema, getZodErrorMessage } from '../../lib/validations';
 import { checkRateLimit, getClientIp } from '../../lib/rateLimit';

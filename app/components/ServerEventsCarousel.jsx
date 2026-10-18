@@ -91,16 +91,27 @@ export default function ServerEventsCarousel({
         </div>
       </div>
 
-      {/* Contenedor relativo del carrusel con flechas */}
-      <div className="pz-carousel-wrapper">
-        {/* Flecha Izquierda */}
-        <button
-          type="button"
-          onClick={() => handleScroll('left')}
-          disabled={!canScrollLeft}
-          className="pz-carousel-nav-btn prev"
-          aria-label="Desplazar eventos a la izquierda"
-        >
+      {/* Contenedor relativo del carrusel con flechas o estado vacío */}
+      {events.length === 0 ? (
+        <div style={{ padding: '24px 20px', textAlign: 'center', background: 'rgba(15, 23, 42, 0.5)', border: '1px dashed rgba(56, 189, 248, 0.25)', borderRadius: 8, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <RadioAntennaIcon size={26} color="#64748b" />
+          <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 600 }}>
+            No hay anuncios ni eventos programados en este momento.
+          </span>
+          <span style={{ fontSize: 11, color: '#64748b' }}>
+            Los administradores y dueños de servidores verificados pueden publicar transmisiones tácticas con el botón superior.
+          </span>
+        </div>
+      ) : (
+        <div className="pz-carousel-wrapper">
+          {/* Flecha Izquierda */}
+          <button
+            type="button"
+            onClick={() => handleScroll('left')}
+            disabled={!canScrollLeft}
+            className="pz-carousel-nav-btn prev"
+            aria-label="Desplazar eventos a la izquierda"
+          >
           <ChevronLeftIcon size={20} color="currentColor" />
         </button>
 
@@ -313,6 +324,7 @@ export default function ServerEventsCarousel({
           <ChevronRightIcon size={20} color="currentColor" />
         </button>
       </div>
+      )}
     </div>
   );
 }

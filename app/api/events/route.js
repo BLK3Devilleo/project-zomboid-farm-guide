@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { queryD1 } from '../../lib/d1Client';
 import { getSessionUser, hasRequiredRole } from '../../lib/session';
-import { initialServerEvents } from '../../data/eventsDatabase';
 import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
 
 export const dynamic = 'force-dynamic';
@@ -42,7 +41,7 @@ export async function GET(request) {
   try {
     await ensureEventsTable();
     const rows = await queryD1('SELECT * FROM server_events ORDER BY created_at DESC');
-    if (Array.isArray(rows) && rows.length > 0) {
+    if (Array.isArray(rows)) {
       const parsed = rows.map((evt) => ({
         id: evt.id,
         serverId: evt.server_id,
@@ -64,11 +63,10 @@ export async function GET(request) {
       return NextResponse.json({ success: true, source: 'cloudflare_d1', data: parsed });
     }
   } catch (error) {
-    console.warn('Fallo consultando D1 en GET /api/events, usando eventos base:', error.message);
+    console.warn('Fallo consultando D1 en GET /api/events:', error.message);
   }
 
-  // Si aún no hay eventos creados por usuarios en D1, devolver eventos iniciales
-  return NextResponse.json({ success: true, source: 'initial_events', data: initialServerEvents });
+  return NextResponse.json({ success: true, source: 'cloudflare_d1', data: [] });
 }
 
 // POST: Publicar nuevo evento con validación estricta de cuota (máximo 2 por dueño)
