@@ -29,11 +29,17 @@ export async function GET(request) {
       return NextResponse.json({ success: true, source: 'cloudflare_d1', data: parsed });
     }
   } catch (error) {
-    console.warn('Error en GET /api/servers (D1):', error.message);
+    console.error('Error crítico consultando D1 en GET /api/servers:', error.message);
+    return NextResponse.json(
+      {
+        success: false,
+        error: `Error de base de datos D1: ${error.message}`,
+        source: 'd1_error',
+        data: [],
+      },
+      { status: 500 }
+    );
   }
-
-  // Fallback con datos iniciales
-  return NextResponse.json({ success: true, source: 'fallback', data: initialServers });
 }
 
 // POST: Registrar un nuevo servidor con Validación Zod, Rate Limit y RLS

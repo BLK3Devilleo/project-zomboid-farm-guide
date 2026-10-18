@@ -1,26 +1,20 @@
 import { initialServerEvents } from '../data/eventsDatabase';
 
-const EVENTS_STORAGE_KEY = 'knox_community_server_events_v1';
 export const MAX_EVENTS_PER_OWNER = 2;
 
 /**
- * Obtener todos los eventos activos del tablón (iniciales + comunitarios guardados)
+ * Obtener todos los eventos activos del tablón desde Cloudflare D1 (/api/events)
+ * Cero persistencia local: la base de datos es la única fuente de verdad.
  */
-export function fetchServerEvents() {
-  if (typeof window === 'undefined') return initialServerEvents;
-
+export async function fetchServerEvents() {
   try {
-    const raw = localStorage.getItem(EVENTS_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(initialServerEvents));
-      return initialServerEvents;
-    }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
+    const res = await fetch('/api/events', { cache: 'no-store' });
+    const json = await res.json().catch(() => ({}));
+    if (res.ok && json.success && Array.isArray(json.data)) {
+      return json.data;
     }
   } catch (err) {
-    console.warn('Error leyendo eventos de localStorage:', err);
+    console.warn('Fallo consultando /api/events en D1:', err.message);
   }
 
   return initialServerEvents;
@@ -30,7 +24,7 @@ export function fetchServerEvents() {
  * Contar cuántos eventos activos tiene registrados un usuario / owner
  */
 export function countOwnerActiveEvents(events, currentUser) {
-  if (!currentUser) return 0;
+  if (!currentUser || !Array.isArray(events)) return 0;
   return events.filter(
     (e) =>
       (e.ownerId && e.ownerId === currentUser.id) ||
@@ -39,13 +33,9 @@ export function countOwnerActiveEvents(events, currentUser) {
 }
 
 /**
- * Crear un nuevo evento de servidor publicado por su dueño
- * Valida:
- * 1. Usuario autenticado
- * 2. Dueño del servidor seleccionado
- * 3. Máximo 2 eventos activos por dueño
+ * Crear un nuevo evento de servidor publicado por su dueño en Cloudflare D1
  */
-export function createServerEvent(eventData, currentUser, userServers) {
+export async function createServerEvent(eventData, currentUser, userServers) {
   if (!currentUser) {
     throw new Error('Debes iniciar sesión con tu cuenta verificada para publicar un evento.');
   }
@@ -67,81 +57,51 @@ export function createServerEvent(eventData, currentUser, userServers) {
     throw new Error('Solo puedes publicar eventos para un servidor del cual eres propietario.');
   }
 
-  const currentEvents = fetchServerEvents();
-  const currentCount = countOwnerActiveEvents(currentEvents, currentUser);
+  const res = await fetch('/api/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      serverId: matchedServer.id,
+      title: eventData.title.trim().toUpperCase(),
+      type: eventData.type || 'EVENTO COMUNITARIO',
+      urgency: eventData.urgency || 'OPORTUNIDAD',
+      tag: matchedServer.name,
+      status: eventData.status || 'PROGRAMADO',
+      dateDisplay: eventData.dateDisplay || 'Próximamente',
+      frequency: eventData.frequency || `${matchedServer.name} Broadcast`,
+      description: eventData.description.trim(),
+      directives: Array.isArray(eventData.directives) && eventData.directives.length > 0
+        ? eventData.directives
+        : ['Conéctate a la hora acordada para coordinar con la comunidad.'],
+    }),
+  });
 
-  if (currentCount >= MAX_EVENTS_PER_OWNER) {
-    throw new Error(
-      `Límite alcanzado: Tienes ${currentCount}/${MAX_EVENTS_PER_OWNER} eventos activos. Elimina un anuncio anterior para publicar uno nuevo.`
-    );
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json.success) {
+    throw new Error(json.error || 'Error al registrar el evento en la base de datos.');
   }
 
-  const newEvent = {
-    id: `evt-${Date.now()}`,
-    serverId: matchedServer.id,
-    serverName: matchedServer.name,
-    serverIp: `${matchedServer.ip}${matchedServer.port ? `:${matchedServer.port}` : ''}`,
-    ownerId: currentUser.id,
-    ownerEmail: currentUser.email,
-    title: eventData.title.trim().toUpperCase(),
-    type: eventData.type || 'EVENTO COMUNITARIO',
-    urgency: eventData.urgency || 'OPORTUNIDAD',
-    tag: matchedServer.name,
-    status: eventData.status || 'PROGRAMADO',
-    dateDisplay: eventData.dateDisplay || 'Próximamente',
-    frequency: eventData.frequency || `${matchedServer.name} Broadcast`,
-    hostServer: matchedServer.name,
-    description: eventData.description.trim(),
-    directives: Array.isArray(eventData.directives) && eventData.directives.length > 0
-      ? eventData.directives
-      : ['Conéctate a la hora acordada para coordinar con la comunidad.'],
-    createdAt: new Date().toISOString(),
-  };
-
-  const updatedEvents = [newEvent, ...currentEvents];
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(updatedEvents));
-    } catch (e) {
-      console.warn('Error guardando evento en localStorage:', e);
-    }
-  }
-
-  return { success: true, event: newEvent, allEvents: updatedEvents };
+  const freshEvents = await fetchServerEvents();
+  return { success: true, event: json.data, allEvents: freshEvents };
 }
 
 /**
- * Eliminar un evento (Solo el owner o admin puede hacerlo)
+ * Eliminar un evento de Cloudflare D1 (Solo el owner o staff)
  */
-export function deleteServerEvent(eventId, currentUser) {
+export async function deleteServerEvent(eventId, currentUser) {
   if (!currentUser) {
     throw new Error('Acceso no autorizado.');
   }
 
-  const currentEvents = fetchServerEvents();
-  const eventToDelete = currentEvents.find((e) => e.id === eventId);
+  const res = await fetch(`/api/events?id=${encodeURIComponent(eventId)}`, {
+    method: 'DELETE',
+  });
 
-  if (!eventToDelete) {
-    throw new Error('Evento no encontrado.');
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok || !json.success) {
+    throw new Error(json.error || 'Error al eliminar el evento de la base de datos.');
   }
 
-  const isOwner =
-    (eventToDelete.ownerId && eventToDelete.ownerId === currentUser.id) ||
-    (eventToDelete.ownerEmail && eventToDelete.ownerEmail === currentUser.email);
-  const isAdmin = currentUser.role === 'admin';
-
-  if (!isOwner && !isAdmin) {
-    throw new Error('Solo el propietario del servidor o un administrador puede eliminar este anuncio.');
-  }
-
-  const updatedEvents = currentEvents.filter((e) => e.id !== eventId);
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(EVENTS_STORAGE_KEY, JSON.stringify(updatedEvents));
-    } catch (e) {
-      console.warn('Error guardando eventos tras eliminación:', e);
-    }
-  }
-
-  return { success: true, allEvents: updatedEvents };
+  const freshEvents = await fetchServerEvents();
+  return { success: true, allEvents: freshEvents };
 }
