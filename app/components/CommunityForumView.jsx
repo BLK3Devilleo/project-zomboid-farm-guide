@@ -44,6 +44,11 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
           const json = await res.json();
           if (json.success && Array.isArray(json.data) && isMounted) {
             setThreads(json.data);
+            const votesMap = {};
+            json.data.forEach((th) => {
+              if (th.has_voted) votesMap[th.id] = true;
+            });
+            setUserThreadVotes(votesMap);
           }
         }
       } catch (err) {
@@ -74,35 +79,33 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
     );
   });
 
-  // Voto en Hilo Principal (Optimista con persistencia en D1)
+  // Voto en Hilo Principal (Toggle con persistencia en D1)
   const handleVoteThread = async (threadId, e) => {
     if (e) e.stopPropagation();
-    if (userThreadVotes[threadId]) return;
-
-    setUserThreadVotes((prev) => ({ ...prev, [threadId]: true }));
-    setThreads((prev) =>
-      prev.map((t) => (t.id === threadId ? { ...t, upvotes: t.upvotes + 1 } : t))
-    );
+    if (!currentUser) {
+      onOpenLoginModal();
+      return;
+    }
 
     try {
       const res = await fetch('/api/forum', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'vote', threadId }),
+        body: JSON.stringify({ action: 'vote', threadId, knox_protocol_trap: '' }),
       });
-      if (!res.ok) {
-        throw new Error('Voto rechazado en D1');
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setUserThreadVotes((prev) => ({ ...prev, [threadId]: json.has_voted }));
+        setThreads((prev) =>
+          prev.map((t) =>
+            t.id === threadId
+              ? { ...t, upvotes: json.upvotes, has_voted: json.has_voted }
+              : t
+          )
+        );
       }
     } catch (err) {
-      console.warn('Revertiendo voto de hilo:', err);
-      setUserThreadVotes((prev) => {
-        const clone = { ...prev };
-        delete clone[threadId];
-        return clone;
-      });
-      setThreads((prev) =>
-        prev.map((t) => (t.id === threadId ? { ...t, upvotes: Math.max(0, t.upvotes - 1) } : t))
-      );
+      console.warn('Error al procesar voto de hilo en D1:', err);
     }
   };
 
@@ -183,6 +186,7 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
           action: 'comment',
           threadId: activeThreadId,
           comment: newCommentItem,
+          knox_protocol_trap: '',
         }),
       });
     } catch (err) {
@@ -250,6 +254,7 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
           action: 'comment',
           threadId: activeThreadId,
           comment: newReplyItem,
+          knox_protocol_trap: '',
         }),
       });
     } catch (err) {
@@ -281,6 +286,7 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
           city: newCity.trim() || 'Rosewood',
           day: newDay.trim() || 'Día 1',
           tag: newTag,
+          knox_protocol_trap: '',
         }),
       });
 
