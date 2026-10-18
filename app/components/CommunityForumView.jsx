@@ -9,6 +9,7 @@ import {
   CheckIcon,
   SearchIcon,
   ChatIcon,
+  HazardIcon,
 } from './icons/KnoxIcons';
 
 export default function CommunityForumView({ currentUser = null, onOpenLoginModal = () => {} }) {
@@ -668,8 +669,9 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
                 </div>
 
                 {forumError && (
-                  <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: 4, color: '#f87171', fontSize: 12 }}>
-                    ⚠️ {forumError}
+                  <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: 4, color: '#f87171', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <HazardIcon size={14} color="#f87171" />
+                    <span>{forumError}</span>
                   </div>
                 )}
 
