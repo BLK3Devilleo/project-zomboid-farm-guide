@@ -60,8 +60,15 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
     banner_url: editingServer?.banner_url || '/spiffo/ferret_mascot.jpg',
     gallery_images: Array.isArray(editingServer?.gallery_images) ? editingServer.gallery_images : [],
     tags: Array.isArray(editingServer?.tags) && editingServer.tags.length > 0 ? editingServer.tags : ['Comunidad', 'B42 Ready'],
+    schedule_type: editingServer?.schedule_type || '24/7',
+    schedule_details: editingServer?.schedule_details || '',
+    is_online: editingServer?.is_online !== undefined ? Boolean(editingServer.is_online) : true,
+    platform: editingServer?.platform || 'PC',
+    mods_count: editingServer?.mods_count || '',
+    mods_list: editingServer?.mods_list || '',
   });
 
+  const [customTagInput, setCustomTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const [isUploadingGallery, setIsUploadingGallery] = useState(false);
@@ -72,8 +79,11 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
   const galleryInputRef = useRef(null);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
   const handleSuggestName = () => {
@@ -89,6 +99,16 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
         tags: exists ? prev.tags.filter((t) => t !== tag) : [...prev.tags, tag],
       };
     });
+  };
+
+  const handleAddCustomTag = (e) => {
+    if (e) e.preventDefault();
+    const clean = customTagInput.trim().replace(/^#/, '');
+    if (!clean) return;
+    if (!formData.tags.includes(clean)) {
+      setFormData((prev) => ({ ...prev, tags: [...prev.tags, clean] }));
+    }
+    setCustomTagInput('');
   };
 
   // Subir archivo al endpoint /api/upload
@@ -378,6 +398,86 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
                   ))}
                 </div>
               </div>
+
+              {/* Selector de Plataforma */}
+              <div>
+                <label className="form-label">Plataforma Soportada</label>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'PC', label: 'PC (Steam)' },
+                    { id: 'Android', label: 'Android (APK/Emulado)' },
+                    { id: 'Crossplay', label: 'Multiplataforma (Crossplay)' },
+                  ].map((plat) => (
+                    <button
+                      key={plat.id}
+                      type="button"
+                      onClick={() => setFormData((p) => ({ ...p, platform: plat.id }))}
+                      className={`pz-switch-tab ${formData.platform === plat.id ? 'active' : ''}`}
+                      style={{ padding: '7px 14px', fontSize: 12 }}
+                    >
+                      {plat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Horarios y Disponibilidad */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                <div>
+                  <label className="form-label">Disponibilidad / Horarios</label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((p) => ({ ...p, schedule_type: '24/7' }))}
+                      className={`pz-switch-tab ${formData.schedule_type === '24/7' ? 'active' : ''}`}
+                      style={{ flex: 1, padding: '7px 10px', fontSize: 12 }}
+                    >
+                      24/7 Operativo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((p) => ({ ...p, schedule_type: 'custom' }))}
+                      className={`pz-switch-tab ${formData.schedule_type === 'custom' ? 'active' : ''}`}
+                      style={{ flex: 1, padding: '7px 10px', fontSize: 12 }}
+                    >
+                      Horario Específico
+                    </button>
+                  </div>
+                  {formData.schedule_type === 'custom' && (
+                    <input
+                      type="text"
+                      name="schedule_details"
+                      value={formData.schedule_details}
+                      onChange={handleChange}
+                      placeholder="Ej: L-V 18:00 - 02:00 UTC / Fines de semana"
+                      className="pz-scanner-input"
+                      style={{ marginTop: 6, minHeight: 36, fontSize: 11 }}
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <label className="form-label">Estado de Transmisión</label>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((p) => ({ ...p, is_online: true }))}
+                      className={`pz-switch-tab ${formData.is_online ? 'active' : ''}`}
+                      style={{ flex: 1, padding: '7px 10px', fontSize: 12, color: formData.is_online ? '#04120c' : '#10b981' }}
+                    >
+                      ● Online / Activo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((p) => ({ ...p, is_online: false }))}
+                      className={`pz-switch-tab ${!formData.is_online ? 'active' : ''}`}
+                      style={{ flex: 1, padding: '7px 10px', fontSize: 12, color: !formData.is_online ? '#04120c' : '#ef4444' }}
+                    >
+                      Mantenimiento
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -470,6 +570,102 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Creador de Tags Personalizados */}
+                <div style={{ marginTop: 10 }}>
+                  <label className="form-label" style={{ fontSize: 11, color: '#38bdf8' }}>
+                    O escribe tus propios tags personalizados:
+                  </label>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      type="text"
+                      placeholder="Ej: NPCs, Metanfetamina, Convoy, MercadoNegro..."
+                      value={customTagInput}
+                      onChange={(e) => setCustomTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCustomTag(e);
+                        }
+                      }}
+                      className="pz-scanner-input"
+                      style={{ minHeight: 36, fontSize: 12 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomTag}
+                      className="pz-btn-primary"
+                      style={{ fontSize: 11, padding: '0 14px', whiteSpace: 'nowrap' }}
+                    >
+                      + Añadir Tag
+                    </button>
+                  </div>
+                  {/* Lista de tags activos actualmente */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                    {formData.tags.map((t) => (
+                      <span
+                        key={t}
+                        style={{
+                          background: 'rgba(56, 189, 248, 0.15)',
+                          border: '1px solid rgba(56, 189, 248, 0.3)',
+                          borderRadius: 3,
+                          padding: '2px 8px',
+                          fontSize: 11,
+                          fontFamily: 'monospace',
+                          color: '#38bdf8',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        #{t}
+                        <button
+                          type="button"
+                          onClick={() => toggleTag(t)}
+                          style={{ background: 'transparent', border: 'none', color: '#f87171', cursor: 'pointer', padding: 0, fontSize: 10 }}
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Información de Mods (Opcional) */}
+              <div style={{ background: 'rgba(15, 23, 42, 0.4)', padding: 14, borderRadius: 6, border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <WrenchIcon size={14} color="#f59e0b" />
+                  <span style={{ fontSize: 12, fontWeight: 900, color: '#f59e0b', fontFamily: 'monospace', textTransform: 'uppercase' }}>
+                    Parches y Mods del Servidor (Opcional)
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
+                  <div>
+                    <label className="form-label" style={{ fontSize: 11 }}>Cantidad de Mods</label>
+                    <input
+                      type="text"
+                      name="mods_count"
+                      value={formData.mods_count}
+                      onChange={handleChange}
+                      placeholder="Ej: Vanilla, 25 mods, 60+ mods..."
+                      className="pz-scanner-input"
+                      style={{ minHeight: 36, fontSize: 11 }}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label" style={{ fontSize: 11 }}>Mods Destacados</label>
+                    <input
+                      type="text"
+                      name="mods_list"
+                      value={formData.mods_list}
+                      onChange={handleChange}
+                      placeholder="Ej: Brita Weapons, Hydrocraft, True Actions..."
+                      className="pz-scanner-input"
+                      style={{ minHeight: 36, fontSize: 11 }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -648,29 +844,34 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
               </div>
 
               {/* Discord / Comunidad y Descripción */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
-                <div>
-                  <label className="form-label">Discord / Web de Comunidad</label>
-                  <input
-                    type="text"
-                    name="discord_url"
-                    value={formData.discord_url}
-                    onChange={handleChange}
-                    placeholder="https://discord.gg/... o tu web"
-                    className="pz-scanner-input"
-                  />
+              <div>
+                <label className="form-label">Discord / Web de Comunidad</label>
+                <input
+                  type="text"
+                  name="discord_url"
+                  value={formData.discord_url}
+                  onChange={handleChange}
+                  placeholder="https://discord.gg/... o tu web"
+                  className="pz-scanner-input"
+                />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <label className="form-label" style={{ margin: 0 }}>Dossier Táctico / Descripción del Servidor</label>
+                  <span style={{ fontSize: 10, color: '#10b981', fontFamily: 'monospace' }}>
+                    Tip: Usa guiones '-' para listar mecánicas destacadas
+                  </span>
                 </div>
-                <div>
-                  <label className="form-label">Dossier / Descripción Breve</label>
-                  <input
-                    type="text"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    placeholder="Safezones, economía propia, hordas nocturnas..."
-                    className="pz-scanner-input"
-                  />
-                </div>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={4}
+                  placeholder={`Explica lo que hace único a tu servidor...\nEjemplo:\n- NPC de misiones y comercio activo\n- Eventos de horda cada fin de semana\n- Spawn de vehículos customizado`}
+                  className="pz-scanner-input"
+                  style={{ width: '100%', resize: 'vertical', lineHeight: 1.5, fontFamily: 'inherit' }}
+                />
               </div>
 
               {/* Live Card Preview */}

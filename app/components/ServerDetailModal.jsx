@@ -14,6 +14,8 @@ import {
   WrenchIcon,
   CloseCrossIcon,
 } from './icons/KnoxIcons';
+import ServerDescriptionEditorial from './ServerDescriptionEditorial';
+import ServerReviewsSection from './ServerReviewsSection';
 
 export default function ServerDetailModal({
   server,
@@ -22,6 +24,7 @@ export default function ServerDetailModal({
   onVote,
   onEdit,
   onDelete,
+  onOpenLoginModal = () => {},
 }) {
   const { modalContainerProps } = useTacticalModal(Boolean(server), onClose);
   const [copied, setCopied] = useState(false);
@@ -285,15 +288,8 @@ export default function ServerDetailModal({
             </div>
           </div>
 
-          {/* DESCRIPCIÓN Y LORE DE COMUNIDAD */}
-          <div style={{ background: 'rgba(0,0,0,0.4)', padding: 16, borderRadius: 4, border: '1px solid rgba(255,255,255,0.06)' }}>
-            <span style={{ fontSize: 12, fontWeight: 900, textTransform: 'uppercase', color: themeColor, letterSpacing: '0.08em', display: 'block', marginBottom: 8, fontFamily: 'monospace' }}>
-              DIRECTIVA Y PROPÓSITO DEL REFUGIO
-            </span>
-            <p style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.6, margin: 0, fontFamily: 'sans-serif' }}>
-              {server.description || 'Sin transmisión de datos disponible.'}
-            </p>
-          </div>
+          {/* DESCRIPCIÓN EDITORIAL Y METADATOS TÁCTICOS */}
+          <ServerDescriptionEditorial server={server} themeColor={themeColor} />
 
           {/* ETIQUETAS Y MODS */}
           {server.tags && server.tags.length > 0 && (
@@ -329,6 +325,13 @@ export default function ServerDetailModal({
               </ul>
             </div>
           )}
+
+          {/* BITÁCORA DE RESEÑAS Y OPINIONES COMUNITARIAS */}
+          <ServerReviewsSection
+            serverId={server.id}
+            currentUser={currentUser}
+            onOpenLoginModal={onOpenLoginModal}
+          />
 
           {/* PIE DE ACCIONES: VOTAR + DISCORD + GESTIÓN DE PROPIETARIO */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)' }}>

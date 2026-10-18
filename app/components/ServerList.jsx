@@ -602,6 +602,39 @@ export default function ServerList({
                       <BackpackIcon size={11} color="currentColor" />
                       <span>{server.loot_tier}</span>
                     </span>
+
+                    {/* Plataforma */}
+                    {server.platform && (
+                      <span className="pz-meta-pill pz-meta-pill-platform" title="Plataforma de juego">
+                        {server.platform === 'Android (APK/Emulado)'
+                          ? 'ANDROID'
+                          : server.platform === 'Multiplataforma (Crossplay)'
+                          ? 'CROSSPLAY'
+                          : 'PC'}
+                      </span>
+                    )}
+
+                    {/* Estado / Horario */}
+                    {server.is_operational === 0 || server.is_operational === false ? (
+                      <span className="pz-meta-pill pz-meta-pill-maintenance" title="Servidor temporalmente en mantenimiento">
+                        MANTENIMIENTO
+                      </span>
+                    ) : server.schedule_type === 'custom' && server.custom_schedule ? (
+                      <span className="pz-meta-pill pz-meta-pill-schedule" title={`Horario: ${server.custom_schedule}`}>
+                        {server.custom_schedule}
+                      </span>
+                    ) : (
+                      <span className="pz-meta-pill pz-meta-pill-247" title="Operativo 24 Horas al Día">
+                        24/7 ONLINE
+                      </span>
+                    )}
+
+                    {/* Mods */}
+                    {Boolean(server.mods_count) && (
+                      <span className="pz-meta-pill pz-meta-pill-mods" title={`Mods: ${server.mods_list || server.mods_count}`}>
+                        MODS: {server.mods_count}
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -726,6 +759,7 @@ export default function ServerList({
           currentUser={currentUser}
           onClose={() => setActiveModalServer(null)}
           onVote={(id) => handleVote(null, id)}
+          onOpenLoginModal={onOpenLoginModal}
           onEdit={(srv) => {
             setActiveModalServer(null);
             setEditingServer(srv);
