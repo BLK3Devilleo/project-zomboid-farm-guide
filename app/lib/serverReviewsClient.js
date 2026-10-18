@@ -1,94 +1,110 @@
-// Cliente y Almacenamiento Local de Reseñas y Comentarios de Servidores KnoxOS
-// Cero emojis - Metadatos militares de bitácora
-
-const REVIEWS_PREFIX = 'knox_server_reviews_';
+// Cliente API de Reseñas y Comentarios de Servidores KnoxOS
+// Conexión directa a Cloudflare D1 mediante /api/servers/[id]/reviews
+// Cero persistencia en localStorage - Cumplimiento de arquitectura cloud pura
 
 /**
- * Obtener reseñas para un servidor dado
+ * Obtener reseñas para un servidor dado desde Cloudflare D1
+ * @param {string} serverId
+ * @returns {Promise<{ reviews: Array, stats: { total: number, avgRating: number } }>}
  */
-export function fetchServerReviews(serverId) {
-  if (typeof window === 'undefined' || !serverId) return [];
+export async function fetchServerReviews(serverId) {
+  if (!serverId) return { reviews: [], stats: { total: 0, avgRating: 0 } };
 
   try {
-    const raw = localStorage.getItem(`${REVIEWS_PREFIX}${serverId}`);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const res = await fetch(`/api/servers/${encodeURIComponent(serverId)}/reviews`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      console.warn(`Respuesta no exitosa (${res.status}) obteniendo reseñas para ${serverId}`);
+      return { reviews: [], stats: { total: 0, avgRating: 0 } };
+    }
+
+    const json = await res.json();
+    if (json.success && json.data) {
+      return json.data;
+    }
+    return { reviews: [], stats: { total: 0, avgRating: 0 } };
   } catch (err) {
-    console.warn('Error leyendo reseñas del servidor:', err);
-    return [];
+    console.warn('Error comunicando con API de reseñas D1:', err);
+    return { reviews: [], stats: { total: 0, avgRating: 0 } };
   }
 }
 
 /**
- * Agregar una nueva reseña a un servidor
+ * Agregar o actualizar la reseña de un servidor
+ * @param {string} serverId
+ * @param {{ rating: number, comment: string }} reviewData
+ * @param {object} currentUser
+ * @returns {Promise<{ success: boolean, reviews: Array, stats: object, message: string }>}
  */
-export function addServerReview(serverId, reviewData, currentUser) {
+export async function addServerReview(serverId, reviewData, currentUser) {
   if (!currentUser) {
-    throw new Error('Debes iniciar sesión con Google para publicar una reseña.');
+    throw new Error('Debes iniciar sesión con tu cuenta de Google para publicar una reseña.');
   }
 
   if (!reviewData.comment || !reviewData.comment.trim()) {
-    throw new Error('Por favor escribe un comentario u opinión sobre el servidor.');
+    throw new Error('Por favor escribe tu reseña u observación sobre el servidor.');
   }
 
-  const newReview = {
-    id: `rev-${Date.now()}`,
-    serverId,
-    userId: currentUser.id,
-    userName: currentUser.name || 'Superviviente Anónimo',
-    userAvatar: currentUser.picture || null,
-    userRole: currentUser.role || 'usuario',
-    rating: reviewData.rating === 'warning' ? 'warning' : 'recommended',
-    comment: reviewData.comment.trim(),
-    createdAt: new Date().toISOString(),
+  const res = await fetch(`/api/servers/${encodeURIComponent(serverId)}/reviews`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify({
+      rating: Number(reviewData.rating) || 2,
+      comment: reviewData.comment.trim(),
+      knox_protocol_trap: '', // Honeypot field
+    }),
+  });
+
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok || !json.success) {
+    throw new Error(json.error || 'Fallo al publicar la reseña en la red militar D1.');
+  }
+
+  return {
+    success: true,
+    reviews: json.data?.reviews || [],
+    stats: json.data?.stats || { total: 0, avgRating: 0 },
+    message: json.message || 'Reseña confirmada en el registro.',
   };
-
-  const currentReviews = fetchServerReviews(serverId);
-  const updated = [newReview, ...currentReviews];
-
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(`${REVIEWS_PREFIX}${serverId}`, JSON.stringify(updated));
-    } catch (err) {
-      console.warn('Error guardando reseña en localStorage:', err);
-    }
-  }
-
-  return { success: true, review: newReview, allReviews: updated };
 }
 
 /**
  * Eliminar una reseña (solo autor o admin)
+ * @param {string} serverId
+ * @param {string} reviewId
+ * @param {object} currentUser
+ * @returns {Promise<{ success: boolean, reviews: Array, stats: object }>}
  */
-export function deleteServerReview(serverId, reviewId, currentUser) {
+export async function deleteServerReview(serverId, reviewId, currentUser) {
   if (!currentUser) {
     throw new Error('Acceso no autorizado.');
   }
 
-  const currentReviews = fetchServerReviews(serverId);
-  const reviewToDelete = currentReviews.find((r) => r.id === reviewId);
-
-  if (!reviewToDelete) {
-    throw new Error('Reseña no encontrada.');
-  }
-
-  const isAuthor = reviewToDelete.userId === currentUser.id;
-  const isAdmin = currentUser.role === 'admin' || currentUser.role === 'super_admin';
-
-  if (!isAuthor && !isAdmin) {
-    throw new Error('Solo el autor o un administrador puede eliminar esta reseña.');
-  }
-
-  const updated = currentReviews.filter((r) => r.id !== reviewId);
-
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(`${REVIEWS_PREFIX}${serverId}`, JSON.stringify(updated));
-    } catch (err) {
-      console.warn('Error actualizando reseñas tras eliminar:', err);
+  const res = await fetch(
+    `/api/servers/${encodeURIComponent(serverId)}/reviews?reviewId=${encodeURIComponent(reviewId)}`,
+    {
+      method: 'DELETE',
+      headers: { 'Accept': 'application/json' },
     }
+  );
+
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok || !json.success) {
+    throw new Error(json.error || 'Error al eliminar la reseña.');
   }
 
-  return { success: true, allReviews: updated };
+  return {
+    success: true,
+    reviews: json.data?.reviews || [],
+    stats: json.data?.stats || { total: 0, avgRating: 0 },
+  };
 }

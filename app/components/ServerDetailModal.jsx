@@ -339,10 +339,22 @@ export default function ServerDetailModal({
               <button
                 onClick={() => onVote(server.id)}
                 className="server-vote-btn"
-                style={{ padding: '9px 18px', fontSize: 13, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                style={{
+                  padding: '9px 18px',
+                  fontSize: 13,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  background: server.has_voted ? 'rgba(234, 179, 8, 0.25)' : undefined,
+                  borderColor: server.has_voted ? '#eab308' : undefined,
+                  color: server.has_voted ? '#fef08a' : undefined,
+                }}
+                title={server.has_voted ? 'Has votado por este servidor (Clic para retirar)' : 'Otorgar voto táctico'}
               >
-                <VoteIcon size={15} color="#f59e0b" />
-                <span>Otorgar Reputación Knox ({server.votes || 0})</span>
+                <VoteIcon size={15} color={server.has_voted ? '#facc15' : '#f59e0b'} />
+                <span>
+                  {server.has_voted ? 'Voto Táctico Otorgado' : 'Otorgar Reputación Knox'} ({server.votes || 0})
+                </span>
               </button>
 
               {/* Botones de Propietario / Admin */}

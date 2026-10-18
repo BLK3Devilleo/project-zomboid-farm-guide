@@ -3,6 +3,8 @@ import { queryD1 } from '../../lib/d1Client';
 import { CreateServerSchema, VoteServerSchema, getZodErrorMessage } from '../../lib/validations';
 import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
 import { getSessionUser, hasRequiredRole } from '../../lib/session';
+import { ensureProductionTables } from '../../lib/dbBootstrap';
+import { sanitizeText, isBotHoneypotTriggered } from '../../lib/sanitizer';
 
 // GET: Listar servidores ordenados por reputación (votos)
 export async function GET(request) {
@@ -17,6 +19,20 @@ export async function GET(request) {
   }
 
   try {
+    await ensureProductionTables();
+
+    // Comprobar si el usuario actual ha votado por alguno de los servidores
+    let userVotedIds = new Set();
+    const sessionUser = await getSessionUser(request);
+    if (sessionUser?.id) {
+      try {
+        const userVotes = await queryD1('SELECT server_id FROM server_votes WHERE user_id = ?', [sessionUser.id]);
+        if (Array.isArray(userVotes)) {
+          userVotedIds = new Set(userVotes.map((v) => v.server_id));
+        }
+      } catch (e) {}
+    }
+
     const results = await queryD1('SELECT * FROM servers ORDER BY votes DESC');
     if (Array.isArray(results)) {
       const parsed = results.map((server) => ({
@@ -24,6 +40,7 @@ export async function GET(request) {
         is_online: Boolean(server.is_online),
         tags: typeof server.tags === 'string' ? JSON.parse(server.tags) : (server.tags || []),
         gallery_images: typeof server.gallery_images === 'string' ? JSON.parse(server.gallery_images) : (server.gallery_images || []),
+        has_voted: userVotedIds.has(server.id),
       }));
       return NextResponse.json({ success: true, source: 'cloudflare_d1', data: parsed });
     }
@@ -70,8 +87,15 @@ export async function POST(request) {
   }
 
   try {
-    // 3. Validación estricta con Zod
+    await ensureProductionTables();
     const rawBody = await request.json().catch(() => ({}));
+
+    // Trampa Honeypot Anti-Bot
+    if (isBotHoneypotTriggered(rawBody)) {
+      return NextResponse.json({ success: false, error: 'Petición rechazada por protocolo de seguridad.' }, { status: 400 });
+    }
+
+    // 3. Validación estricta con Zod
     const parseResult = CreateServerSchema.safeParse(rawBody);
 
     if (!parseResult.success) {
@@ -83,6 +107,9 @@ export async function POST(request) {
     const newServerId = `srv-${Date.now()}`;
     const playersOnline = Math.floor(Math.random() * 8) + 2;
 
+    const safeDescription = sanitizeText(validData.description, 1000);
+    const safeName = sanitizeText(validData.name, 64);
+
     // 4. Inserción segura con parámetros vinculados (Previene Inyecciones SQL)
     await queryD1(
       `INSERT INTO servers (
@@ -92,7 +119,7 @@ export async function POST(request) {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         newServerId,
-        validData.name,
+        safeName,
         validData.ip,
         validData.port,
         validData.region,
@@ -102,7 +129,7 @@ export async function POST(request) {
         validData.max_players,
         1, // is_online
         0, // votes
-        validData.description,
+        safeDescription,
         validData.discord_url || '',
         validData.banner_url || '/spiffo/spiffo_character.png',
         JSON.stringify(validData.gallery_images || []),
@@ -114,7 +141,7 @@ export async function POST(request) {
 
     const createdServer = {
       id: newServerId,
-      name: validData.name,
+      name: safeName,
       ip: validData.ip,
       port: validData.port,
       region: validData.region,
@@ -124,13 +151,14 @@ export async function POST(request) {
       max_players: validData.max_players,
       is_online: true,
       votes: 0,
-      description: validData.description,
+      description: safeDescription,
       discord_url: validData.discord_url,
       banner_url: validData.banner_url,
       gallery_images: validData.gallery_images,
       tags: validData.tags,
       owner_id: sessionUser.id,
       owner_email: sessionUser.email,
+      has_voted: false,
     };
 
     return NextResponse.json({ success: true, data: createdServer });
@@ -143,12 +171,12 @@ export async function POST(request) {
   }
 }
 
-// PATCH: Voto (+1 Reputación) con Rate Limit y Validación Zod
+// PATCH: Voto de reputación (+1 / -1) - 1 Voto Único por Usuario Registrado con Google
 export async function PATCH(request) {
   const clientIp = getClientIp(request);
 
-  // 1. Rate Limit de votos: Máximo 8 votos por minuto por IP
-  const rate = checkRateLimit(`servers:vote:${clientIp}`, 8, 60 * 1000);
+  // 1. Rate Limit de votos: Máximo 30 votos por minuto por IP
+  const rate = checkRateLimit(`servers:vote:${clientIp}`, 30, 60 * 1000);
   if (!rate.allowed) {
     return NextResponse.json(
       {
@@ -159,10 +187,28 @@ export async function PATCH(request) {
     );
   }
 
-  try {
-    const rawBody = await request.json().catch(() => ({}));
-    const parseResult = VoteServerSchema.safeParse(rawBody);
+  // 2. Control de Autorización: Requiere sesión de usuario registrada con Google
+  const sessionUser = await getSessionUser(request);
+  if (!sessionUser?.id) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Debes iniciar sesión con Google para emitir un voto de reputación verificado.',
+      },
+      { status: 401 }
+    );
+  }
 
+  try {
+    await ensureProductionTables();
+    const rawBody = await request.json().catch(() => ({}));
+
+    // Honeypot check
+    if (isBotHoneypotTriggered(rawBody)) {
+      return NextResponse.json({ success: false, error: 'Acceso no permitido.' }, { status: 400 });
+    }
+
+    const parseResult = VoteServerSchema.safeParse(rawBody);
     if (!parseResult.success) {
       return NextResponse.json(
         { success: false, error: getZodErrorMessage(parseResult.error) || 'ID inválido' },
@@ -172,10 +218,39 @@ export async function PATCH(request) {
 
     const { id } = parseResult.data;
 
-    // Actualización atómica parametrizada
-    await queryD1('UPDATE servers SET votes = votes + 1 WHERE id = ?', [id]);
+    // Verificar si el usuario ya votó por este servidor en la tabla server_votes
+    const existingVote = await queryD1(
+      'SELECT user_id FROM server_votes WHERE user_id = ? AND server_id = ? LIMIT 1',
+      [sessionUser.id, id]
+    );
 
-    return NextResponse.json({ success: true, id });
+    let hasVoted = false;
+    let newVotesCount = 0;
+
+    if (existingVote && existingVote.length > 0) {
+      // Retirar el voto previo (toggle un-vote)
+      await queryD1('DELETE FROM server_votes WHERE user_id = ? AND server_id = ?', [sessionUser.id, id]);
+      await queryD1('UPDATE servers SET votes = MAX(0, votes - 1) WHERE id = ?', [id]);
+      hasVoted = false;
+    } else {
+      // Registrar voto verificado en D1
+      await queryD1('INSERT INTO server_votes (user_id, server_id) VALUES (?, ?)', [sessionUser.id, id]);
+      await queryD1('UPDATE servers SET votes = votes + 1 WHERE id = ?', [id]);
+      hasVoted = true;
+    }
+
+    const updatedRow = await queryD1('SELECT votes FROM servers WHERE id = ? LIMIT 1', [id]);
+    if (updatedRow && updatedRow.length > 0) {
+      newVotesCount = updatedRow[0].votes;
+    }
+
+    return NextResponse.json({
+      success: true,
+      id,
+      has_voted: hasVoted,
+      votes: newVotesCount,
+      message: hasVoted ? '¡Voto registrado con éxito!' : 'Voto retirado.',
+    });
   } catch (error) {
     console.error('Error procesando voto:', error);
     return NextResponse.json({ success: false, error: error.message || 'Fallo al computar el voto' }, { status: 500 });

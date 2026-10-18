@@ -33,7 +33,7 @@ export async function createServerEntry(serverData) {
   return json.data;
 }
 
-// Votar servidor (+1 Reputación en D1)
+// Votar servidor (Toggle 1 Voto por usuario en D1)
 export async function upvoteServerEntry(serverId) {
   const res = await fetch('/api/servers', {
     method: 'PATCH',
@@ -46,7 +46,7 @@ export async function upvoteServerEntry(serverId) {
     throw new Error(json.error || 'No se pudo computar el voto.');
   }
 
-  return true;
+  return json;
 }
 
 // Actualizar servidor existente en D1 (PUT /api/servers)

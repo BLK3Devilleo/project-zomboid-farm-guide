@@ -111,25 +111,46 @@ export default function ServerList({
     }
   };
 
-  // Loop C: Votar por un servidor (Mutación optimista con rollback)
+  // Loop C: Votar por un servidor (1 voto por usuario registrado con toggle)
   const handleVote = async (e, serverId) => {
     if (e) e.stopPropagation();
+
+    if (!currentUser) {
+      showToast('Autenticación requerida: Inicia sesión con Google para emitir tu voto táctico.');
+      onOpenLoginModal();
+      return;
+    }
+
     const prevServers = [...servers];
     const prevModal = activeModalServer ? { ...activeModalServer } : null;
 
-    // Actualización optimista
-    setServers((prev) =>
-      prev.map((s) => (s.id === serverId ? { ...s, votes: (s.votes || 0) + 1 } : s))
-    );
-    if (activeModalServer && activeModalServer.id === serverId) {
-      setActiveModalServer((prev) => ({ ...prev, votes: (prev.votes || 0) + 1 }));
-    }
-    showToast('¡Voto registrado! +1 Reputación');
-
     try {
-      await upvoteServerEntry(serverId);
+      const res = await upvoteServerEntry(serverId);
+      const newVotes = typeof res.votes === 'number' ? res.votes : undefined;
+      const hasVoted = Boolean(res.has_voted);
+
+      setServers((prev) =>
+        prev.map((s) =>
+          s.id === serverId
+            ? {
+                ...s,
+                votes: newVotes !== undefined ? newVotes : s.votes,
+                has_voted: hasVoted,
+              }
+            : s
+        )
+      );
+
+      if (activeModalServer && activeModalServer.id === serverId) {
+        setActiveModalServer((prev) => ({
+          ...prev,
+          votes: newVotes !== undefined ? newVotes : prev.votes,
+          has_voted: hasVoted,
+        }));
+      }
+
+      showToast(res.message || (hasVoted ? '¡Voto táctico confirmado en D1!' : 'Voto retirado de la frecuencia.'));
     } catch (err) {
-      // Revertir estado si D1 rechaza
       setServers(prevServers);
       if (prevModal) setActiveModalServer(prevModal);
       showToast(err.message || 'Fallo al confirmar el voto en la base de datos.');
@@ -705,10 +726,17 @@ export default function ServerList({
                       type="button"
                       onClick={(e) => handleVote(e, server.id)}
                       className="server-vote-btn"
-                      title="Otorgar voto de reputación"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                      title={server.has_voted ? 'Has votado por este servidor (Clic para retirar)' : 'Otorgar voto de reputación'}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        background: server.has_voted ? 'rgba(234, 179, 8, 0.25)' : undefined,
+                        borderColor: server.has_voted ? '#eab308' : undefined,
+                        color: server.has_voted ? '#fef08a' : undefined,
+                      }}
                     >
-                      <VoteIcon size={13} color="#eab308" />
+                      <VoteIcon size={13} color={server.has_voted ? '#facc15' : '#eab308'} />
                       <span>{server.votes || 0}</span>
                     </button>
 
