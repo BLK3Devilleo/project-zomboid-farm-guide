@@ -136,4 +136,32 @@ Se ha culminado la reestructuración arquitectónica y de diseño de la platafor
 - **Loop A (Sincronización Periódica de Telemetría)**: Bucle de sondeo automático cada 45 segundos en `ServerList.jsx` que revalida silenciosamente el radar de servidores y recuentos de jugadores en vivo sin recargar la página.
 - **Loop B (Reintento con Backoff Exponencial)**: Ante un fallo de enlace o timeout de D1, el sistema entra en modo de recuperación militar diegética con 3 reintentos automáticos espaciados (2s, 4s, 8s), mostrando un banner CRT de advertencia (`ALERTA RADAR // INTERFERENCIA DE ENLACE CON CLOUDFLARE D1`) y un botón de reintento manual.
 - **Loop C (Mutaciones Optimistas con Reversión)**: Los votos en servidores y foros actualizan la UI de inmediato y se revierten automáticamente con aviso al operador si la API de Cloudflare D1 rechaza la solicitud.
+---
 
+## 6. Módulo Editorial de Servidores, Horarios, Reseñas y Plataforma (B42 Tactical Dossier)
+
+### 6.1 Objetivos y Requerimientos de la Comunidad
+1. **Configuración de Horarios y Disponibilidad**:
+   - Soporte para servidores `24/7` vs `Horario personalizado` (ej. *L-V 18:00 - 02:00 UTC*).
+   - Interruptor de estado operativo: `Online` vs `Mantenimiento`.
+2. **Reseñas Comunitarias de Jugadores**:
+   - Calificación binaria (*Recomendado* / *Advertencia*) con comentarios libres de texto, avatar, autor y fecha.
+   - Restricción de autenticación: los visitantes pueden leer; para publicar deben autenticarse con Google.
+3. **Creador Libre de Etiquetas (Custom Tags)**:
+   - Capacidad para que los administradores creen sus propios tags escribiendo y presionando Enter o botón de añadir, combinable con presets oficiales.
+4. **Selector de Plataforma y Mods Opcionales**:
+   - `PC (Steam)`, `Android (APK/Emulado)` y `Multiplataforma (Crossplay)`.
+   - Campos de mods no obligatorios: cantidad (`mods_count`) y lista de mods destacados (`mods_list`).
+5. **Rediseño Editorial de la Ficha Dossier**:
+   - Transformación de bloques densos de texto en cuadrículas de tarjetas tácticas legibles con viñetas automáticas.
+
+### 6.2 Componentes Desarrollados y Modificados
+- `app/components/ServerDescriptionEditorial.jsx`: Parser inteligente que segmenta la descripción del servidor, extrayendo viñetas (guiones `-`) en un grid de tarjetas tácticas con iconos SVG de verificación y pills de metadatos de cabecera.
+- `app/components/ServerReviewsSection.jsx`: Módulo interactivo de reseñas con selector de veredicto, formulario diegético y listado de valoraciones.
+- `app/lib/serverReviewsClient.js`: Capa de datos para almacenamiento de reseñas por servidor con persistencia local y fallback seguro.
+- `app/components/AddServerModal.jsx`: Enriquecido con selectores de disponibilidad, estado, plataforma, mods y creador de tags libres.
+- `app/components/ServerList.jsx`: Badges tácticos enriquecidos en cada tarjeta del directorio (`PC`/`Android`, `24/7`/`Mantenimiento`, `Mods`).
+
+### 6.3 Verificación de Calidad
+- **Next.js Production Build**: `node node_modules/next/dist/bin/next build` -> **Exit Code 0** (Compilado en 2.0s sin errores de Turbopack o TypeScript).
+- **Zero Emojis**: 0 emojis en todo `./app` (inspección automatizada por AST/Regex).
