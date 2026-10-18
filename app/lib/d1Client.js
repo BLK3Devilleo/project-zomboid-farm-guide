@@ -26,9 +26,12 @@ function sanitizeTelemetry(input) {
  * @returns {Promise<Array<any>|null>}
  */
 export async function queryD1(sql, params = []) {
-  const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
-  const DATABASE_ID = process.env.CLOUDFLARE_D1_DATABASE_ID?.trim();
-  const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN?.trim();
+  const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID?.trim().replace(/^["']|["']$/g, '');
+  const DATABASE_ID = process.env.CLOUDFLARE_D1_DATABASE_ID?.trim().replace(/^["']|["']$/g, '');
+  let API_TOKEN = process.env.CLOUDFLARE_API_TOKEN?.trim().replace(/^["']|["']$/g, '');
+  if (API_TOKEN && API_TOKEN.toLowerCase().startsWith('bearer ')) {
+    API_TOKEN = API_TOKEN.slice(7).trim();
+  }
 
   const required = [
     { key: 'CLOUDFLARE_ACCOUNT_ID', val: ACCOUNT_ID },
