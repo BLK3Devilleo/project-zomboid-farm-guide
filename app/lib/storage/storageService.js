@@ -72,6 +72,22 @@ export async function saveMediaFile(file, metadata = {}) {
   const fileName = `pz-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${safeExt}`;
   const buffer = Buffer.from(await file.arrayBuffer());
 
+  // Verificación estricta de Magic Numbers binarios para neutralizar archivos maliciosos camuflados
+  if (buffer.length < 4) {
+    throw new Error('Archivo corrupto o incompleto.');
+  }
+
+  const isPng = buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
+  const isJpeg = buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  const isGif = buffer[0] === 0x47 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x38;
+  const isWebp = buffer.length > 12 &&
+    buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46 &&
+    buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50;
+
+  if (!isPng && !isJpeg && !isGif && !isWebp) {
+    throw new Error('VIOLACIÓN DE SEGURIDAD: La firma binaria (Magic Numbers) no corresponde a una imagen válida.');
+  }
+
   // 1. Intentar subida a Cloudflare R2 vía S3 API
   const r2Client = getR2Client();
   const R2_BUCKET = process.env.CLOUDFLARE_R2_BUCKET?.trim();
