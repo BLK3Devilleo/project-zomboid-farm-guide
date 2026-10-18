@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { fetchServersList, createServerEntry, updateServerEntry, deleteServerEntry, upvoteServerEntry } from '../lib/supabaseClient';
 import ServerDetailModal from './ServerDetailModal';
@@ -28,6 +28,8 @@ export default function ServerList({
 }) {
   const [servers, setServers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorState, setErrorState] = useState(null);
+  const [isRetrying, setIsRetrying] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMode, setSelectedMode] = useState('ALL');
   const [selectedLoot, setSelectedLoot] = useState('ALL');
@@ -42,10 +44,19 @@ export default function ServerList({
   const [editingServer, setEditingServer] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
 
-  // Cargar eventos del tablón al iniciar
-  useEffect(() => {
-    setEventsList(fetchServerEvents());
+  // Sincronizar eventos de servidor
+  const reloadEvents = useCallback(async () => {
+    try {
+      const data = await fetchServerEvents();
+      if (Array.isArray(data)) setEventsList(data);
+    } catch (e) {
+      console.warn('Error refrescando eventos en D1:', e);
+    }
   }, []);
+
+  useEffect(() => {
+    reloadEvents();
+  }, [reloadEvents]);
 
   // Apertura externa para edición (desde ProfileModal)
   useEffect(() => {
@@ -56,16 +67,32 @@ export default function ServerList({
     }
   }, [serverToEdit, onClearServerToEdit]);
 
-  // Carga inicial
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
+  // Loop A & B: Sintonización periódica (45s) y reintento con backoff
+  const loadServers = useCallback(async (isManualRetry = false) => {
+    if (isManualRetry) setIsRetrying(true);
+    else if (!servers.length) setLoading(true);
+
+    try {
       const data = await fetchServersList();
       setServers(data);
+      setErrorState(null);
+    } catch (err) {
+      console.error('Fallo sintonizando radar D1:', err);
+      setErrorState(err.message || 'Interferencia de conexión con Cloudflare D1');
+    } finally {
       setLoading(false);
+      setIsRetrying(false);
     }
-    load();
-  }, []);
+  }, [servers.length]);
+
+  useEffect(() => {
+    loadServers();
+    const interval = setInterval(() => {
+      loadServers();
+      reloadEvents();
+    }, 45000);
+    return () => clearInterval(interval);
+  }, [loadServers, reloadEvents]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -84,9 +111,12 @@ export default function ServerList({
     }
   };
 
-  // Votar por un servidor
+  // Loop C: Votar por un servidor (Mutación optimista con rollback)
   const handleVote = async (e, serverId) => {
     if (e) e.stopPropagation();
+    const prevServers = [...servers];
+    const prevModal = activeModalServer ? { ...activeModalServer } : null;
+
     // Actualización optimista
     setServers((prev) =>
       prev.map((s) => (s.id === serverId ? { ...s, votes: (s.votes || 0) + 1 } : s))
@@ -95,7 +125,15 @@ export default function ServerList({
       setActiveModalServer((prev) => ({ ...prev, votes: (prev.votes || 0) + 1 }));
     }
     showToast('¡Voto registrado! +1 Reputación');
-    await upvoteServerEntry(serverId);
+
+    try {
+      await upvoteServerEntry(serverId);
+    } catch (err) {
+      // Revertir estado si D1 rechaza
+      setServers(prevServers);
+      if (prevModal) setActiveModalServer(prevModal);
+      showToast(err.message || 'Fallo al confirmar el voto en la base de datos.');
+    }
   };
 
   // Crear o actualizar servidor (CRUD)
@@ -187,9 +225,9 @@ export default function ServerList({
     setShowPublishEventModal(true);
   };
 
-  const handleCreateEvent = (eventData) => {
+  const handleCreateEvent = async (eventData) => {
     try {
-      const res = createServerEvent(eventData, currentUser, userServers);
+      const res = await createServerEvent(eventData, currentUser, userServers);
       setEventsList(res.allEvents);
       showToast('¡Anuncio de evento emitido con éxito en el tablón militar!');
     } catch (err) {
@@ -197,9 +235,9 @@ export default function ServerList({
     }
   };
 
-  const handleDeleteEvent = (eventId) => {
+  const handleDeleteEvent = async (eventId) => {
     try {
-      const res = deleteServerEvent(eventId, currentUser);
+      const res = await deleteServerEvent(eventId, currentUser);
       setEventsList(res.allEvents);
       showToast('Anuncio retirado del tablón militar.');
     } catch (err) {
@@ -299,6 +337,52 @@ export default function ServerList({
           </div>
         </div>
       </div>
+
+      {/* ALERTA VISUAL DE INTERFERENCIA D1 */}
+      {errorState && (
+        <div
+          className="pz-mission-panel"
+          style={{
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.08)',
+            padding: '16px 20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <HazardIcon size={20} color="#ef4444" />
+            <div>
+              <div style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 900, color: '#ef4444', letterSpacing: '0.05em' }}>
+                ALERTA RADAR // INTERFERENCIA DE ENLACE CON CLOUDFLARE D1
+              </div>
+              <div style={{ fontSize: 12, color: '#fca5a5', fontFamily: 'monospace', marginTop: 2 }}>
+                {errorState}
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => loadServers(true)}
+            disabled={isRetrying}
+            className="pz-btn-secondary"
+            style={{
+              borderColor: '#ef4444',
+              color: '#ef4444',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '6px 14px',
+              cursor: isRetrying ? 'not-allowed' : 'pointer',
+            }}
+          >
+            <RadioAntennaIcon size={14} color="currentColor" />
+            <span>{isRetrying ? 'SINTONIZANDO...' : 'REINTENTAR SINTONIZACIÓN'}</span>
+          </button>
+        </div>
+      )}
 
       {/* CARTEL DE ANUNCIOS DE EVENTOS Y DIRECTIVAS GLOBALES (CARRUSEL SLIDER) */}
       <div className="pz-mission-panel" style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>

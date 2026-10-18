@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { initialForumThreads } from '../data/forumThreadsDatabase';
 import CommentThreadItem from './CommentThreadItem';
 import {
@@ -31,6 +31,30 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
   const [newDay, setNewDay] = useState('Día 1');
   const [newTag, setNewTag] = useState('TÁCTICA B42');
   const [publishSuccess, setPublishSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [forumError, setForumError] = useState(null);
+
+  // Carga inicial y revalidación desde Cloudflare D1
+  useEffect(() => {
+    let isMounted = true;
+    const fetchForumThreads = async () => {
+      try {
+        const res = await fetch('/api/forum', { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.data) && isMounted) {
+            setThreads(json.data);
+          }
+        }
+      } catch (err) {
+        console.warn('Alerta: Error sincronizando foro con Cloudflare D1:', err);
+      }
+    };
+    fetchForumThreads();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const activeThread = threads.find((t) => t.id === activeThreadId) || null;
 
@@ -50,14 +74,36 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
     );
   });
 
-  // Voto en Hilo Principal
-  const handleVoteThread = (threadId, e) => {
+  // Voto en Hilo Principal (Optimista con persistencia en D1)
+  const handleVoteThread = async (threadId, e) => {
     if (e) e.stopPropagation();
     if (userThreadVotes[threadId]) return;
+
     setUserThreadVotes((prev) => ({ ...prev, [threadId]: true }));
     setThreads((prev) =>
       prev.map((t) => (t.id === threadId ? { ...t, upvotes: t.upvotes + 1 } : t))
     );
+
+    try {
+      const res = await fetch('/api/forum', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'vote', threadId }),
+      });
+      if (!res.ok) {
+        throw new Error('Voto rechazado en D1');
+      }
+    } catch (err) {
+      console.warn('Revertiendo voto de hilo:', err);
+      setUserThreadVotes((prev) => {
+        const clone = { ...prev };
+        delete clone[threadId];
+        return clone;
+      });
+      setThreads((prev) =>
+        prev.map((t) => (t.id === threadId ? { ...t, upvotes: Math.max(0, t.upvotes - 1) } : t))
+      );
+    }
   };
 
   // Voto en Comentario Individual (Búsqueda recursiva en el árbol)
@@ -88,7 +134,7 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
   };
 
   // Agregar Comentario Raíz al Hilo
-  const handleAddRootComment = (e) => {
+  const handleAddRootComment = async (e) => {
     e.preventDefault();
     if (!newRootComment.trim() || !activeThreadId) return;
 
@@ -111,6 +157,7 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
       replies: [],
     };
 
+    // Actualización local
     setThreads((prev) =>
       prev.map((t) => {
         if (t.id === activeThreadId) {
@@ -124,11 +171,27 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
       })
     );
 
+    const savedCommentText = newRootComment;
     setNewRootComment('');
+
+    // Persistencia en D1
+    try {
+      await fetch('/api/forum', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'comment',
+          threadId: activeThreadId,
+          comment: newCommentItem,
+        }),
+      });
+    } catch (err) {
+      console.warn('Advertencia guardando comentario en D1:', err);
+    }
   };
 
   // Agregar Réplica a un Comentario Existente
-  const handleAddReply = (targetCommentId, replyText) => {
+  const handleAddReply = async (targetCommentId, replyText) => {
     if (!replyText.trim() || !activeThreadId) return;
 
     const authorProfile = {
@@ -177,45 +240,68 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
         return t;
       })
     );
+
+    // Persistencia en D1
+    try {
+      await fetch('/api/forum', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'comment',
+          threadId: activeThreadId,
+          comment: newReplyItem,
+        }),
+      });
+    } catch (err) {
+      console.warn('Advertencia guardando respuesta en D1:', err);
+    }
   };
 
-  // Crear Nuevo Hilo Principal
-  const handleCreateThread = (e) => {
+  // Crear Nuevo Hilo Principal (D1 con verificación de auth)
+  const handleCreateThread = async (e) => {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim()) return;
 
-    const authorProfile = {
-      id: currentUser?.id ? `usr-${currentUser.id}` : `usr-anon-${Date.now()}`,
-      name: currentUser?.name || 'Superviviente_Anónimo',
-      badge: currentUser?.role === 'admin' ? '[ADMIN]' : '[SUPERVIVIENTE]',
-      color: '#10b981',
-      isVerified: Boolean(currentUser),
-    };
+    if (!currentUser) {
+      onOpenLoginModal();
+      return;
+    }
 
-    const newThreadItem = {
-      id: `post-${Date.now()}`,
-      title: newTitle.trim(),
-      city: newCity.trim() || 'Sector Knox',
-      location: `${newCity.trim() || 'Sector Knox'}`,
-      day: newDay.trim() || 'Día 1',
-      date: `${newDay.trim() || 'Día 1'} in-game`,
-      author: authorProfile,
-      tag: newTag,
-      content: newContent.trim(),
-      takeaway: newTakeaway.trim() || 'Mantén siempre una vía de escape y evalúa el riesgo antes de saquear.',
-      upvotes: 1,
-      createdAt: 'Justo ahora',
-      commentsCount: 0,
-      comments: [],
-    };
+    setIsSubmitting(true);
+    setForumError(null);
 
-    setThreads([newThreadItem, ...threads]);
-    setNewTitle('');
-    setNewContent('');
-    setNewTakeaway('');
-    setIsPostingOpen(false);
-    setPublishSuccess(true);
-    setTimeout(() => setPublishSuccess(false), 4000);
+    try {
+      const res = await fetch('/api/forum', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newTitle.trim(),
+          content: newContent.trim(),
+          takeaway: newTakeaway.trim(),
+          city: newCity.trim() || 'Rosewood',
+          day: newDay.trim() || 'Día 1',
+          tag: newTag,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Error al publicar reporte en el foro de Knox.');
+      }
+
+      setThreads((prev) => [json.data, ...prev]);
+      setNewTitle('');
+      setNewContent('');
+      setNewTakeaway('');
+      setIsPostingOpen(false);
+      setPublishSuccess(true);
+      setTimeout(() => setPublishSuccess(false), 4000);
+    } catch (err) {
+      console.error('Error publicando hilo:', err);
+      setForumError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getTagClass = (tag) => {
@@ -582,12 +668,19 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
                   />
                 </div>
 
+                {forumError && (
+                  <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: 4, color: '#f87171', fontSize: 12 }}>
+                    ⚠️ {forumError}
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
                   <button
                     type="button"
                     onClick={() => setIsPostingOpen(false)}
                     className="pz-btn-secondary"
                     style={{ minHeight: 38, padding: '8px 16px', fontSize: 12 }}
+                    disabled={isSubmitting}
                   >
                     Cancelar
                   </button>
@@ -595,8 +688,9 @@ export default function CommunityForumView({ currentUser = null, onOpenLoginModa
                     type="submit"
                     className="pz-btn-primary"
                     style={{ minHeight: 38, padding: '8px 18px', fontSize: 12 }}
+                    disabled={isSubmitting}
                   >
-                    <span>Publicar Hilo</span>
+                    <span>{isSubmitting ? 'Transmitiendo...' : 'Publicar Hilo'}</span>
                   </button>
                 </div>
               </form>
