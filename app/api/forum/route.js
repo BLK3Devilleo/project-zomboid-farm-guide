@@ -4,6 +4,7 @@ import { getSessionUser } from '../../lib/session';
 import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
 import { sanitizeText, isBotHoneypotTriggered } from '../../lib/sanitizer';
 import { ensureProductionTables } from '../../lib/dbBootstrap';
+import { broadcastLog } from '../../lib/sseLogger';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -222,6 +223,12 @@ export async function POST(request) {
       createdAt: 'Ahora mismo',
     };
 
+    broadcastLog('info', `[FORUM-THREAD-CREATE] Hilo publicado: "${cleanTitle}" por ${sessionUser.email}`, {
+      threadId,
+      author: sessionUser.email,
+      city: cleanCity,
+    });
+
     return NextResponse.json({ success: true, data: created });
   } catch (error) {
     console.error('Error insertando hilo en D1:', error);
@@ -294,6 +301,12 @@ export async function PATCH(request) {
 
       const rows = await queryD1('SELECT upvotes FROM forum_threads WHERE id = ? LIMIT 1', [body.threadId]);
       const currentVotes = rows && rows.length > 0 ? rows[0].upvotes : 0;
+
+      broadcastLog('info', `[FORUM-VOTE] ${!alreadyVoted ? 'Voto añadido (+1)' : 'Voto retirado (-1)'} en hilo ${body.threadId} por ${sessionUser.email}`, {
+        threadId: body.threadId,
+        user: sessionUser.email,
+        upvotes: currentVotes,
+      });
 
       return NextResponse.json({
         success: true,
@@ -369,6 +382,12 @@ export async function PATCH(request) {
         upvotes: 1,
         replies: [],
       };
+
+      broadcastLog('info', `[FORUM-COMMENT] Comentario añadido en hilo ${body.threadId} por ${authorName}`, {
+        threadId: body.threadId,
+        author: authorName,
+        commentId,
+      });
 
       return NextResponse.json({
         success: true,

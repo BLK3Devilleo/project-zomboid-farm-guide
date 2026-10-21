@@ -5,6 +5,7 @@ import { checkRateLimit, getClientIp } from '../../lib/rateLimit';
 import { getSessionUser, hasRequiredRole } from '../../lib/session';
 import { ensureProductionTables } from '../../lib/dbBootstrap';
 import { sanitizeText, isBotHoneypotTriggered } from '../../lib/sanitizer';
+import { broadcastLog } from '../../lib/sseLogger';
 
 // GET: Listar servidores ordenados por reputación (votos)
 export async function GET(request) {
@@ -171,6 +172,13 @@ export async function POST(request) {
       has_voted: false,
     };
 
+    broadcastLog('info', `[SERVER-CREATE] Servidor registrado: "${safeName}" (${validData.ip}:${validData.port}) por ${sessionUser.email}`, {
+      serverId: newServerId,
+      owner: sessionUser.email,
+      ip: validData.ip,
+      port: validData.port,
+    });
+
     return NextResponse.json({ success: true, data: createdServer });
   } catch (error) {
     console.error('Error insertando servidor en D1:', error);
@@ -254,6 +262,12 @@ export async function PATCH(request) {
       newVotesCount = updatedRow[0].votes;
     }
 
+    broadcastLog('info', `[SERVER-VOTE] ${hasVoted ? 'Voto añadido (+1)' : 'Voto retirado (-1)'} en servidor ${id} por ${sessionUser.email} (Total: ${newVotesCount})`, {
+      serverId: id,
+      user: sessionUser.email,
+      votes: newVotesCount,
+    });
+
     return NextResponse.json({
       success: true,
       id,
@@ -301,6 +315,11 @@ export async function DELETE(request) {
     }
 
     await queryD1('DELETE FROM servers WHERE id = ?', [serverId]);
+
+    broadcastLog('warn', `[SERVER-DELETE] Servidor "${server.name}" (${serverId}) eliminado por ${sessionUser.email} (Rol: ${sessionUser.role})`, {
+      serverId,
+      deletedBy: sessionUser.email,
+    });
 
     return NextResponse.json({ success: true, message: 'Servidor eliminado correctamente.' });
   } catch (error) {
@@ -388,6 +407,11 @@ export async function PUT(request) {
       gallery_images: validData.gallery_images || [],
       tags: validData.tags,
     };
+
+    broadcastLog('info', `[SERVER-UPDATE] Servidor "${validData.name}" (${id}) actualizado por ${sessionUser.email}`, {
+      serverId: id,
+      user: sessionUser.email,
+    });
 
     return NextResponse.json({ success: true, message: 'Servidor actualizado con éxito.', data: updatedServer });
   } catch (error) {

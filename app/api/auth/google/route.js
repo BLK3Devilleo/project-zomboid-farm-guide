@@ -3,12 +3,14 @@ import { GoogleAuthSchema } from '../../../lib/validations';
 import { checkRateLimit, getClientIp } from '../../../lib/rateLimit';
 import { queryD1 } from '../../../lib/d1Client';
 import { createSessionToken, COOKIE_SESSION_NAME } from '../../../lib/session';
+import { broadcastLog } from '../../../lib/sseLogger';
 
 export async function POST(request) {
   // 1. Rate Limiting: Máximo 10 intentos por minuto por IP
   const clientIp = getClientIp(request);
   const rate = checkRateLimit(`auth:google:${clientIp}`, 10, 60 * 1000);
   if (!rate.allowed) {
+    broadcastLog('warn', `[AUTH-RATELIMIT] Demasiados intentos de acceso desde IP: ${clientIp}`);
     return NextResponse.json(
       {
         success: false,
@@ -26,6 +28,7 @@ export async function POST(request) {
     const body = await request.json().catch(() => ({}));
     const parseResult = GoogleAuthSchema.safeParse(body);
     if (!parseResult.success) {
+      broadcastLog('warn', `[AUTH-INVALID] Payload de autenticación inválido desde ${clientIp}`);
       return NextResponse.json(
         {
           success: false,
@@ -44,6 +47,7 @@ export async function POST(request) {
     );
 
     if (!googleVerifyRes.ok) {
+      broadcastLog('error', `[AUTH-FAILED] Token de Google rechazado o inválido para IP: ${clientIp}`);
       return NextResponse.json(
         { success: false, error: 'Token de Google no válido o expirado.' },
         { status: 401 }
@@ -107,6 +111,12 @@ export async function POST(request) {
     // 6. Generar JWT de sesión seguro
     const sessionToken = await createSessionToken(userProfile);
 
+    broadcastLog('auth', `[AUTH-LOGIN] Inicio de sesión exitoso: ${email} (Rol: ${userRole}, Nombre: ${name || 'Superviviente'})`, {
+      email,
+      role: userRole,
+      ip: clientIp,
+    });
+
     // 7. Responder con Cookie HttpOnly segura
     const response = NextResponse.json({
       success: true,
@@ -125,6 +135,7 @@ export async function POST(request) {
 
     return response;
   } catch (error) {
+    broadcastLog('error', `[AUTH-ERROR] Error procesando login de Google: ${error.message}`);
     console.error('Error procesando login de Google:', error);
     return NextResponse.json(
       { success: false, error: 'Fallo interno al procesar inicio de sesión.' },

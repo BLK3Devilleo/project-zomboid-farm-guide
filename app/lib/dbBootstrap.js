@@ -1,4 +1,5 @@
 import { queryD1 } from './d1Client';
+import { broadcastLog } from './sseLogger';
 
 let isBootstrapped = false;
 
@@ -148,6 +149,7 @@ export async function ensureProductionTables() {
     await queryD1(`CREATE INDEX IF NOT EXISTS idx_forum_comments_thread ON forum_comments(thread_id)`);
 
     isBootstrapped = true;
+    broadcastLog('info', '[DB-BOOTSTRAP] Esquema e índices de Cloudflare D1 verificados y sincronizados.');
   } catch (err) {
     console.warn('Advertencia en ensureProductionTables (D1 Bootstrap):', err.message);
   }

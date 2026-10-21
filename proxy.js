@@ -46,7 +46,14 @@ export async function proxy(request) {
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     '127.0.0.1';
 
+  // Registrar peticiones HTTP entrantes (omitiendo stream continuo SSE para no saturar)
+  if (pathname !== '/api/logs/stream') {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [KNOX-HTTP] ${method} ${pathname} from ${ip}`);
+  }
+
   if (pathname.startsWith('/api') && pathname !== '/api/logs/stream' && isRateLimited(ip)) {
+    console.warn(`[${new Date().toISOString()}] [KNOX-SECURITY] Rate limit excedido para IP ${ip} en ${pathname}`);
     return new NextResponse(
       JSON.stringify({
         success: false,
@@ -76,6 +83,7 @@ export async function proxy(request) {
 
         const isMatch = trustedHosts.some((h) => h === originHost || originHost.endsWith(h));
         if (!isMatch) {
+          console.warn(`[${new Date().toISOString()}] [KNOX-CSRF] Origen no autorizado: ${origin} (Host: ${host}, Forwarded: ${forwardedHost}) en ${method} ${pathname}`);
           return new NextResponse(
             JSON.stringify({
               success: false,

@@ -4,6 +4,7 @@ import { getSessionUser } from '../../../../lib/session';
 import { checkRateLimit, getClientIp } from '../../../../lib/rateLimit';
 import { sanitizeText, isBotHoneypotTriggered } from '../../../../lib/sanitizer';
 import { ensureProductionTables } from '../../../../lib/dbBootstrap';
+import { broadcastLog } from '../../../../lib/sseLogger';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -177,6 +178,12 @@ export async function POST(request, { params }) {
     const total = reviews.length;
     const avgRating = total > 0 ? (reviews.reduce((acc, r) => acc + (Number(r.rating) || 2), 0) / total).toFixed(1) : 0;
 
+    broadcastLog('info', `[SERVER-REVIEW] Reseña ${existing && existing.length > 0 ? 'actualizada' : 'publicada'} en servidor ${serverId} por ${sessionUser.email} (Rating: ${rating}★)`, {
+      serverId,
+      user: sessionUser.email,
+      rating,
+    });
+
     return NextResponse.json({
       success: true,
       data: {
@@ -237,6 +244,12 @@ export async function DELETE(request, { params }) {
     }
 
     await queryD1('DELETE FROM server_reviews WHERE id = ?', [reviewId]);
+
+    broadcastLog('warn', `[SERVER-REVIEW-DELETE] Reseña ${reviewId} en servidor ${serverId} eliminada por ${sessionUser.email}`, {
+      serverId,
+      reviewId,
+      deletedBy: sessionUser.email,
+    });
 
     const reviews = await fetchSafeReviews(serverId);
     const total = reviews.length;

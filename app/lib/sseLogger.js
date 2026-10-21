@@ -36,6 +36,8 @@ ensureConsolePatch();
 
 /**
  * Emite un log en el bus de streaming SSE y lo guarda en el búfer circular.
+ * Además, lo transmite directamente a stdout/stderr de Node.js para que Dokploy y Docker
+ * lo muestren en la consola del contenedor en tiempo real.
  * @param {'info'|'warn'|'error'|'d1'|'auth'} level 
  * @param {string} message 
  * @param {object} [details] 
@@ -60,6 +62,28 @@ export function broadcastLog(level, message, details = {}) {
     } catch (err) {
       subscribers.delete(listener);
     }
+  }
+
+  // Si proviene del interceptor de console.error o console.warn, el método original ya lo emitió
+  // Para todas las demás emisiones (info, auth, d1, o errores directos), escribir a stdout/stderr
+  if (details?.source !== 'console.error' && details?.source !== 'console.warn') {
+    const detailsStr = details && Object.keys(details).length > 0 ? ` ${JSON.stringify(details)}` : '';
+    const formatted = `[${entry.timestamp}] [KNOX-${entry.level.toUpperCase()}] ${entry.message}${detailsStr}\n`;
+    try {
+      if (entry.level === 'error') {
+        if (typeof process !== 'undefined' && process.stderr?.write) {
+          process.stderr.write(formatted);
+        } else {
+          console.error(formatted);
+        }
+      } else {
+        if (typeof process !== 'undefined' && process.stdout?.write) {
+          process.stdout.write(formatted);
+        } else {
+          console.log(formatted);
+        }
+      }
+    } catch (e) {}
   }
 
   return entry;
