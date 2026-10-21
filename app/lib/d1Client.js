@@ -19,18 +19,19 @@ function sanitizeTelemetry(input) {
 
 /**
  * Respaldo de APIs y Circuit Breaker en Memoria para Cloudflare D1
+ * Se activa ÚNICAMENTE ante caídas reales de infraestructura (5xx, timeouts o fallos de red).
+ * Ignora por completo errores de validación, sintaxis o esquema (4xx).
  */
 const circuitState = {
   status: 'CLOSED', // 'CLOSED' | 'OPEN' | 'HALF_OPEN'
   failureCount: 0,
   lastFailureTime: 0,
-  threshold: 3,
-  resetTimeoutMs: 15 * 1000, // 15 segundos para intentar recuperación
+  threshold: 5,
+  resetTimeoutMs: 15 * 1000, // 15 segundos para reintentar recuperación
 };
 
 // Caché SWR (Stale-While-Revalidate) de respaldo en memoria
 const swrCache = new Map();
-const SWR_TTL_MS = 10 * 60 * 1000; // 10 minutos de persistencia en memoria
 
 function getCacheKey(sql, params) {
   return `${sql.trim().toLowerCase()}::${JSON.stringify(params || [])}`;
@@ -52,7 +53,7 @@ function invalidateTableCache(sql) {
 
 /**
  * Ejecuta una consulta SQL parametrizada hacia Cloudflare D1 mediante la API REST.
- * Incorpora Circuit Breaker, Sanitización, Fallback SWR en memoria y tolerancia a fallos.
+ * Incorpora Circuit Breaker de infraestructura, Sanitización y Fallback SWR en memoria.
  * 
  * @param {string} sql Consulta SQL con marcadores de posición (?)
  * @param {Array<any>} params Parámetros vinculados
@@ -81,17 +82,16 @@ export async function queryD1(sql, params = []) {
   const cleanSql = sanitizeTelemetry(sql);
   const isSelect = cleanSql.toLowerCase().startsWith('select');
   const cacheKey = getCacheKey(sql, params);
-
-  // 1. Verificación de Circuit Breaker
   const now = Date.now();
+
+  // 1. Verificación de Circuit Breaker (Solo si Cloudflare sufrió caída de infraestructura)
   if (circuitState.status === 'OPEN') {
     if (now - circuitState.lastFailureTime > circuitState.resetTimeoutMs) {
       circuitState.status = 'HALF_OPEN';
       broadcastLog('warn', '[CIRCUIT-BREAKER] Transición a HALF_OPEN. Reintentando enlace con Cloudflare D1...');
     } else if (isSelect && swrCache.has(cacheKey)) {
-      // Servir caché SWR de respaldo ante corte activo
       const cached = swrCache.get(cacheKey);
-      broadcastLog('warn', `[CIRCUIT-BREAKER SWR] D1 degradado. Sirviendo instantánea en caché (${cached.data.length} filas).`);
+      broadcastLog('warn', `[CIRCUIT-BREAKER SWR] D1 bajo degradación. Sirviendo snapshot en memoria (${cached.data.length} filas).`);
       return cached.data;
     }
   }
@@ -120,13 +120,18 @@ export async function queryD1(sql, params = []) {
     if (!response.ok) {
       const errorText = await response.text();
       const sanitizedError = sanitizeTelemetry(errorText);
-      throw new Error(`D1 HTTP Error ${response.status}: ${sanitizedError}`);
+      const isServerError = response.status >= 500;
+      const err = new Error(`D1 HTTP Error ${response.status}: ${sanitizedError}`);
+      err.isServerError = isServerError;
+      throw err;
     }
 
     const data = await response.json();
     if (!data.success) {
       const rawErrMsg = data.errors?.[0]?.message || 'D1 query failed';
-      throw new Error(sanitizeTelemetry(rawErrMsg));
+      const err = new Error(sanitizeTelemetry(rawErrMsg));
+      err.isServerError = false; // Error lógico/esquema de SQLite, no caída de servidor
+      throw err;
     }
 
     const results = data.result?.[0]?.results || [];
@@ -148,18 +153,26 @@ export async function queryD1(sql, params = []) {
     broadcastLog('info', `[D1-OK] ${results.length} filas retornadas.`);
     return results;
   } catch (error) {
-    // Registrar fallo en Circuit Breaker
-    circuitState.failureCount += 1;
-    circuitState.lastFailureTime = now;
-    if (circuitState.failureCount >= circuitState.threshold) {
-      circuitState.status = 'OPEN';
-      broadcastLog('error', `[CIRCUIT-BREAKER] Umbral de fallos alcanzado. Circuito activado (OPEN).`);
+    // Solo computar fallos de Circuit Breaker ante problemas reales de infraestructura
+    const isInfrastructureDrop =
+      error.isServerError ||
+      error.name === 'AbortError' ||
+      error.message?.includes('fetch failed') ||
+      error.message?.includes('network');
+
+    if (isInfrastructureDrop) {
+      circuitState.failureCount += 1;
+      circuitState.lastFailureTime = now;
+      if (circuitState.failureCount >= circuitState.threshold) {
+        circuitState.status = 'OPEN';
+        broadcastLog('error', `[CIRCUIT-BREAKER] Umbral de caídas de red alcanzado. Circuito activado (OPEN).`);
+      }
     }
 
     // Si es lectura (SELECT) y tenemos snapshot de respaldo SWR, responder con él
     if (isSelect && swrCache.has(cacheKey)) {
       const cached = swrCache.get(cacheKey);
-      broadcastLog('warn', `[D1-FALLBACK SWR] Error de enlace D1 (${error.message}). Retornando respaldo en memoria (${cached.data.length} filas).`);
+      broadcastLog('warn', `[D1-FALLBACK SWR] D1 no respondió (${error.message}). Retornando respaldo en memoria (${cached.data.length} filas).`);
       return cached.data;
     }
 

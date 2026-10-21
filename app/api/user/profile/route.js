@@ -3,6 +3,10 @@ import { getSessionUser } from '../../../lib/session';
 import { queryD1 } from '../../../lib/d1Client';
 import { UpdateProfileSchema, getZodErrorMessage } from '../../../lib/validations';
 import { checkRateLimit, getClientIp } from '../../../lib/rateLimit';
+import { ensureProductionTables } from '../../../lib/dbBootstrap';
+
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // GET: Obtener perfil completo del usuario actual, incluyendo XP y progreso cloud
 export async function GET(request) {
@@ -12,6 +16,8 @@ export async function GET(request) {
   }
 
   try {
+    await ensureProductionTables();
+
     let results = null;
     try {
       results = await queryD1(
@@ -78,6 +84,8 @@ export async function PUT(request) {
   }
 
   try {
+    await ensureProductionTables();
+
     const rawBody = await request.json().catch(() => ({}));
     const parseResult = UpdateProfileSchema.safeParse(rawBody);
 

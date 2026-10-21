@@ -2,15 +2,49 @@ import { queryD1 } from './d1Client';
 
 let isBootstrapped = false;
 
+async function getTableColumns(tableName) {
+  try {
+    const rows = await queryD1(`PRAGMA table_info(${tableName})`);
+    if (Array.isArray(rows)) {
+      return new Set(rows.map((r) => r.name.toLowerCase()));
+    }
+  } catch (err) {
+    // Si la tabla aún no existe, table_info retornará vacío
+  }
+  return new Set();
+}
+
 /**
  * Inicializador DDL Idempotente y Migrador en Caliente para Cloudflare D1.
- * Se ejecuta de forma no bloqueante una sola vez por ciclo de vida del servidor/contenedor.
+ * Inspecciona el esquema existente antes de alterar tablas para garantizar 0 errores de duplicidad.
  */
 export async function ensureProductionTables() {
   if (isBootstrapped) return;
 
   try {
-    // 1. Tabla de Votos en Servidores
+    // 1. Tabla de Usuarios y Progresión
+    await queryD1(`
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        picture TEXT,
+        role TEXT NOT NULL DEFAULT 'usuario' CHECK (role IN ('super_admin', 'admin', 'moderador', 'usuario')),
+        nickname TEXT,
+        profession TEXT DEFAULT 'Desempleado',
+        playstyle TEXT DEFAULT 'PvE',
+        discord_tag TEXT,
+        bio TEXT,
+        avatar_pz TEXT DEFAULT 'spiffo_combat.png',
+        xp INTEGER NOT NULL DEFAULT 0,
+        completed_milestones TEXT DEFAULT '[]',
+        active_route TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 2. Tabla de Votos en Servidores
     await queryD1(`
       CREATE TABLE IF NOT EXISTS server_votes (
         user_id TEXT NOT NULL,
@@ -21,7 +55,7 @@ export async function ensureProductionTables() {
       )
     `);
 
-    // 2. Tabla de Reseñas de Servidores (3 Estrellas)
+    // 3. Tabla de Reseñas de Servidores (3 Estrellas)
     await queryD1(`
       CREATE TABLE IF NOT EXISTS server_reviews (
         id TEXT PRIMARY KEY,
@@ -39,7 +73,7 @@ export async function ensureProductionTables() {
       )
     `);
 
-    // 3. Tabla de Comentarios Normalizados del Foro
+    // 4. Tabla de Comentarios Normalizados del Foro
     await queryD1(`
       CREATE TABLE IF NOT EXISTS forum_comments (
         id TEXT PRIMARY KEY,
@@ -56,7 +90,7 @@ export async function ensureProductionTables() {
       )
     `);
 
-    // 4. Tabla de Votos Únicos en el Foro
+    // 5. Tabla de Votos Únicos en el Foro
     await queryD1(`
       CREATE TABLE IF NOT EXISTS forum_votes (
         user_id TEXT NOT NULL,
@@ -68,35 +102,31 @@ export async function ensureProductionTables() {
       )
     `);
 
-    // 5. Migraciones en caliente (Auto-reparación de columnas faltantes en tablas existentes)
-    try {
-      await queryD1("ALTER TABLE server_reviews ADD COLUMN user_role TEXT DEFAULT 'usuario'");
-    } catch (e) {
-      // Ignorar si la columna ya existe
+    // 6. Migraciones condicionales con inspección previa (Cero errores de duplicidad)
+    const userCols = await getTableColumns('users');
+    if (userCols.size > 0) {
+      if (!userCols.has('xp')) await queryD1("ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0");
+      if (!userCols.has('completed_milestones')) await queryD1("ALTER TABLE users ADD COLUMN completed_milestones TEXT DEFAULT '[]'");
+      if (!userCols.has('active_route')) await queryD1("ALTER TABLE users ADD COLUMN active_route TEXT");
+      if (!userCols.has('nickname')) await queryD1("ALTER TABLE users ADD COLUMN nickname TEXT");
+      if (!userCols.has('profession')) await queryD1("ALTER TABLE users ADD COLUMN profession TEXT DEFAULT 'Desempleado'");
+      if (!userCols.has('playstyle')) await queryD1("ALTER TABLE users ADD COLUMN playstyle TEXT DEFAULT 'PvE'");
+      if (!userCols.has('discord_tag')) await queryD1("ALTER TABLE users ADD COLUMN discord_tag TEXT");
+      if (!userCols.has('bio')) await queryD1("ALTER TABLE users ADD COLUMN bio TEXT");
+      if (!userCols.has('avatar_pz')) await queryD1("ALTER TABLE users ADD COLUMN avatar_pz TEXT DEFAULT 'spiffo_combat.png'");
     }
 
-    try {
-      await queryD1("ALTER TABLE server_reviews ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
-    } catch (e) {
-      // Ignorar si la columna ya existe
+    const reviewCols = await getTableColumns('server_reviews');
+    if (reviewCols.size > 0) {
+      if (!reviewCols.has('user_role')) await queryD1("ALTER TABLE server_reviews ADD COLUMN user_role TEXT DEFAULT 'usuario'");
+      if (!reviewCols.has('updated_at')) await queryD1("ALTER TABLE server_reviews ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
     }
 
-    try {
-      await queryD1("ALTER TABLE forum_votes ADD COLUMN thread_id TEXT");
-    } catch (e) {
-      // Ignorar si la columna ya existe
-    }
-
-    try {
-      await queryD1("ALTER TABLE forum_votes ADD COLUMN target_id TEXT");
-    } catch (e) {
-      // Ignorar si la columna ya existe
-    }
-
-    try {
-      await queryD1("ALTER TABLE forum_votes ADD COLUMN target_type TEXT DEFAULT 'thread'");
-    } catch (e) {
-      // Ignorar si la columna ya existe
+    const voteCols = await getTableColumns('forum_votes');
+    if (voteCols.size > 0) {
+      if (!voteCols.has('thread_id')) await queryD1("ALTER TABLE forum_votes ADD COLUMN thread_id TEXT");
+      if (!voteCols.has('target_id')) await queryD1("ALTER TABLE forum_votes ADD COLUMN target_id TEXT");
+      if (!voteCols.has('target_type')) await queryD1("ALTER TABLE forum_votes ADD COLUMN target_type TEXT DEFAULT 'thread'");
     }
 
     // Sincronizar thread_id <-> target_id para compatibilidad total de votos
@@ -113,7 +143,7 @@ export async function ensureProductionTables() {
       await queryD1("UPDATE servers SET banner_url = '/spiffo/spiffo_character.png' WHERE banner_url LIKE '/uploads/%'");
     } catch (e) {}
 
-    // 6. Índices de aceleración
+    // 7. Índices de aceleración
     await queryD1(`CREATE INDEX IF NOT EXISTS idx_server_reviews_server ON server_reviews(server_id)`);
     await queryD1(`CREATE INDEX IF NOT EXISTS idx_forum_comments_thread ON forum_comments(thread_id)`);
 

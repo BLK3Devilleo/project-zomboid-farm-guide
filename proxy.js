@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// Secret key for verifying JWT in Edge middleware
+// Secret key for verifying JWT in Edge proxy
 function getSecretKey() {
   const secret = process.env.AUTH_JWT_SECRET;
   if (!secret) return null;
@@ -11,7 +11,7 @@ function getSecretKey() {
 // In-memory sliding window rate limiter for edge per-IP protection
 const ipRequests = new Map();
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 180; // 180 requests per minute per IP
+const MAX_REQUESTS_PER_WINDOW = 240; // 240 requests per minute per IP (generous for SPA telemetry)
 
 function isRateLimited(ip) {
   const now = Date.now();
@@ -40,32 +40,42 @@ export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
-  // 1. Per-IP Edge Rate Limiting (Skip static files)
+  // 1. Per-IP Edge Rate Limiting (Solo para endpoints /api/*, excluyendo stream de logs)
   const ip =
     request.headers.get('cf-connecting-ip') ||
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     '127.0.0.1';
 
-  if (pathname.startsWith('/api') && isRateLimited(ip)) {
+  if (pathname.startsWith('/api') && pathname !== '/api/logs/stream' && isRateLimited(ip)) {
     return new NextResponse(
       JSON.stringify({
         success: false,
-        error: 'ALERTA PERIMETRAL: Límite de tráfico excedido. Espera un momento antes de reintentar.',
+        error: 'ALERTA PERIMETRAL: Límite de peticiones por minuto excedido. Espera un momento antes de reintentar.',
       }),
       { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '60' } }
     );
   }
 
-  // 2. Strict Anti-CSRF Defense for Mutation Methods (POST, PUT, PATCH, DELETE)
+  // 2. Strict Anti-CSRF Defense compatible con Proxies Inversos (Dokploy / Traefik)
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && pathname.startsWith('/api')) {
     const origin = request.headers.get('origin');
     const host = request.headers.get('host');
+    const forwardedHost = request.headers.get('x-forwarded-host');
 
-    // Skip CSRF check for Google OAuth callback / credential exchange
-    if (origin && host && pathname !== '/api/auth/google') {
+    // Omitir verificación para login inicial con Google OAuth
+    if (origin && pathname !== '/api/auth/google') {
       try {
         const originHost = new URL(origin).host;
-        if (originHost !== host) {
+        const trustedHosts = [
+          host,
+          forwardedHost,
+          'pzguia.filocentraldemando.site',
+          'localhost:3000',
+          '127.0.0.1:3000',
+        ].filter(Boolean);
+
+        const isMatch = trustedHosts.some((h) => h === originHost || originHost.endsWith(h));
+        if (!isMatch) {
           return new NextResponse(
             JSON.stringify({
               success: false,
@@ -114,7 +124,7 @@ export async function proxy(request) {
     }
   }
 
-  // 3.2 User routes gatekeeper (/api/user/* and /api/upload)
+  // 3.2 User routes gatekeeper (/api/user/* y /api/upload)
   if (pathname.startsWith('/api/user') || pathname === '/api/upload') {
     if (!sessionCookie) {
       return new NextResponse(
@@ -124,19 +134,20 @@ export async function proxy(request) {
     }
   }
 
-  // 4. Inyección de Cabeceras Militares de Ciberseguridad (Security Headers Engine)
+  // 4. Inyección de Cabeceras Militares de Ciberseguridad (Permite SSE, Chunks y Navegación SPA)
   const response = NextResponse.next();
 
-  // Content-Security-Policy (CSP)
+  // Content-Security-Policy optimizada para Next.js 16 y SSE en vivo
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://scripts.clarity.ms https://*.clarity.ms;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-    img-src 'self' data: blob: https://pub-73cf5761b1284ebd8f90a8557c6b2b54.r2.dev https://lh3.googleusercontent.com https://*.googleusercontent.com https://*.clarity.ms https://*.bing.com;
+    img-src 'self' data: blob: https:;
     font-src 'self' data: https://fonts.gstatic.com;
-    connect-src 'self' https://accounts.google.com https://www.google-analytics.com https://*.clarity.ms https://*.r2.cloudflarestorage.com;
+    connect-src 'self' https: wss: data: blob:;
+    worker-src 'self' blob:;
     frame-src 'self' https://accounts.google.com;
-    frame-ancestors 'none';
+    frame-ancestors 'self';
     object-src 'none';
     base-uri 'self';
     form-action 'self';
@@ -145,7 +156,6 @@ export async function proxy(request) {
     .trim();
 
   response.headers.set('Content-Security-Policy', cspHeader);
-  response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
