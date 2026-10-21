@@ -34,10 +34,9 @@ export const CreateServerSchema = z.object({
   ip: z
     .string({ required_error: 'La dirección IP o Dominio es obligatoria' })
     .trim()
-    .min(3, 'La dirección IP o Dominio debe tener al menos 3 caracteres')
-    .max(128, 'La dirección IP o Dominio no puede exceder 128 caracteres')
+    .transform((val) => (val.includes(':') ? val.split(':')[0].trim() : val))
     .refine(
-      (val) => IP_OR_HOSTNAME_REGEX.test(val),
+      (val) => val.length >= 3 && val.length <= 128 && IP_OR_HOSTNAME_REGEX.test(val),
       { message: 'Formato de IP o Dominio inválido (ej: 142.44.215.89 o play.servidor.com)' }
     ),
   port: z.coerce
@@ -77,6 +76,13 @@ export const CreateServerSchema = z.object({
     .max(300)
     .optional()
     .or(z.literal(''))
+    .transform((val) => {
+      if (!val) return '';
+      if (!val.startsWith('http://') && !val.startsWith('https://')) {
+        return 'https://' + val;
+      }
+      return val;
+    })
     .refine(
       (val) => !val || val.startsWith('http://') || val.startsWith('https://'),
       { message: 'El enlace debe ser una URL válida que inicie con http:// o https://' }

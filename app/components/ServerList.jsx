@@ -58,11 +58,16 @@ export default function ServerList({
     reloadEvents();
   }, [reloadEvents]);
 
-  // Apertura externa para edición (desde ProfileModal)
+  // Apertura externa para edición o nuevo registro (desde ProfileModal)
   useEffect(() => {
     if (serverToEdit) {
-      setEditingServer(serverToEdit);
-      setShowAddModal(true);
+      if (serverToEdit.__isNew) {
+        setEditingServer(null);
+        setShowAddModal(true);
+      } else {
+        setEditingServer(serverToEdit);
+        setShowAddModal(true);
+      }
       onClearServerToEdit();
     }
   }, [serverToEdit, onClearServerToEdit]);
@@ -159,20 +164,25 @@ export default function ServerList({
 
   // Crear o actualizar servidor (CRUD)
   const handleSaveServer = async (serverData, serverId) => {
-    if (serverId) {
-      const updated = await updateServerEntry(serverId, serverData);
-      setServers((prev) => prev.map((s) => (s.id === serverId ? { ...s, ...updated } : s)));
-      if (activeModalServer && activeModalServer.id === serverId) {
-        setActiveModalServer((prev) => ({ ...prev, ...updated }));
+    try {
+      if (serverId) {
+        const updated = await updateServerEntry(serverId, serverData);
+        setServers((prev) => prev.map((s) => (s.id === serverId ? { ...s, ...updated } : s)));
+        if (activeModalServer && activeModalServer.id === serverId) {
+          setActiveModalServer((prev) => ({ ...prev, ...updated }));
+        }
+        showToast('¡Frecuencia militar actualizada con éxito!');
+      } else {
+        const created = await createServerEntry(serverData);
+        setServers((prev) => [created, ...prev]);
+        showToast('¡Servidor publicado con éxito en el ranking!');
       }
-      showToast('¡Frecuencia militar actualizada con éxito!');
-    } else {
-      const created = await createServerEntry(serverData);
-      setServers((prev) => [created, ...prev]);
-      showToast('¡Servidor publicado con éxito en el ranking!');
+      setEditingServer(null);
+      setShowAddModal(false);
+    } catch (err) {
+      // Re-lanzar para que AddServerModal.handleSubmit lo muestre en errorMsg
+      throw err;
     }
-    setEditingServer(null);
-    setShowAddModal(false);
   };
 
   // Eliminar servidor

@@ -111,6 +111,7 @@ export async function POST(request) {
 
     if (!parseResult.success) {
       const firstError = getZodErrorMessage(parseResult.error);
+      broadcastLog('warn', `[SERVER-VALIDATION] Falló validación de servidor para ${sessionUser.email}: ${firstError}`, { error: firstError, ip: clientIp });
       return NextResponse.json({ success: false, error: firstError }, { status: 400 });
     }
 
@@ -182,6 +183,10 @@ export async function POST(request) {
     return NextResponse.json({ success: true, data: createdServer });
   } catch (error) {
     console.error('Error insertando servidor en D1:', error);
+    broadcastLog('error', `[SERVER-ERROR] Error insertando servidor en D1: ${error.message}`, {
+      user: sessionUser?.email,
+      error: error.message,
+    });
     return NextResponse.json(
       { success: false, error: error.message || 'Fallo interno al registrar el servidor.' },
       { status: 500 }
@@ -416,6 +421,7 @@ export async function PUT(request) {
     return NextResponse.json({ success: true, message: 'Servidor actualizado con éxito.', data: updatedServer });
   } catch (error) {
     console.error('Error al actualizar servidor:', error);
+    broadcastLog('error', `[SERVER-UPDATE-ERROR] Error actualizando servidor: ${error.message}`);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

@@ -255,7 +255,7 @@ export default function SpiffoOSApp() {
         globalXp={playerData.globalXp}
         onProfileUpdated={handleProfileUpdated}
         onOpenAddServer={(serverToEdit) => {
-          setServerToEditInList(serverToEdit || null);
+          setServerToEditInList(serverToEdit || { __isNew: true });
           window.history.pushState({}, '', '/?view=servers');
           updateProgress((p) => ({ ...p, activeView: 'servers' }));
         }}

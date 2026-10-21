@@ -130,6 +130,21 @@ export async function ensureProductionTables() {
       if (!voteCols.has('target_type')) await queryD1("ALTER TABLE forum_votes ADD COLUMN target_type TEXT DEFAULT 'thread'");
     }
 
+    const serverCols = await getTableColumns('servers');
+    if (serverCols.size > 0) {
+      if (!serverCols.has('owner_id')) await queryD1("ALTER TABLE servers ADD COLUMN owner_id TEXT");
+      if (!serverCols.has('owner_email')) await queryD1("ALTER TABLE servers ADD COLUMN owner_email TEXT");
+      if (!serverCols.has('loot_tier')) await queryD1("ALTER TABLE servers ADD COLUMN loot_tier TEXT DEFAULT 'Normal'");
+      if (!serverCols.has('banner_url')) await queryD1("ALTER TABLE servers ADD COLUMN banner_url TEXT DEFAULT '/spiffo/spiffo_character.png'");
+      if (!serverCols.has('gallery_images')) await queryD1("ALTER TABLE servers ADD COLUMN gallery_images TEXT DEFAULT '[]'");
+      if (!serverCols.has('tags')) await queryD1("ALTER TABLE servers ADD COLUMN tags TEXT DEFAULT '[]'");
+      if (!serverCols.has('discord_url')) await queryD1("ALTER TABLE servers ADD COLUMN discord_url TEXT");
+      if (!serverCols.has('votes')) await queryD1("ALTER TABLE servers ADD COLUMN votes INTEGER DEFAULT 0");
+      if (!serverCols.has('is_online')) await queryD1("ALTER TABLE servers ADD COLUMN is_online INTEGER DEFAULT 1");
+      if (!serverCols.has('players_online')) await queryD1("ALTER TABLE servers ADD COLUMN players_online INTEGER DEFAULT 0");
+      if (!serverCols.has('max_players')) await queryD1("ALTER TABLE servers ADD COLUMN max_players INTEGER DEFAULT 32");
+    }
+
     // Sincronizar thread_id <-> target_id para compatibilidad total de votos
     try {
       await queryD1("UPDATE forum_votes SET thread_id = target_id WHERE (thread_id IS NULL OR thread_id = '') AND target_id IS NOT NULL");

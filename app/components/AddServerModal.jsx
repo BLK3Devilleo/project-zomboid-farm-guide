@@ -80,6 +80,15 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (name === 'ip' && typeof value === 'string' && value.includes(':')) {
+      const [rawHost, rawPort] = value.split(':');
+      setFormData((prev) => ({
+        ...prev,
+        ip: rawHost.trim(),
+        port: rawPort ? rawPort.trim() : prev.port,
+      }));
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
@@ -208,16 +217,30 @@ export default function AddServerModal({ onClose, onSubmit, editingServer = null
 
     setIsSubmitting(true);
 
+    let cleanIp = formData.ip.trim();
+    let cleanPort = parseInt(formData.port, 10) || 16261;
+    if (cleanIp.includes(':')) {
+      const parts = cleanIp.split(':');
+      cleanIp = parts[0].trim();
+      const p = parseInt(parts[1], 10);
+      if (p) cleanPort = p;
+    }
+
+    let cleanDiscord = formData.discord_url.trim();
+    if (cleanDiscord && !cleanDiscord.startsWith('http://') && !cleanDiscord.startsWith('https://')) {
+      cleanDiscord = 'https://' + cleanDiscord;
+    }
+
     const payload = {
       name: formData.name.trim(),
-      ip: formData.ip.trim(),
-      port: parseInt(formData.port, 10) || 16261,
+      ip: cleanIp,
+      port: cleanPort,
       region: formData.region,
       gamemode: formData.mode,
       loot_multiplier: formData.loot_tier,
       max_players: parseInt(formData.max_players, 10) || 32,
       description: formData.description.trim(),
-      discord_url: formData.discord_url.trim(),
+      discord_url: cleanDiscord,
       banner_url: formData.banner_url || '/spiffo/ferret_mascot.jpg',
       gallery_images: formData.gallery_images || [],
       tags: formData.tags.length > 0 ? formData.tags : ['Comunidad'],
