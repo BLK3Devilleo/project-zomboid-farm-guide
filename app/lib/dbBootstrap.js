@@ -3,7 +3,7 @@ import { queryD1 } from './d1Client';
 let isBootstrapped = false;
 
 /**
- * Inicializador DDL Idempotente de Producción para Cloudflare D1.
+ * Inicializador DDL Idempotente y Migrador en Caliente para Cloudflare D1.
  * Se ejecuta de forma no bloqueante una sola vez por ciclo de vida del servidor/contenedor.
  */
 export async function ensureProductionTables() {
@@ -29,6 +29,7 @@ export async function ensureProductionTables() {
         user_id TEXT NOT NULL,
         user_name TEXT NOT NULL,
         user_avatar TEXT,
+        user_role TEXT DEFAULT 'usuario',
         rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 3),
         comment TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -60,13 +61,59 @@ export async function ensureProductionTables() {
       CREATE TABLE IF NOT EXISTS forum_votes (
         user_id TEXT NOT NULL,
         target_id TEXT NOT NULL,
-        target_type TEXT NOT NULL CHECK (target_type IN ('thread', 'comment')),
+        thread_id TEXT,
+        target_type TEXT DEFAULT 'thread',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (user_id, target_id)
       )
     `);
 
-    // 5. Índices de aceleración
+    // 5. Migraciones en caliente (Auto-reparación de columnas faltantes en tablas existentes)
+    try {
+      await queryD1("ALTER TABLE server_reviews ADD COLUMN user_role TEXT DEFAULT 'usuario'");
+    } catch (e) {
+      // Ignorar si la columna ya existe
+    }
+
+    try {
+      await queryD1("ALTER TABLE server_reviews ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP");
+    } catch (e) {
+      // Ignorar si la columna ya existe
+    }
+
+    try {
+      await queryD1("ALTER TABLE forum_votes ADD COLUMN thread_id TEXT");
+    } catch (e) {
+      // Ignorar si la columna ya existe
+    }
+
+    try {
+      await queryD1("ALTER TABLE forum_votes ADD COLUMN target_id TEXT");
+    } catch (e) {
+      // Ignorar si la columna ya existe
+    }
+
+    try {
+      await queryD1("ALTER TABLE forum_votes ADD COLUMN target_type TEXT DEFAULT 'thread'");
+    } catch (e) {
+      // Ignorar si la columna ya existe
+    }
+
+    // Sincronizar thread_id <-> target_id para compatibilidad total de votos
+    try {
+      await queryD1("UPDATE forum_votes SET thread_id = target_id WHERE (thread_id IS NULL OR thread_id = '') AND target_id IS NOT NULL");
+    } catch (e) {}
+
+    try {
+      await queryD1("UPDATE forum_votes SET target_id = thread_id WHERE (target_id IS NULL OR target_id = '') AND thread_id IS NOT NULL");
+    } catch (e) {}
+
+    // Saneamiento de banners locales /uploads/ que quedaron huérfanos tras reiniciar el contenedor
+    try {
+      await queryD1("UPDATE servers SET banner_url = '/spiffo/spiffo_character.png' WHERE banner_url LIKE '/uploads/%'");
+    } catch (e) {}
+
+    // 6. Índices de aceleración
     await queryD1(`CREATE INDEX IF NOT EXISTS idx_server_reviews_server ON server_reviews(server_id)`);
     await queryD1(`CREATE INDEX IF NOT EXISTS idx_forum_comments_thread ON forum_comments(thread_id)`);
 

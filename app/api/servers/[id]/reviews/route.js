@@ -8,6 +8,25 @@ import { ensureProductionTables } from '../../../../lib/dbBootstrap';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+async function fetchSafeReviews(serverId) {
+  try {
+    const rows = await queryD1(
+      'SELECT id, server_id, user_id, user_name, user_avatar, user_role, rating, comment, created_at FROM server_reviews WHERE server_id = ? ORDER BY created_at DESC',
+      [serverId]
+    );
+    return Array.isArray(rows) ? rows : [];
+  } catch (err) {
+    // Fallback defensivo si la columna user_role no existiera aún en D1
+    const fallbackRows = await queryD1(
+      'SELECT id, server_id, user_id, user_name, user_avatar, rating, comment, created_at FROM server_reviews WHERE server_id = ? ORDER BY created_at DESC',
+      [serverId]
+    );
+    return Array.isArray(fallbackRows)
+      ? fallbackRows.map((r) => ({ ...r, user_role: 'usuario' }))
+      : [];
+  }
+}
+
 // GET: Obtener las reseñas de un servidor específico
 export async function GET(request, { params }) {
   try {
@@ -19,12 +38,7 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, error: 'ID de servidor requerido' }, { status: 400 });
     }
 
-    const rows = await queryD1(
-      'SELECT id, server_id, user_id, user_name, user_avatar, user_role, rating, comment, created_at FROM server_reviews WHERE server_id = ? ORDER BY created_at DESC',
-      [serverId]
-    );
-
-    const reviews = Array.isArray(rows) ? rows : [];
+    const reviews = await fetchSafeReviews(serverId);
     const total = reviews.length;
     const avgRating = total > 0 ? (reviews.reduce((acc, r) => acc + (Number(r.rating) || 2), 0) / total).toFixed(1) : 0;
 
@@ -124,29 +138,42 @@ export async function POST(request, { params }) {
       );
     } else {
       reviewId = `rev-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
-      await queryD1(
-        `INSERT INTO server_reviews (
-          id, server_id, user_id, user_name, user_avatar, user_role, rating, comment, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
-        [
-          reviewId,
-          serverId,
-          sessionUser.id,
-          sessionUser.name || 'Superviviente',
-          sessionUser.picture || null,
-          sessionUser.role || 'usuario',
-          rating,
-          cleanComment,
-        ]
-      );
+      try {
+        await queryD1(
+          `INSERT INTO server_reviews (
+            id, server_id, user_id, user_name, user_avatar, user_role, rating, comment, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+          [
+            reviewId,
+            serverId,
+            sessionUser.id,
+            sessionUser.name || 'Superviviente',
+            sessionUser.picture || null,
+            sessionUser.role || 'usuario',
+            rating,
+            cleanComment,
+          ]
+        );
+      } catch (insertErr) {
+        // Fallback si la columna user_role no existe aún
+        await queryD1(
+          `INSERT INTO server_reviews (
+            id, server_id, user_id, user_name, user_avatar, rating, comment, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+          [
+            reviewId,
+            serverId,
+            sessionUser.id,
+            sessionUser.name || 'Superviviente',
+            sessionUser.picture || null,
+            rating,
+            cleanComment,
+          ]
+        );
+      }
     }
 
-    const updatedRows = await queryD1(
-      'SELECT id, server_id, user_id, user_name, user_avatar, user_role, rating, comment, created_at FROM server_reviews WHERE server_id = ? ORDER BY created_at DESC',
-      [serverId]
-    );
-
-    const reviews = Array.isArray(updatedRows) ? updatedRows : [];
+    const reviews = await fetchSafeReviews(serverId);
     const total = reviews.length;
     const avgRating = total > 0 ? (reviews.reduce((acc, r) => acc + (Number(r.rating) || 2), 0) / total).toFixed(1) : 0;
 
@@ -165,7 +192,7 @@ export async function POST(request, { params }) {
   } catch (error) {
     console.error('Error guardando reseña en D1:', error);
     return NextResponse.json(
-      { success: false, error: 'Fallo al almacenar la reseña en Cloudflare D1' },
+      { success: false, error: 'Fallo al almacenar la reseña en Cloudflare D1: ' + (error.message || '') },
       { status: 500 }
     );
   }
@@ -211,12 +238,7 @@ export async function DELETE(request, { params }) {
 
     await queryD1('DELETE FROM server_reviews WHERE id = ?', [reviewId]);
 
-    const updatedRows = await queryD1(
-      'SELECT id, server_id, user_id, user_name, user_avatar, user_role, rating, comment, created_at FROM server_reviews WHERE server_id = ? ORDER BY created_at DESC',
-      [serverId]
-    );
-
-    const reviews = Array.isArray(updatedRows) ? updatedRows : [];
+    const reviews = await fetchSafeReviews(serverId);
     const total = reviews.length;
     const avgRating = total > 0 ? (reviews.reduce((acc, r) => acc + (Number(r.rating) || 2), 0) / total).toFixed(1) : 0;
 

@@ -665,7 +665,7 @@ export default function ServerList({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 260 }}>
                     <div className="server-avatar-box">
                       <Image
-                        src={server.banner_url || '/spiffo/ferret_mascot.jpg'}
+                        src={(server.banner_url && !server.banner_url.startsWith('/uploads/')) ? server.banner_url : '/spiffo/ferret_mascot.jpg'}
                         alt={server.name}
                         width={42}
                         height={42}

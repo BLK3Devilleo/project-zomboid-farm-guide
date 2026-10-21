@@ -67,9 +67,19 @@ export async function GET(request) {
     // 3. Obtener votos del usuario si está autenticado
     let userVotedThreadIds = new Set();
     if (sessionUser?.id) {
-      const voteRows = await queryD1('SELECT thread_id FROM forum_votes WHERE user_id = ?', [sessionUser.id]);
-      if (Array.isArray(voteRows)) {
-        userVotedThreadIds = new Set(voteRows.map((v) => v.thread_id));
+      try {
+        const voteRows = await queryD1('SELECT thread_id FROM forum_votes WHERE user_id = ?', [sessionUser.id]);
+        if (Array.isArray(voteRows)) {
+          userVotedThreadIds = new Set(voteRows.map((v) => v.thread_id).filter(Boolean));
+        }
+      } catch (colErr) {
+        // Fallback defensivo si la tabla forum_votes usa target_id
+        try {
+          const voteRows = await queryD1("SELECT target_id AS thread_id FROM forum_votes WHERE user_id = ? AND (target_type = 'thread' OR target_type IS NULL)", [sessionUser.id]);
+          if (Array.isArray(voteRows)) {
+            userVotedThreadIds = new Set(voteRows.map((v) => v.thread_id).filter(Boolean));
+          }
+        } catch (e2) {}
       }
     }
 
@@ -243,18 +253,42 @@ export async function PATCH(request) {
         );
       }
 
-      const existingVote = await queryD1(
-        'SELECT 1 FROM forum_votes WHERE user_id = ? AND thread_id = ? LIMIT 1',
-        [sessionUser.id, body.threadId]
-      );
+      let existingVote = [];
+      try {
+        existingVote = await queryD1(
+          'SELECT 1 FROM forum_votes WHERE user_id = ? AND thread_id = ? LIMIT 1',
+          [sessionUser.id, body.threadId]
+        );
+      } catch (colErr) {
+        existingVote = await queryD1(
+          'SELECT 1 FROM forum_votes WHERE user_id = ? AND target_id = ? LIMIT 1',
+          [sessionUser.id, body.threadId]
+        );
+      }
 
       const alreadyVoted = existingVote && existingVote.length > 0;
 
       if (alreadyVoted) {
-        await queryD1('DELETE FROM forum_votes WHERE user_id = ? AND thread_id = ?', [sessionUser.id, body.threadId]);
+        try {
+          await queryD1('DELETE FROM forum_votes WHERE user_id = ? AND (thread_id = ? OR target_id = ?)', [sessionUser.id, body.threadId, body.threadId]);
+        } catch (delErr) {
+          try {
+            await queryD1('DELETE FROM forum_votes WHERE user_id = ? AND thread_id = ?', [sessionUser.id, body.threadId]);
+          } catch (delErr2) {
+            await queryD1('DELETE FROM forum_votes WHERE user_id = ? AND target_id = ?', [sessionUser.id, body.threadId]);
+          }
+        }
         await queryD1('UPDATE forum_threads SET upvotes = MAX(0, upvotes - 1) WHERE id = ?', [body.threadId]);
       } else {
-        await queryD1('INSERT INTO forum_votes (user_id, thread_id) VALUES (?, ?)', [sessionUser.id, body.threadId]);
+        try {
+          await queryD1('INSERT INTO forum_votes (user_id, thread_id, target_id, target_type) VALUES (?, ?, ?, ?)', [sessionUser.id, body.threadId, body.threadId, 'thread']);
+        } catch (insErr1) {
+          try {
+            await queryD1('INSERT INTO forum_votes (user_id, thread_id) VALUES (?, ?)', [sessionUser.id, body.threadId]);
+          } catch (insErr2) {
+            await queryD1('INSERT INTO forum_votes (user_id, target_id, target_type) VALUES (?, ?, ?)', [sessionUser.id, body.threadId, 'thread']);
+          }
+        }
         await queryD1('UPDATE forum_threads SET upvotes = upvotes + 1 WHERE id = ?', [body.threadId]);
       }
 

@@ -44,9 +44,9 @@ export default function ServerDetailModal({
   const fullAddress = `${server.ip}:${server.port || 16261}`;
 
   // Galería de imágenes (Soporte Cloudflare R2 y Fallbacks)
-  const images = (server.gallery_images && server.gallery_images.length > 0)
-    ? server.gallery_images
-    : [server.banner_url || '/spiffo/spiffo_character.png'];
+  const cleanBanner = (server.banner_url && !server.banner_url.startsWith('/uploads/')) ? server.banner_url : '/spiffo/spiffo_character.png';
+  const rawImages = (server.gallery_images && server.gallery_images.length > 0) ? server.gallery_images : [cleanBanner];
+  const images = rawImages.map((img) => (img && typeof img === 'string' && img.startsWith('/uploads/')) ? cleanBanner : img);
 
   const rawCurrentImage = images[selectedImgIndex] || images[0];
   const currentImage = failedImages[rawCurrentImage]

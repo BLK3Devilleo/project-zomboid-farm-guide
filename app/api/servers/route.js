@@ -35,13 +35,23 @@ export async function GET(request) {
 
     const results = await queryD1('SELECT * FROM servers ORDER BY votes DESC');
     if (Array.isArray(results)) {
-      const parsed = results.map((server) => ({
-        ...server,
-        is_online: Boolean(server.is_online),
-        tags: typeof server.tags === 'string' ? JSON.parse(server.tags) : (server.tags || []),
-        gallery_images: typeof server.gallery_images === 'string' ? JSON.parse(server.gallery_images) : (server.gallery_images || []),
-        has_voted: userVotedIds.has(server.id),
-      }));
+      const parsed = results.map((server) => {
+        let safeBanner = server.banner_url || '/spiffo/spiffo_character.png';
+        if (typeof safeBanner === 'string' && safeBanner.startsWith('/uploads/')) {
+          safeBanner = '/spiffo/spiffo_character.png';
+        }
+        let rawGallery = typeof server.gallery_images === 'string' ? JSON.parse(server.gallery_images) : (server.gallery_images || []);
+        let safeGallery = Array.isArray(rawGallery) ? rawGallery.filter((img) => typeof img === 'string' && !img.startsWith('/uploads/')) : [];
+        if (safeGallery.length === 0) safeGallery = [safeBanner];
+        return {
+          ...server,
+          banner_url: safeBanner,
+          gallery_images: safeGallery,
+          is_online: Boolean(server.is_online),
+          tags: typeof server.tags === 'string' ? JSON.parse(server.tags) : (server.tags || []),
+          has_voted: userVotedIds.has(server.id),
+        };
+      });
       return NextResponse.json({ success: true, source: 'cloudflare_d1', data: parsed });
     }
   } catch (error) {

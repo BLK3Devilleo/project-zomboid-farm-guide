@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS server_reviews (
   user_id TEXT NOT NULL,
   user_name TEXT NOT NULL,
   user_avatar TEXT,
+  user_role TEXT DEFAULT 'usuario',
   rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 3),
   comment TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -128,7 +129,8 @@ CREATE TABLE IF NOT EXISTS forum_comments (
 CREATE TABLE IF NOT EXISTS forum_votes (
   user_id TEXT NOT NULL,
   target_id TEXT NOT NULL,
-  target_type TEXT NOT NULL CHECK (target_type IN ('thread', 'comment')),
+  thread_id TEXT,
+  target_type TEXT NOT NULL DEFAULT 'thread' CHECK (target_type IN ('thread', 'comment')),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id, target_id)
 );
