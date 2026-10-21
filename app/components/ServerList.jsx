@@ -270,7 +270,7 @@ export default function ServerList({
     <div className="hud-container">
       {/* TOAST DE FEEDBACK */}
       {toastMessage && (
-        <div className="server-toast">
+        <div className="server-toast" role="status" aria-live="polite" aria-atomic="true">
           {toastMessage}
         </div>
       )}

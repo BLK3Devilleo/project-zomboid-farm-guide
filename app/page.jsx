@@ -102,6 +102,28 @@ export default function SpiffoOSApp() {
     toggleObjective(routeId, objId, xpReward, playSound);
   };
 
+  // URL ↔ State sync: read ?view= on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const viewParam = params.get('view');
+    const validViews = ['servers', 'guide', 'forum', 'loot', 'radio', 'missions', 'onboarding'];
+    if (viewParam && validViews.includes(viewParam)) {
+      updateProgress((p) => ({ ...p, activeView: viewParam }));
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // URL ↔ State sync: browser back/forward buttons
+  useEffect(() => {
+    const onPop = () => {
+      const params = new URLSearchParams(window.location.search);
+      const v = params.get('view') || 'servers';
+      updateProgress((p) => ({ ...p, activeView: v }));
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [updateProgress]);
+
   if (!playerData) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#060913', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', fontFamily: 'monospace', letterSpacing: '0.1em' }}>
@@ -139,6 +161,7 @@ export default function SpiffoOSApp() {
         activeView={currentView}
         onSelectView={(v) => {
           playClick();
+          window.history.pushState({}, '', '/?view=' + v);
           updateProgress((p) => ({ ...p, activeView: v }));
         }}
         activeRouteId={playerData.activeRouteId}
@@ -233,6 +256,7 @@ export default function SpiffoOSApp() {
         onProfileUpdated={handleProfileUpdated}
         onOpenAddServer={(serverToEdit) => {
           setServerToEditInList(serverToEdit || null);
+          window.history.pushState({}, '', '/?view=servers');
           updateProgress((p) => ({ ...p, activeView: 'servers' }));
         }}
       />

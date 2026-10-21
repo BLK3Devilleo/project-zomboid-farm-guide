@@ -2098,6 +2098,13 @@ button {
   pointer-events: none;
 }
 
+/* Disable CRT scanlines on mobile and reduced-motion for accessibility/performance */
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  .crt-scanlines {
+    display: none;
+  }
+}
+
 .hud-glow {
   box-shadow: 0 0 16px rgba(16, 185, 129, 0.15), inset 0 0 1px rgba(16, 185, 129, 0.3);
 }

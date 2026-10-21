@@ -7,7 +7,7 @@ const CURRENT_VERSION = 1;
 export const DEFAULT_STORAGE_STATE = {
   version: CURRENT_VERSION,
   activeRouteId: null, // null muestra el Onboarding Wizard por defecto
-  activeView: 'route', // 'onboarding' | 'route' | 'loot'
+  activeView: 'servers', // 'onboarding' | 'servers' | 'guide' | 'forum' | 'loot' | 'radio' | 'missions'
   selectedLootCategory: 'all',
   onboarding: {
     experience: null, // 'new' | 'experienced'

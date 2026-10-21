@@ -7,6 +7,13 @@ export const metadata = {
   description: 'HUD táctico diegético de 1993 para Project Zomboid Build 42: guía de mecánicas, radar de botín, sistema de alerta de meta-eventos, directorio comunitario de servidores y radio en tiempo real.',
 };
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#060913',
+};
+
 export default function RootLayout({ children }) {
   return (
     <html lang="es">

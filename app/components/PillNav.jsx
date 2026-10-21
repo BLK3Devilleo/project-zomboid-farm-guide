@@ -92,9 +92,12 @@ export default function PillNav({
         <nav className="pill-nav-bar">
           {/* LADO IZQUIERDO: LOGO SPIFFO / KNOX-OS */}
           <div
-            onClick={onResetToOnboarding}
+            onClick={() => { window.history.pushState({}, '', '/?view=servers'); onSelectView('servers'); }}
             className="pill-logo-btn"
-            title="Reiniciar Asistente de Supervivencia"
+            title="Ir al Directorio de Servidores"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { window.history.pushState({}, '', '/?view=servers'); onSelectView('servers'); } }}
           >
             <div className="pill-logo-avatar" style={{ overflow: 'hidden', borderRadius: '50%' }}>
               <Image
@@ -418,6 +421,7 @@ export default function PillNav({
                     <button
                       key={item.id}
                       onClick={() => {
+                        window.history.pushState({}, '', '/?view=' + item.id);
                         onSelectView(item.id);
                         setMobileMenuOpen(false);
                       }}
@@ -431,6 +435,20 @@ export default function PillNav({
                     </button>
                   );
                 })}
+
+                {/* Reiniciar Asistente de Supervivencia */}
+                <span className="pill-mobile-nav-section-title" style={{ marginTop: 16 }}>HERRAMIENTAS</span>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onResetToOnboarding();
+                  }}
+                  className="pill-mobile-nav-item"
+                  style={{ color: '#a78bfa' }}
+                >
+                  <span className="pill-mobile-nav-icon">⚙</span>
+                  <span className="pill-mobile-nav-label">Reiniciar Asistente de Supervivencia</span>
+                </button>
 
                 {/* Accesos de Administración y Perfil en Móvil */}
                 {isStaff && (
