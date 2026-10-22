@@ -119,8 +119,12 @@ export async function POST(request) {
     const newServerId = `srv-${Date.now()}`;
     const playersOnline = Math.floor(Math.random() * 8) + 2;
 
-    const safeDescription = sanitizeText(validData.description, 1000);
+    const safeDescription = sanitizeText(validData.description || '', 1000);
     const safeName = sanitizeText(validData.name, 64);
+    const ownerId = String(sessionUser.id || sessionUser.sub || sessionUser.email || 'unknown');
+    const ownerEmail = String(sessionUser.email || '');
+
+    console.log(`[SERVER-CREATE-ATTEMPT] Usuario: ${ownerEmail} (${ownerId}) creando servidor "${safeName}" (${validData.ip}:${validData.port})`);
 
     // 4. Inserción segura con parámetros vinculados (Previene Inyecciones SQL)
     await queryD1(
@@ -136,9 +140,9 @@ export async function POST(request) {
         validData.port,
         validData.region,
         validData.gamemode,
-        validData.loot_multiplier,
+        validData.loot_multiplier || 'Normal',
         playersOnline,
-        validData.max_players,
+        validData.max_players || 32,
         1, // is_online
         0, // votes
         safeDescription,
@@ -146,8 +150,8 @@ export async function POST(request) {
         validData.banner_url || '/spiffo/spiffo_character.png',
         JSON.stringify(validData.gallery_images || []),
         JSON.stringify(validData.tags || []),
-        sessionUser.id,
-        sessionUser.email,
+        ownerId,
+        ownerEmail,
       ]
     );
 
@@ -158,9 +162,9 @@ export async function POST(request) {
       port: validData.port,
       region: validData.region,
       mode: validData.gamemode,
-      loot_tier: validData.loot_multiplier,
+      loot_tier: validData.loot_multiplier || 'Normal',
       players_online: playersOnline,
-      max_players: validData.max_players,
+      max_players: validData.max_players || 32,
       is_online: true,
       votes: 0,
       description: safeDescription,
@@ -168,8 +172,8 @@ export async function POST(request) {
       banner_url: validData.banner_url,
       gallery_images: validData.gallery_images,
       tags: validData.tags,
-      owner_id: sessionUser.id,
-      owner_email: sessionUser.email,
+      owner_id: ownerId,
+      owner_email: ownerEmail,
       has_voted: false,
     };
 

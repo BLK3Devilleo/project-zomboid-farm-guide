@@ -12,7 +12,6 @@ import MissionsView from './components/MissionsView';
 
 import AuthModal from './components/AuthModal';
 import ProfileModal from './components/ProfileModal';
-import TacticalLogModal from './components/TacticalLogModal';
 import AdminPanelModal from './components/AdminPanelModal';
 
 import { routesDatabase } from './data/routesDatabase';
@@ -29,7 +28,6 @@ export default function SpiffoOSApp() {
   // Estados de Modales y Servidores
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [logsModalOpen, setLogsModalOpen] = useState(false);
   const [adminModalOpen, setAdminModalOpen] = useState(false);
   const [serversList, setServersList] = useState([]);
   const [serverToEditInList, setServerToEditInList] = useState(null);
@@ -102,23 +100,37 @@ export default function SpiffoOSApp() {
     toggleObjective(routeId, objId, xpReward, playSound);
   };
 
-  // URL ↔ State sync: read ?view= on mount
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  // Helper para resolver la vista canónica a partir de pathname o ?view=
+  const resolveViewFromUrl = () => {
+    if (typeof window === 'undefined') return 'servers';
+    const path = window.location.pathname.replace(/^\//, '').toLowerCase();
     const params = new URLSearchParams(window.location.search);
     const viewParam = params.get('view');
-    const validViews = ['servers', 'guide', 'forum', 'loot', 'radio', 'missions', 'onboarding'];
-    if (viewParam && validViews.includes(viewParam)) {
-      updateProgress((p) => ({ ...p, activeView: viewParam }));
-    }
+    const target = viewParam || path;
+
+    if (['servers', 'servidores'].includes(target)) return 'servers';
+    if (['guide', 'guia'].includes(target)) return 'guide';
+    if (['forum', 'foro', 'tips'].includes(target)) return 'forum';
+    if (['loot'].includes(target)) return 'loot';
+    if (['radio'].includes(target)) return 'radio';
+    if (['missions', 'misiones'].includes(target)) return 'missions';
+    if (['onboarding'].includes(target)) return 'onboarding';
+
+    return 'servers'; // Por defecto absoluto: siempre Directorio de Servidores
+  };
+
+  // URL ↔ State sync: sincronizar ruta limpia en mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const view = resolveViewFromUrl();
+    updateProgress((p) => ({ ...p, activeView: view }));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // URL ↔ State sync: browser back/forward buttons
+  // URL ↔ State sync: soporte para botones Atrás / Adelante del navegador
   useEffect(() => {
     const onPop = () => {
-      const params = new URLSearchParams(window.location.search);
-      const v = params.get('view') || 'servers';
-      updateProgress((p) => ({ ...p, activeView: v }));
+      const view = resolveViewFromUrl();
+      updateProgress((p) => ({ ...p, activeView: view }));
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -132,11 +144,12 @@ export default function SpiffoOSApp() {
     );
   }
 
-  // Vista activa normalizada a las 6 secciones solicitadas
+  // Vista activa normalizada a las 6 secciones solicitadas (Previene quedar atrapado en el asistente de Spiffo)
   const rawView = playerData.activeView || 'servers';
   const currentView =
     rawView === 'route' ? 'guide' :
     rawView === 'events' ? 'servers' :
+    rawView === 'onboarding' ? (typeof window !== 'undefined' && window.location.pathname === '/onboarding' ? 'onboarding' : 'servers') :
     rawView;
 
   const activeRoute = routesDatabase.find((r) => r.id === playerData.activeRouteId) || routesDatabase[0];
@@ -161,20 +174,22 @@ export default function SpiffoOSApp() {
         activeView={currentView}
         onSelectView={(v) => {
           playClick();
-          window.history.pushState({}, '', '/?view=' + v);
+          window.history.pushState({}, '', '/' + v);
           updateProgress((p) => ({ ...p, activeView: v }));
         }}
         activeRouteId={playerData.activeRouteId}
         onSelectRoute={handleSelectRoute}
         onSelectLootCategory={handleSelectLootCategory}
-        onResetToOnboarding={handleResetToOnboarding}
+        onResetToOnboarding={() => {
+          handleResetToOnboarding();
+          window.history.pushState({}, '', '/onboarding');
+        }}
         globalXp={playerData.globalXp}
         currentUser={currentUser}
         isStaff={isStaff}
         onOpenLoginModal={() => setAuthModalOpen(true)}
         onOpenProfileModal={() => setProfileModalOpen(true)}
         onOpenAdminModal={() => setAdminModalOpen(true)}
-        onOpenLogsModal={() => setLogsModalOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -265,13 +280,6 @@ export default function SpiffoOSApp() {
       <AdminPanelModal
         isOpen={adminModalOpen}
         onClose={() => setAdminModalOpen(false)}
-        currentUser={currentUser}
-      />
-
-      {/* MODAL TERMINAL DE LOGS SSE EN VIVO */}
-      <TacticalLogModal
-        isOpen={logsModalOpen}
-        onClose={() => setLogsModalOpen(false)}
         currentUser={currentUser}
       />
     </div>

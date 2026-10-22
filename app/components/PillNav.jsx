@@ -33,7 +33,6 @@ export default function PillNav({
   currentUser = null,
   onOpenLoginModal = () => {},
   onOpenProfileModal = () => {},
-  onOpenLogsModal = () => {},
   onOpenAdminModal = () => {},
   onLogout = () => {},
 }) {
@@ -92,12 +91,12 @@ export default function PillNav({
         <nav className="pill-nav-bar">
           {/* LADO IZQUIERDO: LOGO SPIFFO / KNOX-OS */}
           <div
-            onClick={() => { window.history.pushState({}, '', '/?view=servers'); onSelectView('servers'); }}
+            onClick={() => { window.history.pushState({}, '', '/servers'); onSelectView('servers'); }}
             className="pill-logo-btn"
             title="Ir al Directorio de Servidores"
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { window.history.pushState({}, '', '/?view=servers'); onSelectView('servers'); } }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { window.history.pushState({}, '', '/servers'); onSelectView('servers'); } }}
           >
             <div className="pill-logo-avatar" style={{ overflow: 'hidden', borderRadius: '50%' }}>
               <Image
@@ -159,26 +158,6 @@ export default function PillNav({
               >
                 <ShieldAdminIcon size={13} color="#06b6d4" />
                 <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 900, color: '#06b6d4' }}>ADMIN</span>
-              </button>
-            )}
-
-            {/* BOTÓN TERMINAL LOGS SSE (SOLO VISIBLE PARA ADMIN O SUPER_ADMIN) */}
-            {isAdmin && (
-              <button
-                onClick={onOpenLogsModal}
-                className="pill-tab-item desktop-only"
-                style={{
-                  padding: '5px 9px',
-                  gap: 4,
-                  border: '1px solid rgba(16, 185, 129, 0.4)',
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  borderRadius: 6,
-                  cursor: 'pointer',
-                }}
-                title="Abrir Terminal de Telemetría y Logs SSE en Vivo (Administrador)"
-              >
-                <TerminalLogsIcon size={13} color="#34d399" />
-                <span style={{ fontSize: 10, fontFamily: 'monospace', fontWeight: 900, color: '#34d399' }}>LOGS</span>
               </button>
             )}
 
@@ -272,19 +251,7 @@ export default function PillNav({
                       </button>
                     )}
 
-                    {isAdmin && (
-                      <button
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          onOpenLogsModal();
-                        }}
-                        className="pill-dropdown-item"
-                        style={{ color: '#38bdf8', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}
-                      >
-                        <TerminalLogsIcon size={14} color="#38bdf8" />
-                        <span>Terminal SSE Logs</span>
-                      </button>
-                    )}
+                    {/* Dropdown item: Cerrar Sesión */}
 
                     <button
                       onClick={() => {
@@ -421,7 +388,7 @@ export default function PillNav({
                     <button
                       key={item.id}
                       onClick={() => {
-                        window.history.pushState({}, '', '/?view=' + item.id);
+                        window.history.pushState({}, '', '/' + item.id);
                         onSelectView(item.id);
                         setMobileMenuOpen(false);
                       }}
@@ -469,20 +436,6 @@ export default function PillNav({
                       <span className="pill-mobile-nav-label">Panel de Administración</span>
                     </button>
                   </>
-                )}
-
-                {isAdmin && (
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      onOpenLogsModal();
-                    }}
-                    className="pill-mobile-nav-item"
-                    style={{ color: '#38bdf8' }}
-                  >
-                    <span className="pill-mobile-nav-icon"><TerminalLogsIcon size={16} color="#38bdf8" /></span>
-                    <span className="pill-mobile-nav-label">Terminal SSE Logs en Vivo</span>
-                  </button>
                 )}
 
                 {currentUser ? (

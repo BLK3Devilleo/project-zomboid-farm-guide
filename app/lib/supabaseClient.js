@@ -25,9 +25,18 @@ export async function createServerEntry(serverData) {
     body: JSON.stringify(serverData),
   });
 
-  const json = await res.json().catch(() => ({}));
+  let json = {};
+  let rawText = '';
+  try {
+    rawText = await res.text();
+    json = JSON.parse(rawText);
+  } catch (e) {
+    json = {};
+  }
+
   if (!res.ok || !json.success) {
-    throw new Error(json.error || 'Error al registrar el servidor en la base de datos.');
+    const errorDetail = json.error || (rawText ? rawText.substring(0, 200) : null) || `Error HTTP ${res.status}`;
+    throw new Error(errorDetail);
   }
 
   return json.data;
